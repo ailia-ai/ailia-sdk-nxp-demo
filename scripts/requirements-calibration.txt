@@ -1,0 +1,6 @@
+# Host-side conversion only. Do not install these packages on the NXP device.
+numpy==2.2.6
+onnx==1.23.2
+onnxruntime==1.23.2
+opencv-python-headless==5.0.0.93
+pycocotools==2.0.11

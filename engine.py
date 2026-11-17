@@ -69,11 +69,11 @@ class Session:
             )
             self.run = self.net.run
             self.version = ailia.get_version()
-            from warmup import inputs_for_model
+        from warmup import inputs_for_model
 
-            outputs = self.run(inputs_for_model(Path(path).name))
-            if not all(np.isfinite(value).all() for value in outputs):
-                raise RuntimeError(f"Non-finite Open-time warm-up output: {path}")
+        outputs = self.run(inputs_for_model(Path(path).name))
+        if not all(np.isfinite(value).all() for value in outputs):
+            raise RuntimeError(f"Non-finite Open-time warm-up output: {path}")
 
 
 class SessionCache:
@@ -240,16 +240,12 @@ def worker(directory, requests, responses):
                     encoder_ms=engine.encoder_ms,
                     cached=cached,
                     version=engine.encoder.version,
-                    mode="warm / latest" if backend.startswith("ailia") else "first / latest",
+                    mode="warm / latest",
                     action=job["action"],
                 )
                 if job["action"] == "benchmark":
-                    # ailia is already warmed at Open; only ORT needs a
-                    # benchmark warm-up before the three measured samples.
+                    # Both runtimes already performed the same dummy inference at Open.
                     points = job["points"] or [[0.5, 0.5, 1]]
-                    if backend.startswith("ort"):
-                        engine.encode()
-                        engine.segment(points)
                     enc_times, click_times = [], []
                     for _ in range(3):
                         enc_times.append(engine.encode())

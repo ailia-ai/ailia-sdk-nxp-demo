@@ -2,91 +2,48 @@
 
 ailia Inc.
 
-HDMIに接続したi.MX95で、画像をクリックしてセグメンテーションし、
-ailiaとNXP ONNX Runtimeの速度を比較するGTK3アプリです。
-SAM 2.1 Tinyを512×512へ変換したモデルを同梱しています。
-bedroomの5フレームを、SAM 2.1のメモリを使って追跡できます。
+i.MX95のHDMI画面で、クリックによるセグメンテーションとBedroomの5フレーム追跡を行うデモです。
+COCO校正済みのSAM2.1 Tiny 512×512モデルを同梱し、ailia／ORTのCPU・NPUを比較できます。
 
-## 実行方式
+## 動作環境
 
-| 選択肢 | Image Encoder / Memory Attention | その他のネットワーク |
-|---|---|---|
-| ailia CPU | ailia CPU | ailia CPU |
-| ailia NPU | ailia Neutron + CPU fallback | ailia CPU |
-| ORT CPU | ONNX Runtime CPU | ONNX Runtime CPU |
-| ORT NPU | NeutronExecutionProvider + CPU fallback | ONNX Runtime CPU |
+- i.MX95、HDMI、マウス
+- NXP i.MX Distro `6.18-wrynose`（Linux ARM64、Weston/Wayland）
+- Python 3、NumPy、OpenCV、GTK3、PyGObject、Cairo
+- ailia Python package `1.7.0.0`、有効なailiaライセンス
+- NXP ONNX Runtime `1.24.3`、BSP付属のNeutronドライバ
 
-「NPU」は全ノードのNPU実行を意味しません。Prompt Encoder、Mask Decoder、
-Memory Encoder、MLPなどはCPUで動作します。4方式で同じモデルを使用します。
-最終モデルは標準ONNXの整数MatMul形式です。Encoderは75個、Memory Attentionは
-共有DQ部分を含む64個のMatMulを整数化しています。
-
-**ORT NPUは速度測定用です。** NXP ORT 1.24.3 Neutron EPではEncoderの
-`Invalid args`、出力値の誤差、同じ入力に対する推論ごとの出力変動が残ります。
-表示される時間は異常出力を含む処理時間であり、同等精度の性能比較ではありません。
-ailia NPUではEncoderの変換前後の出力一致と、bedroomの5フレーム追跡を確認しています。
-モデルと同梱SDKをセットで更新してください。旧QDQモデルと新SDKの混在は推奨しません。
-公開pip版の **ailia SDK 1.7 (公開版)** はNPU非対応です。
-このリポジトリの **ailia SDK 1.7 (NXP NPU対応版)** への差し替えでNPUを利用できます。
-
-## 検証環境・必要なもの
-
-- NXP i.MX95 / Linux aarch64、HDMI、マウス。
-- NXP i.MX Distro with Wayland and XWayland `6.18-wrynose`。
-- Weston/Wayland、Python 3、NumPy、OpenCV (`cv2`)、GTK3、PyGObject、Cairo。
-- ailia Python package `1.7.0.0`、有効なailiaライセンス。
-- ORTを使う場合はNXP版ONNX Runtime `1.24.3`。
-- NPUを使う場合はBSPのNeutronドライバ、対応ファームウェア、NPUへのアクセス権。
-
-同梱SDKはLinux ARM64専用です。macOS/x86では実行できません。
-BSPの共有ライブラリに依存するため、他のYoctoイメージでの動作は保証しません。
-同梱バイナリのELF依存シンボルには`GLIBC_2.43`、`GLIBCXX_3.4.32`、
-`CXXABI_1.3.15`が含まれます。古いBSPでは差し替えだけでは動作しません。
-GTK/OpenCV/Neutron/ORTは対象のNXPイメージから導入してください。
-**NXPのORTをPyPIの`onnxruntime`で上書きしないでください。**
-PyPI版ではNeutron EPが利用できなくなる可能性があります。
+同梱SDKはこのBSP向けです（`GLIBC_2.43`、`GLIBCXX_3.4.32`、`CXXABI_1.3.15`）。
+NXP版ORTはPyPI版で上書きせず、そのまま使用してください。
 
 ## セットアップ
 
-実機で次を実行します。リポジトリのモデル・画像はGitの通常ファイルです。
+実機で実行します。
 
 ```sh
 git clone https://github.com/ailia-ai/ailia-sdk-nxp-demo.git
 cd ailia-sdk-nxp-demo
 sha256sum -c SHA256SUMS
 
-# Python bindingをデモ専用フォルダへインストール（BSPの依存パッケージを維持）
 python3 -m pip install --target ./python --no-deps ailia==1.7.0.0
-
-# 同梱NPU対応版をコピーして差し替え
 python3 scripts/copy_sdk.py --install-npu --package-dir ./python/ailia
 ```
 
-`python/`はGit管理対象外です。システムのailiaを上書きしません。
-差し替え前にアプリを終了してください。コピー対象は`libailia.so`だけです。
-NumPyやOpenCVなどは別途BSPで導入済みであることを確認してください。
+ailia SDK 1.7 (公開版)はNPU非対応です。上記コマンドで同梱のailia SDK 1.7 (NXP NPU対応版)へ差し替えます。
+既存アプリを終了してから実行してください。
 
-pipパッケージからSDKバイナリをコピーする場合は、**差し替え前**に実行します。
+pip版のバイナリを保存する場合は、差し替え前に次を実行します。
 
 ```sh
 python3 scripts/copy_sdk.py --export-pip --package-dir ./python/ailia
-# sdk/from-pip/linux/arm64-v8a/libailia.so にコピー
+# 保存先: sdk/from-pip/linux/arm64-v8a/libailia.so
 ```
 
-差し替え後に実行すると、コピー元はNPU対応版になります。
-通常の仮想環境へpipインストールした場合は、そのPythonを使い、`--package-dir`を省略できます。
-詳細は[sdk/README.md](sdk/README.md)を参照してください。
+### ライセンス
 
-### ライセンス取得
-
-ailiaは商用SDKです。同梱バイナリにもSDKの利用条件が適用されます。
-Pythonパッケージは必要に応じて評価ライセンスをオンライン取得します。
-初回実行時はネットワーク、DNS、HTTPS接続、正しいシステム日時が必要です。
-取得失敗・期限切れ・オフライン利用の場合は、利用条件に合うライセンスを別途用意してください。
-Linuxでは実行ユーザーの`~/.shalo/AILIA.lic`などを確認します。
-rootと一般ユーザーではライセンスの参照先が異なります。
-ライセンスファイルは本リポジトリに含めず、コミットしないでください。
-SDKの正式な条件は[同梱ライセンス文書](licenses/LICENSE_AILIA_JA.pdf)を参照してください。
+初回の評価ライセンス取得にはインターネット接続と正しいシステム日時が必要です。
+オフライン利用や期限切れの場合は、別途有効なライセンスを用意してください。
+ライセンスは実行ユーザーごとに管理されます。利用条件は[同梱ライセンス](licenses/LICENSE_AILIA_JA.pdf)を参照してください。
 
 ## 起動・操作
 
@@ -94,37 +51,29 @@ Westonと同じユーザーで実行します。
 
 ```sh
 sh launch.sh                         # 全画面、ailia NPU
+sh launch.sh --bedroom               # 5フレーム追跡
 sh launch.sh --windowed              # ウィンドウ表示
 sh launch.sh --backend ort_cpu       # ORT CPUで開始
-sh launch.sh --bedroom               # 5フレーム追跡モード
 sh launch.sh --image /path/to/image.jpg
 ```
 
-ログは`demo.log`へ保存します。`sh start.sh`で直接起動すると標準出力へ出ます。
-SSH経由ではWestonの`XDG_RUNTIME_DIR`と`WAYLAND_DISPLAY`を指定してください。
-別のPythonパッケージを使う場合は`AILIA_PYTHON_PATH`を設定できます。
+- 左クリック：前景点、右クリック：背景点
+- **Undo point / Clear points**：点を戻す／消す
+- **Open image**：画像を選択
+- **Compare all 4**：4方式を比較
+- **Track 5 frames**：最初のフレームで指定した対象を追跡。終了後は1枚目に戻り、再クリックできます。
 
-- 左クリック：前景点、右クリック：背景点（最大64点）。
-- **Undo point / Clear points**：点を戻す／消す。
-- **Open image**：実機上の画像を選ぶ。
-- **Compare all 4**：同じ入力で4方式を順番に測定する。
-- **Bedroom (5 frames)**：最初のフレームへ戻る。対象をクリック後、**Track 5 frames**で追跡する。
-- **Exit**：アプリと推論ワーカーを終了する。
+ランタイムを切り替えるまでモデルを保持し、測定履歴は再実行・再起動後も残ります。
+ログは`demo.log`、履歴は`benchmark_history.jsonl`へ保存します。
+SSH起動時はWestonの`XDG_RUNTIME_DIR`と`WAYLAND_DISPLAY`を指定してください。
 
-任意長動画や途中フレームへの追加クリックには対応していません。
-bedroomに戻って最初のフレームで指定し直してください。
-
-### アプリ起動アイコン
+### 起動アイコン
 
 ```sh
 python3 scripts/install_desktop.py
 ```
 
-実行ユーザーのアプリケーション一覧へ`.desktop`ファイルを配置します。
-Westonのデスクトップは通常のファイルアイコンを表示しない場合があります。
-Westonパネルへ追加する場合は、使用中の`weston.ini`へ次のブロックを追加し、
-`/path/to/ailia-sdk-nxp-demo`を実際の絶対パスに置き換えてください。
-既存の設定を丸ごと上書きしないでください。
+Westonパネルに追加する場合は、`weston.ini`に次を追記します。
 
 ```ini
 [launcher]
@@ -132,91 +81,62 @@ icon=/path/to/ailia-sdk-nxp-demo/launcher.png
 path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
 ```
 
-## 測定値の意味
+## ベンチマーク
 
-6 CPUスレッド、プロファイル無効、ailia memory mode **11**で測定します。速度は固定値ではなく実測です。
+2026-11-18、i.MX95、モデル`coco-val2017-v1`。
+NXP ORT 1.24.3／ailia SDK 1.7 (NXP NPU対応版)、CPU 6スレッド、プロファイル無効。
+全方式でモデルOpen時に同じダミー入力で1回推論します。その後、Bedroomの5フレームを同じ2点で1周ウォームアップし、続く3回の中央値を測定しました。ウォームアップは測定から除外しています。
 
-- 静止画のEncoder特徴量はクリック間で再利用します。
-- ClickはPrompt + Decoder + マスク選択。Encoderは含みません。
-- ailiaは各モデルをOpenした直後、対応するダミー入力で一度推論します。EncoderだけでなくPrompt、Decoder、動画用モデルも対象です。この時間はモデル準備に含め、測定値から除外します。
-- クリック時にはウォームアップを追加しません。ただしクリック数などの動的形状が変わる場合、ランタイム内部の形状準備が発生することがあります。
-- 選択中のランタイムとモデルをメモリに保持し、静止画・動画で共通モデルを共有します。ランタイム変更時に旧モデルを解放します。Compare allは選択中の方式を最後に実行して、その方式を保持します。
-- 方式を切り替える時だけ推論プロセスを終了・再生成します。NXP ORTのNeutron用CMAメモリはセッション破棄だけでは解放されず、同一プロセスでailia NPUへ戻すと`ailiaCreate -12`になることを実機で確認したためです。連続クリック・同じ方式での再実行時にはプロセスを再生成しません。
-- ORTの通常表示はfirst/latestです。公平な比較には**Compare all 4**を使ってください。
-- 静止画のCompare allは初期化後3回の中央値です。ailiaはOpen時ウォームアップを使い、ORTのみ比較開始時にウォームアップします。
-- 表のSumは推論区間の和で、読み込み・前処理・描画・IPCを含む画面応答時間ではありません。
-- 動画は各フレームの実測値で、3回中央値ではありません。ailiaのOpen時ウォームアップは含みません。ORTの初回実行コストは含みます。
-- `last_results.json` / `video_results.json`に結果を保存します（Git管理対象外）。
-- 再実行・画像変更・ランタイム変更で他方式の測定値を消しません。表は方式ごとの最新測定値を表示し、準備だけでは既存の値を上書きしません。
-- `Measurement history`に日時・入力画像付きの履歴を表示します。`benchmark_history.jsonl`へ追記し、アプリ再起動時にも直近200件と最新値を復元します。ファイルには全履歴を保持します。入力や測定方式が異なる値を同条件の結果として比較しないでください。
+| 処理 | 回数／動画 | ORT CPU | ORT NPU※ | ailia CPU | ailia NPU |
+|---|---:|---:|---:|---:|---:|
+| Image Encoder (ms／回) | 5 | 2,273.1 | 2,194.3 | 4,806.9 | 883.2 |
+| Mask Decoder (ms／回) | 5 | 169.6 | 164.8 | 126.9 | 126.1 |
+| Memory Attention (ms／回) | 4 | 1,487.2 | 1,484.2 | 3,822.7 | 517.2 |
+| Memory Encoder (ms／回) | 5 | 294.3 | 299.9 | 237.8 | 238.7 |
+| 5フレーム全体 (秒) | — | 20.14 | 19.75 | 41.63 | 8.72 |
 
-## モデル・精度上の制約
+モデル別は1回あたりの平均時間の中央値です。全体時間は画像読み込み・前後処理を含み、モデル読み込み・描画・保存を除きます。
+4方式とも同じモデルを使用します。NPU方式ではImage EncoderとMemory AttentionをCPU/NPU混在で実行し、その他はCPU実行です。
 
-Image Encoderは512×512の静的INT8 QDQ版です。
-Memory Attentionは64個のMatMulをQDQ化し、RoPEの16個の2×2 MatMulはFP32のままです。
-入力メモリを4096空間トークン＋16ポインタトークンへ固定し、未使用領域をマスクします。
-bedroomの5枚は量子化校正にも使用しており、未知動画の精度検証ではありません。
-バックエンドや量子化による出力差があります。表示する予測IoUスコアは実測正解率ではありません。
+※ **ORT NPUは出力異常（最終測定の後続フレームのマスクが0～3画素）があるため、速度参考値です。**
 
-デモ画像は**Segment Anythingの公式リポジトリのもの**です。
+BedroomでのFP32参照に対する平均マスクIoUは、ホストORT CPUで96.07%、実機ailia NPUで95.71%です。
+正解マスクに対する精度ではありません。
+
+アプリ内の静止画比較は3回中央値、動画表示は各フレームの実測値です。
+ailia・ORTともモデルOpen時に同じダミー入力で1回ウォームアップし、測定から除外します。
+表のSumは推論区間の合計で、画面応答時間とは異なります。
+
+## モデル変換
+
+ホストPCで、[ailia-modelsのSAM2](https://github.com/ailia-ai/ailia-models/tree/master/image_segmentation/segment-anything-2)
+の公開SAM2.1 Tiny ONNXから生成します。
+[COCO 2017 validation画像・アノテーション](https://cocodataset.org/#download)を展開して実行してください。
+
+```sh
+python3 -m pip install -r scripts/requirements-calibration.txt
+python3 scripts/calibrate_sam2.py \
+  --source-dir /path/to/ailia-models/image_segmentation/segment-anything-2 \
+  --download-sources \
+  --coco-images /path/to/coco/val2017 \
+  --coco-annotations /path/to/coco/annotations/instances_val2017.json \
+  --output /path/to/sam2-calibrated \
+  --workers 2 --threads 2
+```
+
+全5,000画像でMin/Max校正し、活性値はtensor-wise UINT8、固定重みはchannel-wise INT8にします。
+Memory Attentionには各画像から生成した5フレームの疑似動画を使います。
+
+出力はINT8／FP32混在です。Image EncoderのMatMulは整数演算、ConvはQDQ、
+Softmax・LayerNormは入出力のみ量子化します。
+Memory AttentionはMatMulを整数化し、RoPEはFP32を維持します。補助モデルもFP32です。
+
+生成モデルは出力先の`models/`、校正記録は`manifest.json`・`ranges_*.json`・`completion.json`に保存します。
+同じコマンドで途中再開できます。同梱モデルへのコピーは自動では行いません。
+
+## デモ画像・ライセンス
+
+デモ画像はSegment Anythingの公式リポジトリのものです：
 [truck.jpg](https://github.com/facebookresearch/segment-anything/blob/main/notebooks/images/truck.jpg)、
-[bedroom](https://github.com/facebookresearch/sam2/tree/main/notebooks/videos/bedroom)を使用します。
-画面の緑色マスクは本デモが生成したものです。出典・ライセンスは[NOTICE.md](NOTICE.md)を参照してください。
-
-## 開発・テスト
-
-### 整数MatMul形式への事前変換
-
-変換はホスト側で実行します。同梱の最終モデルは変換済みです。
-元のQDQモデルはコミット`7755af0`の`models/`から取得できます。
-以下ではそれらを`/path/to/source/`へ保存したものとし、新しいファイルへ出力します。
-
-```sh
-python3 -m pip install numpy onnx
-python3 scripts/convert_qdq_matmul.py /path/to/source/image_encoder_hiera_t_2.1_512_full_int8_layout.onnx /tmp/image_encoder_512_integer.onnx --nxp-ep-benchmark
-python3 scripts/convert_qdq_matmul.py /path/to/source/memory_attention_512_qdq.onnx /tmp/memory_attention_512_integer.onnx --include-shared
-```
-
-専用のDQ入力を持つMatMulを、標準ONNXの`MatMulInteger → Cast → Mul → Mul`
-へ変換します。再キャリブレーションはせず、入力・重みのスケールと乗算順序を保持します。
-従来CPUで実行されていた共有DQのMatMul、Conv、その他のQ/DQは維持します。
-`--include-shared` を指定すると、DequantizeLinearの出力を他のノードと共有する
-MatMulも整数ノードへ変換します。他の利用先に必要なDQは残します。
-このオプションは演算経路が変わるため、出力の完全一致を保証しません。
-速度だけでなく、動画の追跡マスクも評価してから採用してください。
-
-#### NXP ORTとの速度比較用の形状変換
-
-`--nxp-ep-benchmark` は固定重みMatMulの入力を `[1, M, K]` にまとめ、
-Castとスケール適用の後で元の形状に戻します。ailiaの融合経路を維持しつつ、
-NXP ORT 1.24.3 Neutron EPの多次元入力による形状エラーを回避するための
-ベンチマーク用オプションです。
-
-```sh
-python3 scripts/convert_qdq_matmul.py /path/to/source/image_encoder_hiera_t_2.1_512_full_int8_layout.onnx /tmp/image_encoder_512_integer.onnx --nxp-ep-benchmark
-```
-
-**これはORT側の精度保証を意味しません。** 重みやスケールは変更しませんが、
-Neutron EPで数値誤差、推論ごとの出力変動、`Invalid args` が残るケースがあります。
-このオプションは速度測定用に限定し、ORTの時間と出力異常を併記してください。
-追加のパディングやタイル分割は行いません。通常のデモ用モデルを自動で置換しません。
-Encoderは75個、Memory Attentionは既定で36個、`--include-shared`で64個のMatMulが変換対象です。
-
-生成モデルには対応する新SDKが必要です。既存SDKやORT Neutronで同じ速度・互換性が
-得られることを保証しません。デモの既定モデル選択・同梱バイナリはこのコマンドでは変更されません。
-変換後は実際の入力で出力と処理時間を検証してください。
-
-```sh
-python3 -m unittest discover -s tests -v
-PYTHONPATH=./python python3 selftest.py --backends ailia_cpu ailia_npu ort_cpu ort_npu
-PYTHONPATH=./python python3 video.py --backend ailia_npu --output video_results
-```
-
-`selftest.py`は静止画の推論・動的クリック数・出力有限性を検証します。
-GTKを使わない単体テストはモデル推論を行いません。
-コード整形・静的検査には`ruff format .`、`ruff check .`を使います。
-
-構成：`app.py`（GUI）、`engine.py`（推論とワーカー）、`video.py`（追跡と計時）、
-`settings.py`（共通設定・前処理）、`sam2_video_predictor.py`（SAM 2追跡実装）、
-`models/`（静止画・動画の全モデル）、`sdk/`（SDK）、`scripts/`（導入補助）。
-実験ログ、校正データ、中間モデル、ライセンスキーは含めていません。
+[Bedroom](https://github.com/facebookresearch/sam2/tree/main/notebooks/videos/bedroom)。
+出典・ライセンスは[NOTICE.md](NOTICE.md)を参照してください。

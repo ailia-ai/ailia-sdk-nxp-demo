@@ -1,21 +1,31 @@
 {
-  "revision": "integer-v1",
+  "revision": "coco-val2017-v1",
   "runtime_source_revision": "13f6f9e62",
-  "source_repository_revision": "7755af0",
-  "converter": "scripts/convert_qdq_matmul.py",
+  "source_url": "https://storage.googleapis.com/ailia-models/segment-anything-2.1/",
+  "converter": "scripts/calibrate_sam2.py",
+  "calibration": {
+    "dataset": "COCO val2017",
+    "images": 5000,
+    "method": "global MinMax",
+    "frames_per_image": 5,
+    "memory_inputs": "FP32 tracking of deterministic translated views, not real videos",
+    "image_encoder_calls": 25000,
+    "memory_attention_calls": 20000,
+    "manifest_sha256": "83c6783f1eb5eec5186941eb482b8caad79adddd11278a5c5732fc199e35c522"
+  },
   "models": {
     "image_encoder_512_integer.onnx": {
-      "source": "models/image_encoder_hiera_t_2.1_512_full_int8_layout.onnx",
-      "source_sha256": "a7f3d99e908da729fe33db042686f396b15210d7635ec940b1ec9d3924f46372",
-      "sha256": "1d833568639f4b31f3b35d8ecbde75c620740c8cbc69cb67168bd90d2a0d37af",
-      "options": ["--nxp-ep-benchmark"],
+      "source": "image_encoder_hiera_t_2.1.onnx",
+      "source_sha256": "636c759b11d908bbe922242aef535d16211bcf440df570b90ff3bf3cba9e88f1",
+      "sha256": "d2cb67d5fb8c3fa63523e98df4b10d721c9415cd5d1c4dc68eb65963802c05bc",
+      "options": ["--include-shared", "--nxp-ep-benchmark"],
       "converted_matmuls": 75,
       "ort_neutron_warning": "Timing only: Invalid args and varying outputs remain; not accuracy-qualified."
     },
     "memory_attention_512_integer.onnx": {
-      "source": "models/memory_attention_512_qdq.onnx",
-      "source_sha256": "dfa70fecc395d48e67245b0300fb2f0778dd7f1bba175fd17003c5ba0fbc7252",
-      "sha256": "2404a3a4afb2dd45c2c288e4735885aa929cd86e5d6bef87a7d898e57ea555d4",
+      "source": "memory_attention_6d_hiera_t_2.1.onnx",
+      "source_sha256": "84bbdf8ebeb1fe8d159b4a382a2faf2d60dd59f5d0d84644381ad35af94e0dd1",
+      "sha256": "a0cc510265783ce9e64a00c63293b4c077f32c2ca81af8ef32eb235d2ab6598d",
       "options": ["--include-shared"],
       "converted_matmuls": 64
     }

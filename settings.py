@@ -10,7 +10,7 @@ CPU_THREADS = 6
 BACKENDS = ("ailia_cpu", "ailia_npu", "ort_cpu", "ort_npu")
 ENCODER = "image_encoder_512_integer.onnx"
 MEMORY_ATTENTION = "memory_attention_512_integer.onnx"
-MODEL_REVISION = "integer-v1"
+MODEL_REVISION = "coco-val2017-v1"
 
 
 def configure_npu():
