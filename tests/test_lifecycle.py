@@ -18,6 +18,28 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_tracking_done_identifies_action(self):
+        for action in ("video", "video_compare"):
+            with self.subTest(action=action):
+                requests, responses = SimpleQueue(), SimpleQueue()
+                requests.put(
+                    dict(
+                        action=action,
+                        backend="ailia_npu",
+                        single_backend=True,
+                        points=[[0.2, 0.6, 1]],
+                    )
+                )
+                requests.put(None)
+                with patch("video.VideoEngine") as factory:
+                    factory.return_value.track.return_value = []
+                    worker(ROOT / "models", requests, responses)
+                events = []
+                while not responses.empty():
+                    events.append(responses.get())
+                self.assertEqual(events[-1]["kind"], "done")
+                self.assertEqual(events[-1]["action"], action)
+
     def test_worker_reuses_engine_until_backend_switch(self):
         requests, responses = SimpleQueue(), SimpleQueue()
         made = []

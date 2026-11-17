@@ -217,9 +217,7 @@ def worker(directory, requests, responses):
                         raise ValueError("Expected exactly five bedroom frames")
                     for result in video_engine.track(frames, job["points"]):
                         responses.put(result)
-                responses.put(
-                    dict(kind="done", text="Tracking complete — Bedroom resets to frame 1.")
-                )
+                responses.put(dict(kind="done", action=job["action"], text="Tracking complete."))
                 continue
             backends = backend_order(job, job["action"] == "benchmark")
             for backend in backends:
@@ -277,4 +275,6 @@ def worker(directory, requests, responses):
             video_engine = None
             cache = None
             gc.collect()
-            responses.put(dict(kind="error", text=f"{type(exc).__name__}: {exc}"))
+            responses.put(
+                dict(kind="error", action=job["action"], text=f"{type(exc).__name__}: {exc}")
+            )

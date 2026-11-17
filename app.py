@@ -16,6 +16,14 @@ from runtime_worker import RuntimeWorker
 from settings import MODEL_REVISION
 
 
+def reset_tracking_view(view):
+    """Return to a clean first-frame prompt without clearing timings or sessions."""
+    view.video_frame = 0
+    view.image_path = str(Path(__file__).parent / "bedroom" / "00000.jpg")
+    view.points, view.mask = [], None
+    view.load_image()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", type=Path, default=Path(__file__).parent / "models")
@@ -462,6 +470,12 @@ def main():
                     for control in self.controls:
                         control.set_sensitive(True)
                     self.status.set_text(result.get("text", "Ready — click the image."))
+                    if self.video_mode and result.get("action") in ("video", "video_compare"):
+                        reset_tracking_view(self)
+                        if kind == "done":
+                            self.status.set_text(
+                                "Tracking complete — click a new target on frame 1."
+                            )
                     if self.autoplay_pending:
                         self.autoplay_pending = False
                         if kind == "done":
