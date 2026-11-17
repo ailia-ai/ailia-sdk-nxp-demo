@@ -14,8 +14,10 @@ the shared model-weight directory and formatting. See `licenses/SAM2_LICENSE`
 The bundled ONNX models and `models/pretrained_weights.npz` derive from
 SAM 2.1 Tiny (Hiera Tiny), distributed through ailia-models:
 https://storage.googleapis.com/ailia-models/segment-anything-2.1/
-The image encoder and Memory Attention are adapted to 512 pixels and INT8
-QDQ; prompt, mask decoder and memory encoder are adapted to 512 pixels.
+The image encoder and Memory Attention are adapted to 512 pixels and INT8,
+with QDQ MatMuls lowered offline to standard ONNX MatMulInteger/Cast/Mul.
+The encoder includes shape-only adaptations for NXP ORT timing; its Neutron
+EP outputs are not accuracy-qualified. Prompt, mask decoder and memory encoder are adapted to 512 pixels.
 The remaining MLP and temporal projection are unmodified model exports.
 These are demo conversions, not official Meta or NXP model releases.
 

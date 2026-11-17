@@ -6,7 +6,7 @@ require shape-dependent preparation later; no extra inference is run on click.
 
 import numpy as np
 
-from settings import ENCODER
+from settings import ENCODER, MEMORY_ATTENTION
 
 
 def inputs_for_model(name):
@@ -31,7 +31,7 @@ def inputs_for_model(name):
             high_res_features1=zeros(1, 32, 128, 128),
             high_res_features2=zeros(1, 64, 64, 64),
         )
-    if name == "memory_attention_512_qdq.onnx":
+    if name == MEMORY_ATTENTION:
         return dict(
             curr=zeros(1024, 1, 256),
             curr_pos=zeros(1024, 1, 256),

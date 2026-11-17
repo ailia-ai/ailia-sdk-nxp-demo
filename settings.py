@@ -8,7 +8,9 @@ import numpy as np
 IMAGE_SIZE = 512
 CPU_THREADS = 6
 BACKENDS = ("ailia_cpu", "ailia_npu", "ort_cpu", "ort_npu")
-ENCODER = "image_encoder_hiera_t_2.1_512_full_int8_layout.onnx"
+ENCODER = "image_encoder_512_integer.onnx"
+MEMORY_ATTENTION = "memory_attention_512_integer.onnx"
+MODEL_REVISION = "integer-v1"
 
 
 def configure_npu():

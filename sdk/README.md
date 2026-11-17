@@ -2,6 +2,9 @@
 
 `linux/arm64-v8a/libailia.so`: ailia SDK 1.7 (NXP NPU対応版), Linux ARM64.
 Includes the optimized batched FP32 2×2 MatMul/NEON path used by SAM 2 RoPE.
+Runtime source revision: `13f6f9e62` (standard ONNX integer-operator backend).
+The bundled integer models require this runtime; replace models and library
+together. Dedicated static-QDQ MatMul/Conv NPU pattern recognition was removed.
 This is not the public pip SDK binary. See `../NOTICE.md` and the SDK terms
 in `../licenses/`. No license key, Python binding or Neutron driver is bundled here.
 

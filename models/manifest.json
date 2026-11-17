@@ -1,0 +1,23 @@
+{
+  "revision": "integer-v1",
+  "runtime_source_revision": "13f6f9e62",
+  "source_repository_revision": "7755af0",
+  "converter": "scripts/convert_qdq_matmul.py",
+  "models": {
+    "image_encoder_512_integer.onnx": {
+      "source": "models/image_encoder_hiera_t_2.1_512_full_int8_layout.onnx",
+      "source_sha256": "a7f3d99e908da729fe33db042686f396b15210d7635ec940b1ec9d3924f46372",
+      "sha256": "1d833568639f4b31f3b35d8ecbde75c620740c8cbc69cb67168bd90d2a0d37af",
+      "options": ["--nxp-ep-benchmark"],
+      "converted_matmuls": 75,
+      "ort_neutron_warning": "Timing only: Invalid args and varying outputs remain; not accuracy-qualified."
+    },
+    "memory_attention_512_integer.onnx": {
+      "source": "models/memory_attention_512_qdq.onnx",
+      "source_sha256": "dfa70fecc395d48e67245b0300fb2f0778dd7f1bba175fd17003c5ba0fbc7252",
+      "sha256": "2404a3a4afb2dd45c2c288e4735885aa929cd86e5d6bef87a7d898e57ea555d4",
+      "options": ["--include-shared"],
+      "converted_matmuls": 64
+    }
+  }
+}

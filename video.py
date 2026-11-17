@@ -10,7 +10,7 @@ import numpy as np
 
 from engine import ENCODER, Session
 from sam2_video_predictor import SAM2VideoPredictor
-from settings import BACKENDS, configure_npu, preprocess_image
+from settings import BACKENDS, MEMORY_ATTENTION, configure_npu, preprocess_image
 
 
 class TimedSession:
@@ -52,7 +52,7 @@ class VideoEngine:
         self,
         directory,
         backend,
-        memory_model="memory_attention_512_qdq.onnx",
+        memory_model=MEMORY_ATTENTION,
         capture=None,
         cache=None,
     ):
@@ -135,7 +135,7 @@ class VideoEngine:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--backend", choices=BACKENDS, default="ort_cpu")
-    parser.add_argument("--memory-model", default="memory_attention_512_qdq.onnx")
+    parser.add_argument("--memory-model", default=MEMORY_ATTENTION)
     parser.add_argument("--capture", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

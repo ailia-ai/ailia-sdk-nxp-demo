@@ -13,6 +13,7 @@ import numpy as np
 from engine import BACKENDS, fit_rect, image_point
 from history import append_history, load_history
 from runtime_worker import RuntimeWorker
+from settings import MODEL_REVISION
 
 
 def main():
@@ -120,7 +121,7 @@ def main():
                 self.controls.append(button)
                 side.pack_start(button, False, False, 0)
             info = Gtk.Label(
-                label="Left: foreground (+)\nRight: background (−)\nBedroom: click frame 1, then Track.\nNPU: Encoder + MemoryAttention.\nOther tracking operations: CPU.\nINT8 QDQ · 6 threads · no profile",
+                label="Left: foreground (+)\nRight: background (−)\nBedroom: click frame 1, then Track.\nNPU: Encoder + MemoryAttention.\nOther tracking operations: CPU.\nINT8 integer-v1 · 6 threads · no profile\nORT NPU: timing only.\nOutputs may be incorrect or vary.",
                 xalign=0,
             )
             info.set_line_wrap(True)
@@ -197,11 +198,13 @@ def main():
 
         def show_measurement(self, record):
             backend = record["backend"]
-            for cell, text in zip(self.cells[backend][1:], record["values"]):
+            values = list(record["values"])
+            values[-1] += " / " + record.get("model_revision", "legacy-qdq")
+            for cell, text in zip(self.cells[backend][1:], values):
                 cell.set_text(text)
             self.recorded_backends.add(backend)
             label = record["time"] + " / " + Path(record.get("image", "")).name
-            self.history_rows.append([label, backend, *record["values"]])
+            self.history_rows.append([label, backend, *values])
             if len(self.history_rows) > 200:
                 self.history_rows.remove(self.history_rows.get_iter_first())
 
@@ -211,7 +214,13 @@ def main():
                 record = append_history(self.history_path, backend, values, image)
             except OSError as exc:
                 print("Cannot save measurement history:", exc, flush=True)
-                record = dict(time="unsaved", backend=backend, values=values, image=image)
+                record = dict(
+                    time="unsaved",
+                    backend=backend,
+                    values=values,
+                    image=image,
+                    model_revision=MODEL_REVISION,
+                )
             self.show_measurement(record)
 
         def load_image(self):

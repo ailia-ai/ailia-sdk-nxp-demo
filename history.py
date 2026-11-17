@@ -4,7 +4,7 @@ import json
 from collections import deque
 from datetime import datetime
 
-from settings import BACKENDS
+from settings import BACKENDS, MODEL_REVISION
 
 
 def load_history(path, limit=200):
@@ -40,6 +40,7 @@ def append_history(path, backend, values, image):
         values=values,
         image=str(image),
         memory_mode=11,
+        model_revision=MODEL_REVISION,
     )
     with path.open("a", encoding="utf-8") as stream:
         stream.write(json.dumps(record, ensure_ascii=False) + "\n")

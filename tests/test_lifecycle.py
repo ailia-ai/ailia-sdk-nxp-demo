@@ -11,7 +11,7 @@ import numpy as np
 
 from engine import Engine, Session, SessionCache, worker
 from history import append_history, load_history
-from settings import ENCODER
+from settings import ENCODER, MODEL_REVISION
 from video import VideoEngine
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +79,7 @@ class LifecycleTests(unittest.TestCase):
             for backend in ("ailia_npu", "ort_npu", "ailia_npu"):
                 append_history(path, backend, values, "00004.jpg")
             records = load_history(path)
+            self.assertTrue(all(r["model_revision"] == MODEL_REVISION for r in records))
             self.assertEqual([r["backend"] for r in records], ["ailia_npu", "ort_npu", "ailia_npu"])
             self.assertEqual(len(load_history(path, limit=2)), 2)
             self.assertEqual(len(path.read_text().splitlines()), 3)

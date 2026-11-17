@@ -18,6 +18,14 @@ bedroomの5フレームを、SAM 2.1のメモリを使って追跡できます�
 
 「NPU」は全ノードのNPU実行を意味しません。Prompt Encoder、Mask Decoder、
 Memory Encoder、MLPなどはCPUで動作します。4方式で同じモデルを使用します。
+最終モデルは標準ONNXの整数MatMul形式です。Encoderは75個、Memory Attentionは
+共有DQ部分を含む64個のMatMulを整数化しています。
+
+**ORT NPUは速度測定用です。** NXP ORT 1.24.3 Neutron EPではEncoderの
+`Invalid args`、出力値の誤差、同じ入力に対する推論ごとの出力変動が残ります。
+表示される時間は異常出力を含む処理時間であり、同等精度の性能比較ではありません。
+ailia NPUではEncoderの変換前後の出力一致と、bedroomの5フレーム追跡を確認しています。
+モデルと同梱SDKをセットで更新してください。旧QDQモデルと新SDKの混在は推奨しません。
 公開pip版の **ailia SDK 1.7 (公開版)** はNPU非対応です。
 このリポジトリの **ailia SDK 1.7 (NXP NPU対応版)** への差し替えでNPUを利用できます。
 
@@ -156,6 +164,47 @@ bedroomの5枚は量子化校正にも使用しており、未知動画の精度
 画面の緑色マスクは本デモが生成したものです。出典・ライセンスは[NOTICE.md](NOTICE.md)を参照してください。
 
 ## 開発・テスト
+
+### 整数MatMul形式への事前変換
+
+変換はホスト側で実行します。同梱の最終モデルは変換済みです。
+元のQDQモデルはコミット`7755af0`の`models/`から取得できます。
+以下ではそれらを`/path/to/source/`へ保存したものとし、新しいファイルへ出力します。
+
+```sh
+python3 -m pip install numpy onnx
+python3 scripts/convert_qdq_matmul.py /path/to/source/image_encoder_hiera_t_2.1_512_full_int8_layout.onnx /tmp/image_encoder_512_integer.onnx --nxp-ep-benchmark
+python3 scripts/convert_qdq_matmul.py /path/to/source/memory_attention_512_qdq.onnx /tmp/memory_attention_512_integer.onnx --include-shared
+```
+
+専用のDQ入力を持つMatMulを、標準ONNXの`MatMulInteger → Cast → Mul → Mul`
+へ変換します。再キャリブレーションはせず、入力・重みのスケールと乗算順序を保持します。
+従来CPUで実行されていた共有DQのMatMul、Conv、その他のQ/DQは維持します。
+`--include-shared` を指定すると、DequantizeLinearの出力を他のノードと共有する
+MatMulも整数ノードへ変換します。他の利用先に必要なDQは残します。
+このオプションは演算経路が変わるため、出力の完全一致を保証しません。
+速度だけでなく、動画の追跡マスクも評価してから採用してください。
+
+#### NXP ORTとの速度比較用の形状変換
+
+`--nxp-ep-benchmark` は固定重みMatMulの入力を `[1, M, K]` にまとめ、
+Castとスケール適用の後で元の形状に戻します。ailiaの融合経路を維持しつつ、
+NXP ORT 1.24.3 Neutron EPの多次元入力による形状エラーを回避するための
+ベンチマーク用オプションです。
+
+```sh
+python3 scripts/convert_qdq_matmul.py /path/to/source/image_encoder_hiera_t_2.1_512_full_int8_layout.onnx /tmp/image_encoder_512_integer.onnx --nxp-ep-benchmark
+```
+
+**これはORT側の精度保証を意味しません。** 重みやスケールは変更しませんが、
+Neutron EPで数値誤差、推論ごとの出力変動、`Invalid args` が残るケースがあります。
+このオプションは速度測定用に限定し、ORTの時間と出力異常を併記してください。
+追加のパディングやタイル分割は行いません。通常のデモ用モデルを自動で置換しません。
+Encoderは75個、Memory Attentionは既定で36個、`--include-shared`で64個のMatMulが変換対象です。
+
+生成モデルには対応する新SDKが必要です。既存SDKやORT Neutronで同じ速度・互換性が
+得られることを保証しません。デモの既定モデル選択・同梱バイナリはこのコマンドでは変更されません。
+変換後は実際の入力で出力と処理時間を検証してください。
 
 ```sh
 python3 -m unittest discover -s tests -v
