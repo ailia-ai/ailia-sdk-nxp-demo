@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+python/
+sdk/from-pip/
+*.lic
+*.key
+.env
+*.log
+*_results/
+last_results.json
+video_results.json
+screen.png
+*.tmp
+.DS_Store
+._*

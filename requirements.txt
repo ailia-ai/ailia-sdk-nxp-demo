@@ -1,0 +1,4 @@
+# GTK3, PyGObject, Cairo and OpenCV are supplied by the NXP image.
+# Keep the NXP ONNX Runtime package: do not replace it with the PyPI build.
+ailia==1.7.0.0
+numpy>=1.24,<3
