@@ -14,8 +14,10 @@ from settings import BACKENDS, configure_npu, preprocess_image
 
 
 class TimedSession:
-    def __init__(self, path, backend, npu=False, capture=None, memory_bank=False):
-        self.session = Session(path, backend, npu)
+    def __init__(self, path, backend, npu=False, capture=None, memory_bank=False, cache=None):
+        self.session = (
+            cache.get(path, backend, npu) if cache is not None else Session(path, backend, npu)
+        )
         self.ms = 0.0
         self.calls = 0
         self.capture = capture
@@ -47,7 +49,12 @@ class TimedSession:
 
 class VideoEngine:
     def __init__(
-        self, directory, backend, memory_model="memory_attention_512_qdq.onnx", capture=None
+        self,
+        directory,
+        backend,
+        memory_model="memory_attention_512_qdq.onnx",
+        capture=None,
+        cache=None,
     ):
         configure_npu()
         self.directory = Path(directory)
@@ -69,8 +76,8 @@ class VideoEngine:
                 backend.endswith("_npu") and key in ("image_encoder", "memory_attention"),
                 capture if key == "memory_attention" else None,
                 key == "memory_attention",
+                cache=cache,
             )
-        self.warmed = False
 
     def track(self, frames, points):
         if len(frames) != 5:
@@ -96,9 +103,6 @@ class VideoEngine:
                 raise ValueError(f"Cannot read frame: {path}")
             h, w = image.shape[:2]
             tensor = preprocess_image(image)
-            if not self.warmed and self.backend.startswith("ailia"):
-                self.nets["image_encoder"].run({"input_image": tensor[None]})
-                self.warmed = True
             before = {key: net.ms for key, net in self.nets.items()}
             start = time.perf_counter()
             predictor.append_image(state, tensor, h, w, self.nets["image_encoder"])

@@ -3,7 +3,6 @@
 
 import argparse
 import json
-import multiprocessing as mp
 import queue
 import signal
 from pathlib import Path
@@ -11,7 +10,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from engine import BACKENDS, fit_rect, image_point, worker
+from engine import BACKENDS, fit_rect, image_point
+from history import append_history, load_history
+from runtime_worker import RuntimeWorker
 
 
 def main():
@@ -39,6 +40,7 @@ def main():
     import gi
 
     gi.require_version("Gtk", "3.0")
+    gi.require_version("Gdk", "3.0")
     from gi.repository import Gdk, GdkPixbuf, GLib, GLibUnix, Gtk
 
     class Demo(Gtk.Window):
@@ -48,6 +50,7 @@ def main():
             self.connect("destroy", self.shutdown)
             self.points, self.mask, self.busy = [], None, False
             self.results = {}
+            self.closing = False
             self.video_mode = args.bedroom
             self.video_frame = 0
             self.video_records = []
@@ -58,12 +61,8 @@ def main():
             if args.bedroom:
                 self.image_path = str(Path(__file__).parent / "bedroom" / "00000.jpg")
             self.backend = args.backend
-            context = mp.get_context("spawn")
-            self.requests, self.responses = context.Queue(), context.Queue()
-            self.process = context.Process(
-                target=worker, args=(str(args.models), self.requests, self.responses), daemon=True
-            )
-            self.process.start()
+            self.runner = RuntimeWorker(args.models)
+            self.pending_jobs = []
             css = Gtk.CssProvider()
             css.load_from_data(b"""
                 window { background: #101820; color: #ecf3f8; }
@@ -154,6 +153,35 @@ def main():
                 for col, cell in enumerate(cells):
                     grid.attach(cell, col, row, 1, 1)
                 self.cells[backend] = cells
+            self.recorded_backends = set()
+            self.history_path = Path(__file__).parent / "benchmark_history.jsonl"
+            self.history_rows = Gtk.ListStore(*([str] * 7))
+            view = Gtk.TreeView(model=self.history_rows)
+            for col, name in enumerate(
+                [
+                    "Time / input",
+                    "Backend",
+                    "Encoder",
+                    "Memory",
+                    "Click / other",
+                    "Sum",
+                    "Measurement",
+                ]
+            ):
+                view.append_column(Gtk.TreeViewColumn(name, Gtk.CellRendererText(), text=col))
+            scroll = Gtk.ScrolledWindow()
+            scroll.set_size_request(-1, 140)
+            scroll.add(view)
+            history_box = Gtk.Expander(
+                label="Measurement history (last 200; includes previous runs)"
+            )
+            history_box.add(scroll)
+            root.pack_start(history_box, False, False, 0)
+            try:
+                for record in load_history(self.history_path):
+                    self.show_measurement(record)
+            except OSError as exc:
+                print("Cannot load measurement history:", exc, flush=True)
             self.note = Gtk.Label(xalign=0)
             self.note.set_line_wrap(True)
             root.pack_start(self.note, False, False, 0)
@@ -166,6 +194,25 @@ def main():
                 self.fullscreen()
             GLib.timeout_add(100, self.poll)
             self.submit("prepare")
+
+        def show_measurement(self, record):
+            backend = record["backend"]
+            for cell, text in zip(self.cells[backend][1:], record["values"]):
+                cell.set_text(text)
+            self.recorded_backends.add(backend)
+            label = record["time"] + " / " + Path(record.get("image", "")).name
+            self.history_rows.append([label, backend, *record["values"]])
+            if len(self.history_rows) > 200:
+                self.history_rows.remove(self.history_rows.get_iter_first())
+
+        def record_measurement(self, backend, values, image=None):
+            image = self.image_path if image is None else image
+            try:
+                record = append_history(self.history_path, backend, values, image)
+            except OSError as exc:
+                print("Cannot save measurement history:", exc, flush=True)
+                record = dict(time="unsaved", backend=backend, values=values, image=image)
+            self.show_measurement(record)
 
         def load_image(self):
             if self.video_mode:
@@ -181,7 +228,10 @@ def main():
             self.note.set_text(
                 "Video: actual per-frame times, not 3-run medians. Sum = network calls; excludes loading/drawing. NPU includes CPU fallback."
                 if self.video_mode
-                else "ailia: first encoder run excluded (warm-up). Compare all: warm-up + median of 3 runs. Times exclude loading/drawing. NPU may include CPU fallback."
+                else "ailia: warm-up at model Open; memory mode 11. Compare all: median of 3 runs. Times exclude loading/drawing. NPU includes CPU fallback."
+            )
+            self.note.set_text(
+                self.note.get_text() + " Previous values retained; check input/time in history."
             )
             bgr = cv2.imread(self.image_path)
             if bgr is None:
@@ -243,14 +293,22 @@ def main():
             for control in self.controls:
                 control.set_sensitive(False)
             self.status.set_text("Working… " + self.backend)
-            self.requests.put(
+            backends = (
+                [backend for backend in BACKENDS if backend != self.backend] + [self.backend]
+                if action in ("benchmark", "video_compare")
+                else [self.backend]
+            )
+            self.pending_jobs = [
                 dict(
                     action=action,
-                    backend=self.backend,
+                    backend=backend,
                     image=self.image_path,
                     points=list(self.points),
+                    video_mode=self.video_mode,
                 )
-            )
+                for backend in backends
+            ]
+            self.runner.submit(self.pending_jobs.pop(0))
 
         def switch(self, selector):
             self.backend = selector.get_active_id()
@@ -271,10 +329,6 @@ def main():
             self.video_mode, self.video_frame = True, 0
             self.image_path = str(Path(__file__).parent / "bedroom" / "00000.jpg")
             self.points, self.mask, self.video_records = [], None, []
-            self.results = {}
-            for cells in self.cells.values():
-                for cell in cells[1:]:
-                    cell.set_text("—")
             self.load_image()
             self.submit("prepare")
 
@@ -285,9 +339,6 @@ def main():
                 )
                 return
             self.video_records = []
-            for cells in self.cells.values():
-                for cell in cells[1:]:
-                    cell.set_text("—")
             self.submit("video_compare" if compare else "video")
 
         def undo(self, *_):
@@ -315,18 +366,17 @@ def main():
             if dialog.run() == Gtk.ResponseType.OK:
                 self.video_mode = False
                 self.image_path = dialog.get_filename()
-                self.points, self.mask, self.results = [], None, {}
+                self.points, self.mask = [], None
                 self.load_image()
-                for cells in self.cells.values():
-                    for cell in cells[1:]:
-                        cell.set_text("—")
                 self.submit("prepare")
             dialog.destroy()
 
         def poll(self):
+            if self.closing:
+                return False
             while True:
                 try:
-                    result = self.responses.get_nowait()
+                    result = self.runner.responses.get_nowait()
                 except queue.Empty:
                     break
                 kind = result["kind"]
@@ -338,9 +388,8 @@ def main():
                     enc = times["image_encoder"]
                     memory = times["memory_attention"]
                     other = sum(times.values()) - enc - memory
-                    cells = self.cells[backend]
-                    for cell, text in zip(
-                        cells[1:],
+                    self.record_measurement(
+                        backend,
                         [
                             f"{enc:.1f}",
                             f"{memory:.1f}",
@@ -348,8 +397,8 @@ def main():
                             f"{enc + memory + other:.1f}",
                             f"video frame {result['frame'] + 1}/5",
                         ],
-                    ):
-                        cell.set_text(text)
+                        image=result["image"],
+                    )
                     if backend == self.backend:
                         self.image_path = result["image"]
                         self.video_frame = result["frame"]
@@ -368,18 +417,19 @@ def main():
                 elif kind == "result":
                     backend = result["backend"]
                     enc, click = result["encoder_ms"], result.get("click_ms")
-                    cells = self.cells[backend]
-                    for cell, text in zip(
-                        cells[1:],
-                        [
-                            f"{enc:.1f}",
-                            "—",
-                            "—" if click is None else f"{click:.1f}",
-                            "—" if click is None else f"{enc + click:.1f}",
-                            result["mode"],
-                        ],
-                    ):
-                        cell.set_text(text)
+                    # Preparing an image must not erase an existing benchmark
+                    # (especially the last full video measurement).
+                    if result.get("action") != "prepare" or backend not in self.recorded_backends:
+                        self.record_measurement(
+                            backend,
+                            [
+                                f"{enc:.1f}",
+                                "—",
+                                "—" if click is None else f"{click:.1f}",
+                                "—" if click is None else f"{enc + click:.1f}",
+                                result["mode"],
+                            ],
+                        )
                     if backend == self.backend and "mask" in result and self.points:
                         self.mask = result["mask"]
                         self.update_pixbuf()
@@ -395,6 +445,10 @@ def main():
                     except OSError as exc:
                         print("Cannot save timings:", exc, flush=True)
                 elif kind in ("done", "error"):
+                    if kind == "done" and self.pending_jobs:
+                        self.runner.submit(self.pending_jobs.pop(0))
+                        continue
+                    self.pending_jobs = []
                     self.busy = False
                     for control in self.controls:
                         control.set_sensitive(True)
@@ -405,7 +459,7 @@ def main():
                             GLib.idle_add(self.track)
                     if args.snapshot:
                         GLib.timeout_add(300, self.snapshot)
-            if not self.process.is_alive():
+            if self.runner.process is not None and not self.runner.process.is_alive():
                 self.status.set_text(
                     "Inference process stopped. Close and restart the demo. See demo.log."
                 )
@@ -423,8 +477,8 @@ def main():
             return False
 
         def shutdown(self, *_):
-            self.process.terminate()
-            self.process.join(timeout=2)
+            self.closing = True
+            self.runner.close()
             Gtk.main_quit()
 
     demo = Demo()

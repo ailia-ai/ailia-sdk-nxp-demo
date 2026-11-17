@@ -65,29 +65,46 @@ class Session:
                 str(path),
                 env_id=env,
                 num_thread=CPU_THREADS,
-                memory_mode=ailia.get_memory_mode(
-                    reduce_constant=True,
-                    ignore_input_with_initializer=True,
-                    reduce_interstage=True,
-                    reuse_interstage=True,
-                ),
+                memory_mode=11,
             )
             self.run = self.net.run
             self.version = ailia.get_version()
+            from warmup import inputs_for_model
+
+            outputs = self.run(inputs_for_model(Path(path).name))
+            if not all(np.isfinite(value).all() for value in outputs):
+                raise RuntimeError(f"Non-finite Open-time warm-up output: {path}")
+
+
+class SessionCache:
+    """Sessions for one selected backend, shared by image and video engines."""
+
+    def __init__(self, backend):
+        self.backend = backend
+        self.sessions = {}
+
+    def get(self, path, backend, npu=False):
+        if backend != self.backend:
+            raise ValueError("A session cache cannot mix backends")
+        key = (Path(path).resolve(), npu)
+        if key not in self.sessions:
+            self.sessions[key] = Session(path, backend, npu)
+        return self.sessions[key]
 
 
 class Engine:
-    def __init__(self, directory, backend):
+    def __init__(self, directory, backend, cache=None):
         self.backend = backend
         self.directory = Path(directory)
         # Shared settings from the measured SAM512 QDQ configuration.
         configure_npu()
         start = time.perf_counter()
-        self.encoder = Session(self.directory / ENCODER, backend, backend.endswith("_npu"))
+        cache = cache if cache is not None else SessionCache(backend)
+        self.encoder = cache.get(self.directory / ENCODER, backend, backend.endswith("_npu"))
         # Explicitly CPU on both runtimes: dynamic point prompts do not trigger
         # NPU recompilation. UI labels identify this hybrid execution policy.
-        self.prompt = Session(self.directory / "prompt_512.onnx", backend)
-        self.decoder = Session(self.directory / "decoder_512.onnx", backend)
+        self.prompt = cache.get(self.directory / "prompt_512.onnx", backend)
+        self.decoder = cache.get(self.directory / "decoder_512.onnx", backend)
         self.no_mem = (
             np.load(self.directory / "pretrained_weights.npz")["v2.1_hiera_t_no_mem_embed"]
             .astype(np.float32)
@@ -115,8 +132,8 @@ class Engine:
             raise RuntimeError("Unexpected/non-finite encoder outputs")
         self.features = dict(
             image_embeddings=values[6] + self.no_mem,
-            high_res_features1=values[4],
-            high_res_features2=values[5],
+            high_res_features1=values[4].copy(),
+            high_res_features2=values[5].copy(),
         )
         return self.encoder_ms
 
@@ -163,6 +180,25 @@ class Engine:
 def worker(directory, requests, responses):
     engine = None
     video_engine = None
+    cache = None
+
+    def select_backend(backend):
+        nonlocal engine, video_engine, cache
+        if cache is None or cache.backend != backend:
+            engine = video_engine = cache = None
+            gc.collect()
+            cache = SessionCache(backend)
+
+    def backend_order(job, compare):
+        # Leave the UI-selected runtime resident after Compare all.
+        if job.get("single_backend"):
+            return [job["backend"]]
+        return (
+            [b for b in BACKENDS if b != job["backend"]] + [job["backend"]]
+            if compare
+            else [job["backend"]]
+        )
+
     while True:
         job = requests.get()
         if job is None:
@@ -171,14 +207,11 @@ def worker(directory, requests, responses):
             if job["action"] in ("video", "video_compare"):
                 from video import VideoEngine
 
-                engine = None
-                gc.collect()
-                for backend in BACKENDS if job["action"] == "video_compare" else [job["backend"]]:
+                for backend in backend_order(job, job["action"] == "video_compare"):
+                    select_backend(backend)
                     responses.put(dict(kind="progress", text="Loading video models / " + backend))
                     if video_engine is None or video_engine.backend != backend:
-                        video_engine = None
-                        gc.collect()
-                        video_engine = VideoEngine(Path(directory).parent, backend)
+                        video_engine = VideoEngine(Path(directory).parent, backend, cache=cache)
                     frames = sorted((Path(directory).parent / "bedroom").glob("[0-9]*.jpg"))
                     if len(frames) != 5:
                         raise ValueError("Expected exactly five bedroom frames")
@@ -188,25 +221,20 @@ def worker(directory, requests, responses):
                     dict(kind="done", text="Tracking complete — Bedroom resets to frame 1.")
                 )
                 continue
-            video_engine = None
-            backends = BACKENDS if job["action"] == "benchmark" else [job["backend"]]
+            backends = backend_order(job, job["action"] == "benchmark")
             for backend in backends:
+                select_backend(backend)
                 responses.put(dict(kind="progress", text="Loading / running " + backend))
                 new_engine = engine is None or engine.backend != backend
                 if new_engine:
-                    engine = None
-                    gc.collect()
-                    engine = Engine(directory, backend)
+                    engine = Engine(directory, backend, cache=cache)
+                if job.get("video_mode") and video_engine is None:
+                    from video import VideoEngine
+
+                    video_engine = VideoEngine(Path(directory).parent, backend, cache=cache)
                 cached = engine.path == job["image"] and engine.features is not None
                 if not cached:
                     engine.prepare(job["image"])
-                if new_engine and backend.startswith("ailia"):
-                    # The first encoder inference initializes the runtime. Keep
-                    # it outside the displayed timing, then measure a warm run.
-                    responses.put(
-                        dict(kind="progress", text="Warm-up complete; measuring " + backend)
-                    )
-                    engine.encode()
                 result = dict(
                     kind="result",
                     backend=backend,
@@ -215,12 +243,15 @@ def worker(directory, requests, responses):
                     cached=cached,
                     version=engine.encoder.version,
                     mode="warm / latest" if backend.startswith("ailia") else "first / latest",
+                    action=job["action"],
                 )
                 if job["action"] == "benchmark":
-                    # One explicit warm-up followed by 3 measured runs for every backend.
-                    engine.encode()
+                    # ailia is already warmed at Open; only ORT needs a
+                    # benchmark warm-up before the three measured samples.
                     points = job["points"] or [[0.5, 0.5, 1]]
-                    engine.segment(points)
+                    if backend.startswith("ort"):
+                        engine.encode()
+                        engine.segment(points)
                     enc_times, click_times = [], []
                     for _ in range(3):
                         enc_times.append(engine.encode())
@@ -244,5 +275,6 @@ def worker(directory, requests, responses):
             traceback.print_exc()
             engine = None
             video_engine = None
+            cache = None
             gc.collect()
             responses.put(dict(kind="error", text=f"{type(exc).__name__}: {exc}"))
