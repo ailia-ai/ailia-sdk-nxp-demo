@@ -53,16 +53,15 @@ class VideoEngine:
         self.directory = Path(directory)
         self.backend = backend
         models = self.directory / "models"
-        video_models = self.directory / "video_models"
         self.nets = {}
         for key, path in {
             "image_encoder": models / ENCODER,
             "prompt_encoder": models / "prompt_512.onnx",
             "mask_decoder": models / "decoder_512.onnx",
-            "memory_attention": video_models / memory_model,
-            "memory_encoder": video_models / "memory_encoder_512.onnx",
-            "mlp": video_models / "mlp_original.onnx",
-            "obj_ptr_tpos_proj": video_models / "obj_ptr_tpos_proj_original.onnx",
+            "memory_attention": models / memory_model,
+            "memory_encoder": models / "memory_encoder_512.onnx",
+            "mlp": models / "mlp_original.onnx",
+            "obj_ptr_tpos_proj": models / "obj_ptr_tpos_proj_original.onnx",
         }.items():
             self.nets[key] = TimedSession(
                 path,

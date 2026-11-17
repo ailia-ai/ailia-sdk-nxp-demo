@@ -164,5 +164,5 @@ GTKを使わない単体テストはモデル推論を行いません。
 
 構成：`app.py`（GUI）、`engine.py`（推論とワーカー）、`video.py`（追跡と計時）、
 `settings.py`（共通設定・前処理）、`sam2_video_predictor.py`（SAM 2追跡実装）、
-`models/`・`video_models/`（モデル）、`sdk/`（SDK）、`scripts/`（導入補助）。
+`models/`（静止画・動画の全モデル）、`sdk/`（SDK）、`scripts/`（導入補助）。
 実験ログ、校正データ、中間モデル、ライセンスキーは含めていません。

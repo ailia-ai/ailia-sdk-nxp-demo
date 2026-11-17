@@ -1,11 +1,26 @@
 """Memory-bank and input-contract regressions without loading model weights."""
 
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import numpy as np
 
-from video import TimedSession
+from video import TimedSession, VideoEngine
+
+
+class ModelLayoutTests(unittest.TestCase):
+    def test_all_tracking_models_use_shared_directory(self):
+        root = Path(__file__).resolve().parents[1]
+        with patch("video.TimedSession") as session:
+            engine = VideoEngine(root, "ort_cpu")
+        self.assertEqual(len(engine.nets), 7)
+        self.assertEqual(session.call_count, 7)
+        for call in session.call_args_list:
+            path = call.args[0]
+            self.assertEqual(path.parent, root / "models")
+            self.assertTrue(path.is_file(), str(path))
 
 
 class MemoryBankTests(unittest.TestCase):
