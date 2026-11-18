@@ -1,24 +1,22 @@
 # SAM 2.1 Tiny / i.MX95 Demo
 
-ailia Inc.
+An interactive segmentation demo for an i.MX95 HDMI display, with click-based segmentation and tracking across five Bedroom frames.
+Includes COCO-calibrated SAM 2.1 Tiny 512×512 models for comparing ailia and ORT on CPU and NPU.
 
-i.MX95のHDMI画面で、クリックによるセグメンテーションとBedroomの5フレーム追跡を行うデモです。
-COCO校正済みのSAM2.1 Tiny 512×512モデルを同梱し、ailia／ORTのCPU・NPUを比較できます。
+## Requirements
 
-## 動作環境
+- i.MX95, HDMI display, and mouse
+- NXP i.MX Distro `6.18-wrynose` (Linux ARM64, Weston/Wayland)
+- Python 3, NumPy, OpenCV, GTK3, PyGObject, and Cairo
+- ailia Python package `1.7.0.0` and a valid ailia license
+- NXP ONNX Runtime `1.24.3` and the Neutron driver supplied with the BSP
 
-- i.MX95、HDMI、マウス
-- NXP i.MX Distro `6.18-wrynose`（Linux ARM64、Weston/Wayland）
-- Python 3、NumPy、OpenCV、GTK3、PyGObject、Cairo
-- ailia Python package `1.7.0.0`、有効なailiaライセンス
-- NXP ONNX Runtime `1.24.3`、BSP付属のNeutronドライバ
+The bundled SDK targets this BSP (`GLIBC_2.43`, `GLIBCXX_3.4.32`, and `CXXABI_1.3.15`).
+Keep the NXP-provided ORT installation; do not replace it with the PyPI version.
 
-同梱SDKはこのBSP向けです（`GLIBC_2.43`、`GLIBCXX_3.4.32`、`CXXABI_1.3.15`）。
-NXP版ORTはPyPI版で上書きせず、そのまま使用してください。
+## Setup
 
-## セットアップ
-
-実機で実行します。
+Run on the device:
 
 ```sh
 git clone https://github.com/ailia-ai/ailia-sdk-nxp-demo.git
@@ -29,51 +27,51 @@ python3 -m pip install --target ./python --no-deps ailia==1.7.0.0
 python3 scripts/copy_sdk.py --install-npu --package-dir ./python/ailia
 ```
 
-ailia SDK 1.7 (公開版)はNPU非対応です。上記コマンドで同梱のailia SDK 1.7 (NXP NPU対応版)へ差し替えます。
-既存アプリを終了してから実行してください。
+ailia SDK 1.7 (public release) does not support the NXP NPU. The commands above install the bundled ailia SDK 1.7 (NXP NPU-enabled version) in its place.
+Stop running applications before replacing the library.
 
-pip版のバイナリを保存する場合は、差し替え前に次を実行します。
+To save the pip-provided binary, run this before replacing it:
 
 ```sh
 python3 scripts/copy_sdk.py --export-pip --package-dir ./python/ailia
-# 保存先: sdk/from-pip/linux/arm64-v8a/libailia.so
+# Saved to: sdk/from-pip/linux/arm64-v8a/libailia.so
 ```
 
-### ライセンス
+### License
 
-初回の評価ライセンス取得にはインターネット接続と正しいシステム日時が必要です。
-オフライン利用や期限切れの場合は、別途有効なライセンスを用意してください。
-ライセンスは実行ユーザーごとに管理されます。利用条件は[同梱ライセンス](licenses/LICENSE_AILIA_JA.pdf)を参照してください。
+Obtaining an evaluation license for the first time requires an internet connection and the correct system date and time.
+For offline use or an expired license, obtain a valid license separately.
+Licenses are managed per user account. See the [bundled license](licenses/LICENSE_AILIA_EN.pdf) for terms of use.
 
-## 起動・操作
+## Launch and Controls
 
-Westonと同じユーザーで実行します。
+Run as the same user as Weston:
 
 ```sh
-sh launch.sh                         # 全画面、ailia NPU
-sh launch.sh --bedroom               # 5フレーム追跡
-sh launch.sh --windowed              # ウィンドウ表示
-sh launch.sh --backend ort_cpu       # ORT CPUで開始
+sh launch.sh                         # Fullscreen, ailia NPU
+sh launch.sh --bedroom               # Five-frame tracking
+sh launch.sh --windowed              # Windowed mode
+sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
 ```
 
-- 左クリック：前景点、右クリック：背景点
-- **Undo point / Clear points**：点を戻す／消す
-- **Open image**：画像を選択
-- **Compare all 4**：4方式を比較
-- **Track 5 frames**：最初のフレームで指定した対象を追跡。終了後は1枚目に戻り、再クリックできます。
+- Left-click: foreground point; right-click: background point
+- **Undo point / Clear points**: undo the last point or clear all points
+- **Open image**: select an image
+- **Compare all 4**: compare all four backends
+- **Track 5 frames**: track the object selected in the first frame. After tracking finishes, the demo returns to the first frame and accepts new clicks.
 
-ランタイムを切り替えるまでモデルを保持し、測定履歴は再実行・再起動後も残ります。
-ログは`demo.log`、履歴は`benchmark_history.jsonl`へ保存します。
-SSH起動時はWestonの`XDG_RUNTIME_DIR`と`WAYLAND_DISPLAY`を指定してください。
+Models stay in memory until you switch backends. Benchmark history persists across runs and application restarts.
+Logs are saved to `demo.log`, and benchmark history to `benchmark_history.jsonl`.
+When launching over SSH, set `XDG_RUNTIME_DIR` and `WAYLAND_DISPLAY` to match the Weston session.
 
-### 起動アイコン
+### Launcher Icon
 
 ```sh
 python3 scripts/install_desktop.py
 ```
 
-Westonパネルに追加する場合は、`weston.ini`に次を追記します。
+To add a launcher to the Weston panel, append the following to `weston.ini`:
 
 ```ini
 [launcher]
@@ -81,38 +79,38 @@ icon=/path/to/ailia-sdk-nxp-demo/launcher.png
 path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
 ```
 
-## ベンチマーク
+## Benchmarks
 
-2026-11-18、i.MX95、モデル`coco-val2017-v1`。
-NXP ORT 1.24.3／ailia SDK 1.7 (NXP NPU対応版)、CPU 6スレッド、プロファイル無効。
-ailiaのランタイムは`566f2f71b`（CPU整数MatMulのNEON最適化版）です。
-全方式でモデルOpen時に同じダミー入力で1回推論します。その後、Bedroomの5フレームを同じ2点で1周ウォームアップし、続く3回の中央値を測定しました。ウォームアップは測定から除外しています。
+Measured on 2026-11-18 on i.MX95 with model revision `coco-val2017-v1`.
+NXP ORT 1.24.3 / ailia SDK 1.7 (NXP NPU-enabled version), six CPU threads, profiling disabled.
+The ailia runtime is `566f2f71b`, with NEON-optimized CPU integer MatMul.
+All backends run one inference with identical dummy inputs when opening each model. They then warm up on the complete five-frame Bedroom sequence using the same two points. Results are medians of the next three runs; warm-up is excluded.
 
-| 処理 | 回数／動画 | ORT CPU | ORT NPU※ | ailia CPU | ailia NPU |
+| Component | Calls / video | ORT CPU | ORT NPU* | ailia CPU | ailia NPU |
 |---|---:|---:|---:|---:|---:|
-| Image Encoder (ms／回) | 5 | 2,273.1 | 2,194.3 | 2,471.5 | 891.0 |
-| Mask Decoder (ms／回) | 5 | 169.6 | 164.8 | 126.8 | 126.9 |
-| Memory Attention (ms／回) | 4 | 1,487.2 | 1,484.2 | 1,116.5 | 517.3 |
-| Memory Encoder (ms／回) | 5 | 294.3 | 299.9 | 236.1 | 236.4 |
-| 5フレーム全体 (秒) | — | 20.14 | 19.75 | 19.12 | 8.75 |
+| Image Encoder (ms / call) | 5 | 2,273.1 | 2,194.3 | 2,471.5 | 891.0 |
+| Mask Decoder (ms / call) | 5 | 169.6 | 164.8 | 126.8 | 126.9 |
+| Memory Attention (ms / call) | 4 | 1,487.2 | 1,484.2 | 1,116.5 | 517.3 |
+| Memory Encoder (ms / call) | 5 | 294.3 | 299.9 | 236.1 | 236.4 |
+| Full five-frame sequence (s) | — | 20.14 | 19.75 | 19.12 | 8.75 |
 
-モデル別は1回あたりの平均時間の中央値です。全体時間は画像読み込み・前後処理を含み、モデル読み込み・描画・保存を除きます。
-4方式とも同じモデルを使用します。NPU方式ではImage EncoderとMemory AttentionをCPU/NPU混在で実行し、その他はCPU実行です。
+Per-model values are medians of each run's average time per call. Full-sequence timing includes image loading and pre/post-processing, but excludes model loading, rendering, and saving results.
+All four backends use the same models. NPU backends run Image Encoder and Memory Attention with mixed CPU/NPU execution; other models run on the CPU.
 
-※ **ORT NPUは出力異常（最終測定の後続フレームのマスクが0～3画素）があるため、速度参考値です。**
+* **ORT NPU timings are for speed reference only: its outputs are incorrect, with masks containing only 0–3 pixels in subsequent frames of the final measured run.**
 
-BedroomでのFP32参照に対する平均マスクIoUは、ホストORT CPUで96.07%、実機ailia NPUで95.71%です。
-正解マスクに対する精度ではありません。
+Mean mask IoU against the FP32 reference on Bedroom is 96.07% for host ORT CPU and 95.71% for ailia NPU on the device.
+These are comparisons with reference outputs, not ground-truth accuracy scores.
 
-アプリ内の静止画比較は3回中央値、動画表示は各フレームの実測値です。
-ailia・ORTともモデルOpen時に同じダミー入力で1回ウォームアップし、測定から除外します。
-表のSumは推論区間の合計で、画面応答時間とは異なります。
+In the app, still-image comparisons show medians of three runs; video timings show individual frame measurements.
+Both ailia and ORT perform one excluded warm-up inference with the same dummy inputs when opening each model.
+The app's Sum column totals inference time, not UI response time.
 
-## モデル変換
+## Model Conversion
 
-ホストPCで、[ailia-modelsのSAM2](https://github.com/ailia-ai/ailia-models/tree/master/image_segmentation/segment-anything-2)
-の公開SAM2.1 Tiny ONNXから生成します。
-[COCO 2017 validation画像・アノテーション](https://cocodataset.org/#download)を展開して実行してください。
+On a host PC, convert the public SAM 2.1 Tiny ONNX models from
+[SAM2 in ailia-models](https://github.com/ailia-ai/ailia-models/tree/master/image_segmentation/segment-anything-2).
+Extract the [COCO 2017 validation images and annotations](https://cocodataset.org/#download), then run:
 
 ```sh
 python3 -m pip install -r scripts/requirements-calibration.txt
@@ -125,19 +123,19 @@ python3 scripts/calibrate_sam2.py \
   --workers 2 --threads 2
 ```
 
-全5,000画像でMin/Max校正し、活性値はtensor-wise UINT8、固定重みはchannel-wise INT8にします。
-Memory Attentionには各画像から生成した5フレームの疑似動画を使います。
+Min/Max calibration uses all 5,000 images, with tensor-wise UINT8 activations and channel-wise INT8 constant weights.
+Memory Attention uses a synthetic five-frame sequence generated from each image.
 
-出力はINT8／FP32混在です。Image EncoderのMatMulは整数演算、ConvはQDQ、
-Softmax・LayerNormは入出力のみ量子化します。
-Memory AttentionはMatMulを整数化し、RoPEはFP32を維持します。補助モデルもFP32です。
+The resulting models mix INT8 and FP32. In Image Encoder, MatMul uses integer operators, Conv uses QDQ,
+and Softmax/LayerNorm quantize only their inputs and outputs.
+Memory Attention uses integer MatMul while retaining FP32 RoPE. Auxiliary models also remain FP32.
 
-生成モデルは出力先の`models/`、校正記録は`manifest.json`・`ranges_*.json`・`completion.json`に保存します。
-同じコマンドで途中再開できます。同梱モデルへのコピーは自動では行いません。
+Generated models are saved under `models/` in the output directory. Calibration records are saved as `manifest.json`, `ranges_*.json`, and `completion.json`.
+Run the same command to resume an interrupted conversion. Generated models are not automatically copied over the bundled models.
 
-## デモ画像・ライセンス
+## Demo Images and Licenses
 
-デモ画像はSegment Anythingの公式リポジトリのものです：
-[truck.jpg](https://github.com/facebookresearch/segment-anything/blob/main/notebooks/images/truck.jpg)、
-[Bedroom](https://github.com/facebookresearch/sam2/tree/main/notebooks/videos/bedroom)。
-出典・ライセンスは[NOTICE.md](NOTICE.md)を参照してください。
+Demo images come from the official Segment Anything repositories:
+[truck.jpg](https://github.com/facebookresearch/segment-anything/blob/main/notebooks/images/truck.jpg) and
+[Bedroom](https://github.com/facebookresearch/sam2/tree/main/notebooks/videos/bedroom).
+See [NOTICE.md](NOTICE.md) for attribution and licenses.
