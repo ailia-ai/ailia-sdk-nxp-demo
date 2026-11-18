@@ -1,6 +1,6 @@
 {
   "revision": "coco-val2017-v1",
-  "runtime_source_revision": "13f6f9e62",
+  "runtime_source_revision": "566f2f71b",
   "source_url": "https://storage.googleapis.com/ailia-models/segment-anything-2.1/",
   "converter": "scripts/calibrate_sam2.py",
   "calibration": {
