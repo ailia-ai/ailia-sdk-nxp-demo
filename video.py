@@ -63,12 +63,12 @@ class VideoEngine:
         self.nets = {}
         for key, path in {
             "image_encoder": models / ENCODER,
-            "prompt_encoder": models / "prompt_512.onnx",
-            "mask_decoder": models / "decoder_512.onnx",
+            "prompt_encoder": models / "sam2.1_tiny_prompt_encoder_512_fp32.onnx",
+            "mask_decoder": models / "sam2.1_tiny_mask_decoder_512_fp32.onnx",
             "memory_attention": models / memory_model,
-            "memory_encoder": models / "memory_encoder_512.onnx",
-            "mlp": models / "mlp_original.onnx",
-            "obj_ptr_tpos_proj": models / "obj_ptr_tpos_proj_original.onnx",
+            "memory_encoder": models / "sam2.1_tiny_memory_encoder_512_fp32.onnx",
+            "mlp": models / "sam2.1_tiny_mlp_fp32.onnx",
+            "obj_ptr_tpos_proj": models / "sam2.1_tiny_obj_ptr_tpos_proj_fp32.onnx",
         }.items():
             self.nets[key] = TimedSession(
                 path,
@@ -144,7 +144,7 @@ def main():
     engine = VideoEngine(base, args.backend, args.memory_model, args.capture)
     records = []
     for result in engine.track(
-        sorted((base / "bedroom").glob("[0-9]*.jpg")),
+        sorted((base / "images" / "bedroom").glob("[0-9]*.jpg")),
         [[210 / 960, 350 / 540, 1], [250 / 960, 220 / 540, 1]],
     ):
         cv2.imwrite(str(args.output / f"frame_{result['frame']}.png"), result.pop("mask") * 255)

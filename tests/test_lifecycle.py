@@ -58,7 +58,7 @@ class LifecycleTests(unittest.TestCase):
 
         for backend in ("ailia_npu", "ailia_npu", "ort_npu", "ort_npu"):
             requests.put(
-                dict(action="segment", backend=backend, image="truck.jpg", points=[[0.5, 0.5, 1]])
+                dict(action="segment", backend=backend, image="images/truck.jpg", points=[[0.5, 0.5, 1]])
             )
         requests.put(None)
         with patch("engine.Engine", side_effect=create) as factory:

@@ -19,7 +19,7 @@ from settings import MODEL_REVISION
 def reset_tracking_view(view):
     """Return to a clean first-frame prompt without clearing timings or sessions."""
     view.video_frame = 0
-    view.image_path = str(Path(__file__).parent / "bedroom" / "00000.jpg")
+    view.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
     view.points, view.mask = [], None
     view.load_image()
 
@@ -27,7 +27,7 @@ def reset_tracking_view(view):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", type=Path, default=Path(__file__).parent / "models")
-    parser.add_argument("--image", type=Path, default=Path(__file__).parent / "truck.jpg")
+    parser.add_argument("--image", type=Path, default=Path(__file__).parent / "images" / "truck.jpg")
     parser.add_argument("--windowed", action="store_true")
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
     parser.add_argument(
@@ -68,7 +68,7 @@ def main():
                 self.points = [[210 / 960, 350 / 540, 1], [250 / 960, 220 / 540, 1]]
             self.image_path = str(args.image.resolve())
             if args.bedroom:
-                self.image_path = str(Path(__file__).parent / "bedroom" / "00000.jpg")
+                self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
             self.backend = args.backend
             self.runner = RuntimeWorker(args.models)
             self.pending_jobs = []
@@ -236,7 +236,7 @@ def main():
                 self.attribution.set_text(
                     "Demo images: Segment Anything official repository (SAM 2 / bedroom) — github.com/facebookresearch/sam2"
                 )
-            elif Path(self.image_path).resolve() == (Path(__file__).parent / "truck.jpg").resolve():
+            elif Path(self.image_path).resolve() == (Path(__file__).parent / "images" / "truck.jpg").resolve():
                 self.attribution.set_text(
                     "Demo image: Segment Anything official repository (truck.jpg) — github.com/facebookresearch/segment-anything"
                 )
@@ -330,7 +330,7 @@ def main():
         def switch(self, selector):
             self.backend = selector.get_active_id()
             if self.video_mode:
-                self.image_path = str(Path(__file__).parent / "bedroom" / "00000.jpg")
+                self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
                 self.video_frame = 0
             self.mask = None
             self.load_image()
@@ -344,7 +344,7 @@ def main():
 
         def bedroom(self, *_):
             self.video_mode, self.video_frame = True, 0
-            self.image_path = str(Path(__file__).parent / "bedroom" / "00000.jpg")
+            self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
             self.points, self.mask, self.video_records = [], None, []
             self.load_image()
             self.submit("prepare")

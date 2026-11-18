@@ -10,6 +10,19 @@ from warmup import inputs_for_model
 
 
 class ModelManifestTests(unittest.TestCase):
+    def test_public_model_names_and_warmup_contract(self):
+        root = Path(__file__).resolve().parents[1] / "models"
+        manifest = json.loads((root / "manifest.json").read_text())
+        self.assertEqual(len(manifest["downloads"]), 3)
+        for name, record in manifest["downloads"].items():
+            with self.subTest(model=name):
+                self.assertEqual(Path(name).name, name)
+                self.assertTrue(name.startswith("sam2.1_tiny_"))
+                self.assertTrue(record["url"].startswith("https://"))
+                self.assertRegex(record["sha256"], r"^[0-9a-f]{64}$")
+                if name.endswith(".onnx"):
+                    self.assertTrue(inputs_for_model(name))
+
     def test_final_models_and_warmup_contract(self):
         root = Path(__file__).resolve().parents[1] / "models"
         manifest = json.loads((root / "manifest.json").read_text())

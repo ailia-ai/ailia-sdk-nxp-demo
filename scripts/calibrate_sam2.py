@@ -423,17 +423,19 @@ def finalize(args, manifest):
             quantized, include_shared=True, nxp_ep_benchmark=key == "image_encoder"
         )
         onnx.checker.check_model(lowered)
-        onnx.save(lowered, destination / f"{key}_512_integer.onnx")
+        onnx.save(lowered, destination / f"sam2.1_tiny_{key}_512_int8.onnx")
     for key, name in {
-        "prompt_encoder": "prompt_512.onnx",
-        "mask_decoder": "decoder_512.onnx",
-        "memory_encoder": "memory_encoder_512.onnx",
-        "mlp": "mlp_original.onnx",
-        "obj_ptr_tpos_proj": "obj_ptr_tpos_proj_original.onnx",
+        "prompt_encoder": "sam2.1_tiny_prompt_encoder_512_fp32.onnx",
+        "mask_decoder": "sam2.1_tiny_mask_decoder_512_fp32.onnx",
+        "memory_encoder": "sam2.1_tiny_memory_encoder_512_fp32.onnx",
     }.items():
         shutil.copyfile(args.output / "fp32" / f"{key}.onnx", destination / name)
+    for key in ("mlp", "obj_ptr_tpos_proj"):
+        shutil.copyfile(
+            args.source_dir / SOURCES[key], destination / f"sam2.1_tiny_{key}_fp32.onnx"
+        )
     shutil.copyfile(
-        args.source_dir / "pretrained_weights.npz", destination / "pretrained_weights.npz"
+        args.source_dir / "pretrained_weights.npz", destination / "sam2.1_tiny_weights.npz"
     )
     save_json(
         args.output / "completion.json",

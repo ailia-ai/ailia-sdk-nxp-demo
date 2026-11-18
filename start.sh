@@ -20,4 +20,5 @@ if [ -z "${WAYLAND_DISPLAY:-}" ]; then
     exit 1
 fi
 cd "$DEMO_DIR"
+python3 scripts/download_models.py
 exec python3 app.py "$@"

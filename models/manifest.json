@@ -3,6 +3,20 @@
   "runtime_source_revision": "566f2f71b",
   "source_url": "https://storage.googleapis.com/ailia-models/segment-anything-2.1/",
   "converter": "scripts/calibrate_sam2.py",
+  "downloads": {
+    "sam2.1_tiny_mlp_fp32.onnx": {
+      "url": "https://storage.googleapis.com/ailia-models/segment-anything-2.1/mlp_hiera_t_2.1.onnx",
+      "sha256": "dba4c5eab2ce46d1071de2d606b604ab2657f8b56fc1d564be661e5b40b10102"
+    },
+    "sam2.1_tiny_obj_ptr_tpos_proj_fp32.onnx": {
+      "url": "https://storage.googleapis.com/ailia-models/segment-anything-2.1/obj_ptr_tpos_proj_hiera_t_2.1.onnx",
+      "sha256": "94c127ea5d71c6a0ae625b789c3ec09e3dc9e3f65594cd24e97a06b6fe877a8f"
+    },
+    "sam2.1_tiny_weights.npz": {
+      "url": "https://raw.githubusercontent.com/ailia-ai/ailia-models/35a19ec2ed4db1bfa6bcb10334f93fa74b471b17/image_segmentation/segment-anything-2/pretrained_weights.npz",
+      "sha256": "d46889f00799802198cb31549e768c6b104e5f7d57f40d16acf90a60f889b548"
+    }
+  },
   "calibration": {
     "dataset": "COCO val2017",
     "images": 5000,
@@ -14,7 +28,7 @@
     "manifest_sha256": "83c6783f1eb5eec5186941eb482b8caad79adddd11278a5c5732fc199e35c522"
   },
   "models": {
-    "image_encoder_512_integer.onnx": {
+    "sam2.1_tiny_image_encoder_512_int8.onnx": {
       "source": "image_encoder_hiera_t_2.1.onnx",
       "source_sha256": "636c759b11d908bbe922242aef535d16211bcf440df570b90ff3bf3cba9e88f1",
       "sha256": "d2cb67d5fb8c3fa63523e98df4b10d721c9415cd5d1c4dc68eb65963802c05bc",
@@ -22,7 +36,7 @@
       "converted_matmuls": 75,
       "ort_neutron_warning": "Timing only: Invalid args and varying outputs remain; not accuracy-qualified."
     },
-    "memory_attention_512_integer.onnx": {
+    "sam2.1_tiny_memory_attention_512_int8.onnx": {
       "source": "memory_attention_6d_hiera_t_2.1.onnx",
       "source_sha256": "84bbdf8ebeb1fe8d159b4a382a2faf2d60dd59f5d0d84644381ad35af94e0dd1",
       "sha256": "a0cc510265783ce9e64a00c63293b4c077f32c2ca81af8ef32eb235d2ab6598d",

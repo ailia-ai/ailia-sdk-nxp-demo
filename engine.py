@@ -103,10 +103,10 @@ class Engine:
         self.encoder = cache.get(self.directory / ENCODER, backend, backend.endswith("_npu"))
         # Explicitly CPU on both runtimes: dynamic point prompts do not trigger
         # NPU recompilation. UI labels identify this hybrid execution policy.
-        self.prompt = cache.get(self.directory / "prompt_512.onnx", backend)
-        self.decoder = cache.get(self.directory / "decoder_512.onnx", backend)
+        self.prompt = cache.get(self.directory / "sam2.1_tiny_prompt_encoder_512_fp32.onnx", backend)
+        self.decoder = cache.get(self.directory / "sam2.1_tiny_mask_decoder_512_fp32.onnx", backend)
         self.no_mem = (
-            np.load(self.directory / "pretrained_weights.npz")["v2.1_hiera_t_no_mem_embed"]
+            np.load(self.directory / "sam2.1_tiny_weights.npz")["v2.1_hiera_t_no_mem_embed"]
             .astype(np.float32)
             .reshape(1, 256, 1, 1)
         )
@@ -212,7 +212,7 @@ def worker(directory, requests, responses):
                     responses.put(dict(kind="progress", text="Loading video models / " + backend))
                     if video_engine is None or video_engine.backend != backend:
                         video_engine = VideoEngine(Path(directory).parent, backend, cache=cache)
-                    frames = sorted((Path(directory).parent / "bedroom").glob("[0-9]*.jpg"))
+                    frames = sorted((Path(directory).parent / "images" / "bedroom").glob("[0-9]*.jpg"))
                     if len(frames) != 5:
                         raise ValueError("Expected exactly five bedroom frames")
                     for result in video_engine.track(frames, job["points"]):

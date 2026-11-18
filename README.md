@@ -2,6 +2,7 @@
 
 An interactive segmentation demo for an i.MX95 HDMI display, with click-based segmentation and tracking across five Bedroom frames.
 Includes COCO-calibrated SAM 2.1 Tiny 512×512 models for comparing ailia and ORT on CPU and NPU.
+Demo images are stored in `images/truck.jpg` and `images/bedroom/`.
 
 ## Requirements
 
@@ -22,6 +23,7 @@ Run on the device:
 git clone https://github.com/ailia-ai/ailia-sdk-nxp-demo.git
 cd ailia-sdk-nxp-demo
 sha256sum -c SHA256SUMS
+python3 scripts/download_models.py
 
 python3 -m pip install --target ./python --no-deps ailia==1.7.0.0
 python3 scripts/copy_sdk.py --install-npu --package-dir ./python/ailia
@@ -29,6 +31,11 @@ python3 scripts/copy_sdk.py --install-npu --package-dir ./python/ailia
 
 ailia SDK 1.7 (public release) does not support the NXP NPU. The commands above install the bundled ailia SDK 1.7 (NXP NPU-enabled version) in its place.
 Stop running applications before replacing the library.
+
+Model filenames use `sam2.1_tiny_<component>[_512]_<precision>.onnx`.
+The five 512-specific models are bundled; `int8` denotes quantized MatMul with other operations in FP32.
+The unmodified MLP, temporal-position projection, and auxiliary weights are downloaded from ailia-models, verified by SHA-256, and cached locally (not tracked in Git).
+The launcher also downloads these files when missing; subsequent launches can run offline.
 
 To save the pip-provided binary, run this before replacing it:
 

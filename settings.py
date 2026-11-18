@@ -8,8 +8,8 @@ import numpy as np
 IMAGE_SIZE = 512
 CPU_THREADS = 6
 BACKENDS = ("ailia_cpu", "ailia_npu", "ort_cpu", "ort_npu")
-ENCODER = "image_encoder_512_integer.onnx"
-MEMORY_ATTENTION = "memory_attention_512_integer.onnx"
+ENCODER = "sam2.1_tiny_image_encoder_512_int8.onnx"
+MEMORY_ATTENTION = "sam2.1_tiny_memory_attention_512_int8.onnx"
 MODEL_REVISION = "coco-val2017-v1"
 
 

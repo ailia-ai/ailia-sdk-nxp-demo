@@ -13,7 +13,7 @@ class TrackingResetTests(unittest.TestCase):
         runner, records, results = object(), [{"frame": 4}], {"ailia_npu": "measured"}
         view = SimpleNamespace(
             video_frame=4,
-            image_path="bedroom/00004.jpg",
+            image_path="images/bedroom/00004.jpg",
             points=[[0.2, 0.6, 1]],
             mask=object(),
             load_image=Mock(),

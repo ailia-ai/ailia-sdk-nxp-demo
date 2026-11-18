@@ -17,7 +17,7 @@ from settings import MODEL_REVISION
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--models", default=str(Path(__file__).parent / "models"))
-    p.add_argument("--image", default=str(Path(__file__).parent / "truck.jpg"))
+    p.add_argument("--image", default=str(Path(__file__).parent / "images" / "truck.jpg"))
     p.add_argument("--backends", nargs="+", choices=BACKENDS, default=list(BACKENDS))
     p.add_argument("--output", type=Path, default=Path(__file__).parent / "selftest_results")
     args = p.parse_args()
