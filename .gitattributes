@@ -2,6 +2,7 @@
 *.sh text eol=lf
 *.md text eol=lf
 *.onnx binary
+*.data[0-9][0-9] binary
 *.npz binary
 *.so binary
 # Preserve third-party license files exactly as supplied.

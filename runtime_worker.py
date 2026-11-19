@@ -9,11 +9,17 @@ class RuntimeWorker:
     def __init__(self, models):
         self.models = str(models)
         self.backend = None
+        self.model = None
         self.process = None
         self.requests = self.responses = None
 
     def submit(self, job):
-        if self.process is None or self.backend != job["backend"] or not self.process.is_alive():
+        if (
+            self.process is None
+            or self.backend != job["backend"]
+            or self.model != job.get("model", "sam")
+            or not self.process.is_alive()
+        ):
             self.close()
             context = mp.get_context("spawn")
             self.requests, self.responses = context.Queue(), context.Queue()
@@ -22,6 +28,7 @@ class RuntimeWorker:
             )
             self.process.start()
             self.backend = job["backend"]
+            self.model = job.get("model", "sam")
         # Compare all is sequenced by the UI, one isolated backend at a time.
         self.requests.put(dict(job, single_backend=True))
 
@@ -41,3 +48,4 @@ class RuntimeWorker:
                 channel.close()
         self.process = None
         self.backend = None
+        self.model = None

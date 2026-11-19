@@ -5,11 +5,28 @@ import json
 import unittest
 from pathlib import Path
 
+from grounding_inputs import MODEL as GROUNDING_MODEL
+from grounding_inputs import REVISION as GROUNDING_REVISION
 from settings import ENCODER, MEMORY_ATTENTION, MODEL_REVISION
 from warmup import inputs_for_model
 
 
 class ModelManifestTests(unittest.TestCase):
+    def test_grounding_production_model_and_shards(self):
+        root = Path(__file__).resolve().parents[1] / "models"
+        manifest = json.loads((root / "grounding_manifest.json").read_text())
+        self.assertEqual(manifest["revision"], GROUNDING_REVISION)
+        self.assertTrue(manifest["calibration"]["production"])
+        self.assertEqual(manifest["calibration"]["images"], 5000)
+        record = manifest["models"][GROUNDING_MODEL]
+        files = {GROUNDING_MODEL: record["sha256"], **record["external_data"]}
+        files[manifest["tokenizer"]["file"]] = manifest["tokenizer"]["sha256"]
+        for name, expected in files.items():
+            path = root / name
+            with self.subTest(file=name):
+                self.assertLess(path.stat().st_size, 100 * 1024 * 1024)
+                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), expected)
+
     def test_public_model_names_and_warmup_contract(self):
         root = Path(__file__).resolve().parents[1] / "models"
         manifest = json.loads((root / "manifest.json").read_text())

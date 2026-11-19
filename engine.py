@@ -24,7 +24,7 @@ def image_point(x, y, rect):
 
 
 class Session:
-    def __init__(self, path, backend, npu=False):
+    def __init__(self, path, backend, npu=False, warmup_inputs=None, validate_outputs=None):
         if backend not in BACKENDS:
             raise ValueError(f"Unknown backend: {backend}")
         if not Path(path).is_file():
@@ -71,8 +71,15 @@ class Session:
             self.version = ailia.get_version()
         from warmup import inputs_for_model
 
-        outputs = self.run(inputs_for_model(Path(path).name))
-        if not all(np.isfinite(value).all() for value in outputs):
+        outputs = self.run(
+            inputs_for_model(Path(path).name) if warmup_inputs is None else warmup_inputs
+        )
+        valid = (
+            validate_outputs(outputs)
+            if validate_outputs
+            else all(np.isfinite(value).all() for value in outputs)
+        )
+        if not valid:
             raise RuntimeError(f"Non-finite Open-time warm-up output: {path}")
 
 
@@ -103,7 +110,9 @@ class Engine:
         self.encoder = cache.get(self.directory / ENCODER, backend, backend.endswith("_npu"))
         # Explicitly CPU on both runtimes: dynamic point prompts do not trigger
         # NPU recompilation. UI labels identify this hybrid execution policy.
-        self.prompt = cache.get(self.directory / "sam2.1_tiny_prompt_encoder_512_fp32.onnx", backend)
+        self.prompt = cache.get(
+            self.directory / "sam2.1_tiny_prompt_encoder_512_fp32.onnx", backend
+        )
         self.decoder = cache.get(self.directory / "sam2.1_tiny_mask_decoder_512_fp32.onnx", backend)
         self.no_mem = (
             np.load(self.directory / "sam2.1_tiny_weights.npz")["v2.1_hiera_t_no_mem_embed"]
@@ -181,6 +190,7 @@ def worker(directory, requests, responses):
     engine = None
     video_engine = None
     cache = None
+    grounding = None
 
     def select_backend(backend):
         nonlocal engine, video_engine, cache
@@ -204,6 +214,31 @@ def worker(directory, requests, responses):
         if job is None:
             return
         try:
+            if job.get("model", "sam") == "grounding":
+                from grounding import GroundingEngine
+
+                for backend in backend_order(job, job["action"] == "benchmark"):
+                    responses.put(
+                        dict(kind="progress", text="Loading / running Grounding DINO / " + backend)
+                    )
+                    if grounding is None or grounding.backend != backend:
+                        grounding = None
+                        gc.collect()
+                        grounding = GroundingEngine(directory, backend)
+                    result = grounding.run(
+                        job["image"], job["caption"], compare=job["action"] == "benchmark"
+                    )
+                    responses.put(
+                        dict(
+                            kind="result",
+                            model="grounding",
+                            backend=backend,
+                            action=job["action"],
+                            **result,
+                        )
+                    )
+                responses.put(dict(kind="done", text="Ready — edit the prompt and press Detect."))
+                continue
             if job["action"] in ("video", "video_compare"):
                 from video import VideoEngine
 
@@ -212,7 +247,9 @@ def worker(directory, requests, responses):
                     responses.put(dict(kind="progress", text="Loading video models / " + backend))
                     if video_engine is None or video_engine.backend != backend:
                         video_engine = VideoEngine(Path(directory).parent, backend, cache=cache)
-                    frames = sorted((Path(directory).parent / "images" / "bedroom").glob("[0-9]*.jpg"))
+                    frames = sorted(
+                        (Path(directory).parent / "images" / "bedroom").glob("[0-9]*.jpg")
+                    )
                     if len(frames) != 5:
                         raise ValueError("Expected exactly five bedroom frames")
                     for result in video_engine.track(frames, job["points"]):
@@ -270,6 +307,7 @@ def worker(directory, requests, responses):
             engine = None
             video_engine = None
             cache = None
+            grounding = None
             gc.collect()
             responses.put(
                 dict(kind="error", action=job["action"], text=f"{type(exc).__name__}: {exc}")

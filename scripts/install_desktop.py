@@ -15,7 +15,7 @@ def main():
     launch = launch.replace("$", "\\$").replace("`", "\\`").replace("%", "%%")
     entry = applications / "ailia-sdk-nxp-demo.desktop"
     entry.write_text(
-        "[Desktop Entry]\nType=Application\nName=ailia SAM 2.1 Demo\n"
+        "[Desktop Entry]\nType=Application\nName=ailia i.MX95 Demo\n"
         f'Exec=sh "{launch}"\nIcon={root / "launcher.png"}\n'
         "Terminal=false\nCategories=Graphics;Science;\n",
         encoding="utf-8",

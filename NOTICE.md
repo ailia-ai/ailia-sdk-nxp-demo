@@ -21,6 +21,20 @@ EP outputs are not accuracy-qualified. Prompt, mask decoder and memory encoder a
 The remaining MLP and temporal projection are unmodified model exports.
 These are demo conversions, not official Meta or NXP model releases.
 
+## Grounding DINO
+
+The Grounding DINO Swin-T model derives from the public ailia-models export:
+https://github.com/ailia-ai/ailia-models/tree/master/object_detection/groundingdino
+Original project: https://github.com/IDEA-Research/GroundingDINO
+See `licenses/GROUNDING_DINO_LICENSE` (Apache License 2.0).
+The conversion uses COCO val2017 Min/Max calibration, integer fixed-weight
+MatMuls, and a standard-ONNX rearrangement of multi-scale deformable attention.
+This is a demo conversion, not an official upstream model release.
+
+`models/grounding_tokenizer/vocab.txt` is the BERT-base-uncased vocabulary
+distributed with the ailia-models Grounding DINO example.
+Original BERT project: https://github.com/google-research/bert (Apache 2.0).
+
 ## Demo images
 
 The demo images are from the **official Segment Anything repositories**:

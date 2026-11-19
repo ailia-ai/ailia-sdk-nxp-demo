@@ -11,6 +11,8 @@ import cv2
 import numpy as np
 
 from engine import BACKENDS, fit_rect, image_point
+from grounding_inputs import DEFAULT_PROMPT
+from grounding_inputs import REVISION as GROUNDING_REVISION
 from history import append_history, load_history
 from runtime_worker import RuntimeWorker
 from settings import MODEL_REVISION
@@ -27,9 +29,13 @@ def reset_tracking_view(view):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", type=Path, default=Path(__file__).parent / "models")
-    parser.add_argument("--image", type=Path, default=Path(__file__).parent / "images" / "truck.jpg")
+    parser.add_argument(
+        "--image", type=Path, default=Path(__file__).parent / "images" / "truck.jpg"
+    )
     parser.add_argument("--windowed", action="store_true")
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
+    parser.add_argument("--model", choices=("sam", "grounding"), default="sam")
+    parser.add_argument("--caption", default=DEFAULT_PROMPT, help="Grounding DINO detection prompt")
     parser.add_argument(
         "--bedroom", action="store_true", help="Open the five-frame memory tracking demo"
     )
@@ -46,6 +52,8 @@ def main():
     args = parser.parse_args()
     if args.autoplay_bedroom:
         args.bedroom = True
+    if args.model == "grounding":
+        args.bedroom = args.autoplay_bedroom = False
     import gi
 
     gi.require_version("Gtk", "3.0")
@@ -54,10 +62,12 @@ def main():
 
     class Demo(Gtk.Window):
         def __init__(self):
-            super().__init__(title="SAM 2.1 | i.MX95")
+            super().__init__(title="SAM 2.1 / Grounding DINO | i.MX95")
             self.set_default_size(1280, 720)
             self.connect("destroy", self.shutdown)
             self.points, self.mask, self.busy = [], None, False
+            self.model = args.model
+            self.detections = []
             self.results = {}
             self.closing = False
             self.video_mode = args.bedroom
@@ -92,9 +102,17 @@ def main():
             root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             root.set_border_width(12)
             self.add(root)
-            title = Gtk.Label(label="SAM 2.1 Tiny  /  512 × 512  /  i.MX95", xalign=0)
-            title.get_style_context().add_class("title")
-            root.pack_start(title, False, False, 0)
+            heading = Gtk.Box(spacing=14)
+            self.model_selector = Gtk.ComboBoxText()
+            self.model_selector.append("sam", "SAM 2.1 Tiny")
+            self.model_selector.append("grounding", "Grounding DINO")
+            self.model_selector.set_active_id(self.model)
+            self.model_selector.connect("changed", self.switch_model)
+            heading.pack_start(self.model_selector, False, False, 0)
+            self.title_label = Gtk.Label(xalign=0)
+            self.title_label.get_style_context().add_class("title")
+            heading.pack_start(self.title_label, True, True, 0)
+            root.pack_start(heading, False, False, 0)
             body = Gtk.Box(spacing=18)
             root.pack_start(body, True, True, 0)
             self.canvas = Gtk.DrawingArea()
@@ -115,7 +133,21 @@ def main():
             self.selector.set_active_id(self.backend)
             self.selector.connect("changed", self.switch)
             side.pack_start(self.selector, False, False, 0)
-            self.controls = [self.selector]
+            self.controls = [self.model_selector, self.selector]
+            self.prompt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            self.prompt_box.pack_start(
+                Gtk.Label(label="Detection prompt (English)", xalign=0), False, False, 0
+            )
+            self.prompt_entry = Gtk.Entry()
+            self.prompt_entry.set_text(args.caption)
+            self.prompt_entry.connect("activate", lambda *_: self.submit("detect"))
+            self.prompt_box.pack_start(self.prompt_entry, False, False, 0)
+            detect = Gtk.Button(label="Detect")
+            detect.connect("clicked", lambda *_: self.submit("detect"))
+            self.prompt_box.pack_start(detect, False, False, 0)
+            self.controls.extend([self.prompt_entry, detect])
+            side.pack_start(self.prompt_box, False, False, 0)
+            self.sam_controls = []
             for title, callback in [
                 (f"Compare all {len(BACKENDS)}", self.benchmark),
                 ("Undo point", self.undo),
@@ -127,12 +159,15 @@ def main():
                 button = Gtk.Button(label=title)
                 button.connect("clicked", callback)
                 self.controls.append(button)
+                if title not in (f"Compare all {len(BACKENDS)}", "Open image…"):
+                    self.sam_controls.append(button)
                 side.pack_start(button, False, False, 0)
             info = Gtk.Label(
                 label="Left: foreground (+)\nRight: background (−)\nBedroom: click frame 1, then Track.\nNPU: Encoder + MemoryAttention.\nOther tracking operations: CPU.\nINT8 integer-v1 · 6 threads · no profile\nORT NPU: timing only.\nOutputs may be incorrect or vary.",
                 xalign=0,
             )
             info.set_line_wrap(True)
+            self.info = info
             side.pack_start(info, False, False, 0)
             quit_button = Gtk.Button(label="Exit")
             quit_button.connect("clicked", lambda *_: self.destroy())
@@ -142,6 +177,7 @@ def main():
             root.pack_start(self.status, False, False, 0)
             grid = Gtk.Grid(column_spacing=28, row_spacing=10)
             root.pack_start(grid, False, False, 0)
+            self.table_headers = []
             for col, text in enumerate(
                 [
                     "Backend",
@@ -152,7 +188,9 @@ def main():
                     "Measurement",
                 ]
             ):
-                grid.attach(Gtk.Label(label=text, xalign=0), col, 0, 1, 1)
+                label = Gtk.Label(label=text, xalign=0)
+                self.table_headers.append(label)
+                grid.attach(label, col, 0, 1, 1)
             self.cells = {}
             for row, backend in enumerate(BACKENDS, 1):
                 cells = [
@@ -170,7 +208,7 @@ def main():
                 [
                     "Time / input",
                     "Backend",
-                    "Encoder",
+                    "Encoder / inference",
                     "Memory",
                     "Click / other",
                     "Sum",
@@ -199,6 +237,7 @@ def main():
             root.pack_start(self.attribution, False, False, 0)
             self.load_image()
             self.show_all()
+            self.update_model_controls()
             if not args.windowed:
                 self.fullscreen()
             GLib.timeout_add(100, self.poll)
@@ -208,10 +247,19 @@ def main():
             backend = record["backend"]
             values = list(record["values"])
             values[-1] += " / " + record.get("model_revision", "legacy-qdq")
-            for cell, text in zip(self.cells[backend][1:], values):
-                cell.set_text(text)
-            self.recorded_backends.add(backend)
-            label = record["time"] + " / " + Path(record.get("image", "")).name
+            if record.get("model", "sam") == self.model:
+                for cell, text in zip(self.cells[backend][1:], values):
+                    cell.set_text(text)
+                self.recorded_backends.add(backend)
+            label = (
+                record["time"]
+                + " / "
+                + record.get("model", "sam")
+                + " / "
+                + Path(record.get("image", "")).name
+            )
+            if record.get("caption"):
+                label += " / " + record["caption"]
             self.history_rows.append([label, backend, *values])
             if len(self.history_rows) > 200:
                 self.history_rows.remove(self.history_rows.get_iter_first())
@@ -219,7 +267,14 @@ def main():
         def record_measurement(self, backend, values, image=None):
             image = self.image_path if image is None else image
             try:
-                record = append_history(self.history_path, backend, values, image)
+                record = append_history(
+                    self.history_path,
+                    backend,
+                    values,
+                    image,
+                    model=self.model,
+                    caption=self.prompt_entry.get_text() if self.model == "grounding" else None,
+                )
             except OSError as exc:
                 print("Cannot save measurement history:", exc, flush=True)
                 record = dict(
@@ -227,7 +282,10 @@ def main():
                     backend=backend,
                     values=values,
                     image=image,
-                    model_revision=MODEL_REVISION,
+                    model_revision=GROUNDING_REVISION
+                    if self.model == "grounding"
+                    else MODEL_REVISION,
+                    model=self.model,
                 )
             self.show_measurement(record)
 
@@ -236,7 +294,10 @@ def main():
                 self.attribution.set_text(
                     "Demo images: Segment Anything official repository (SAM 2 / bedroom) — github.com/facebookresearch/sam2"
                 )
-            elif Path(self.image_path).resolve() == (Path(__file__).parent / "images" / "truck.jpg").resolve():
+            elif (
+                Path(self.image_path).resolve()
+                == (Path(__file__).parent / "images" / "truck.jpg").resolve()
+            ):
                 self.attribution.set_text(
                     "Demo image: Segment Anything official repository (truck.jpg) — github.com/facebookresearch/segment-anything"
                 )
@@ -245,7 +306,7 @@ def main():
             self.note.set_text(
                 "Video: actual per-frame times, not 3-run medians. Sum = network calls; excludes loading/drawing. NPU includes CPU fallback."
                 if self.video_mode
-                else "ailia: warm-up at model Open; memory mode 11. Compare all: median of 3 runs. Times exclude loading/drawing. NPU includes CPU fallback."
+                else "ailia / ORT: warm-up at model Open. ailia memory mode 11. Compare all: median of 3 runs. Times exclude loading/drawing. NPU includes CPU fallback."
             )
             self.note.set_text(
                 self.note.get_text() + " Previous values retained; check input/time in history."
@@ -258,6 +319,23 @@ def main():
 
         def update_pixbuf(self):
             rgb = self.rgb.copy()
+            if self.model == "grounding":
+                height, width = rgb.shape[:2]
+                for item in self.detections:
+                    x0, y0, x1, y1 = (
+                        np.array(item["box"]) * [width, height, width, height]
+                    ).astype(int)
+                    cv2.rectangle(rgb, (x0, y0), (x1, y1), (50, 225, 170), 2)
+                    cv2.putText(
+                        rgb,
+                        f"{item['label']} {item['score']:.2f}",
+                        (x0, max(16, y0 - 4)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.55,
+                        (50, 225, 170),
+                        2,
+                        cv2.LINE_AA,
+                    )
             if self.mask is not None:
                 selected = cv2.resize(
                     self.mask, (rgb.shape[1], rgb.shape[0]), interpolation=cv2.INTER_NEAREST
@@ -292,7 +370,7 @@ def main():
                 cr.stroke()
 
         def click(self, _area, event):
-            if self.busy or event.button not in (1, 3):
+            if self.model != "sam" or self.busy or event.button not in (1, 3):
                 return
             if self.video_mode and self.video_frame != 0:
                 self.status.set_text("Press Bedroom to return to frame 1 before adding points.")
@@ -322,10 +400,58 @@ def main():
                     image=self.image_path,
                     points=list(self.points),
                     video_mode=self.video_mode,
+                    model=self.model,
+                    caption=self.prompt_entry.get_text(),
                 )
                 for backend in backends
             ]
             self.runner.submit(self.pending_jobs.pop(0))
+
+        def update_model_controls(self):
+            grounding = self.model == "grounding"
+            self.title_label.set_text(
+                "Grounding DINO / 400 × 599 / i.MX95"
+                if grounding
+                else "SAM 2.1 Tiny / 512 × 512 / i.MX95"
+            )
+            self.prompt_box.set_visible(grounding)
+            for control in self.sam_controls:
+                control.set_visible(not grounding)
+            self.table_headers[1].set_text("Inference (ms)" if grounding else "Encoder (ms)")
+            for column in (2, 3, 4):
+                self.table_headers[column].set_visible(not grounding)
+                for cells in self.cells.values():
+                    cells[column].set_visible(not grounding)
+            self.info.set_text(
+                "Enter English category names separated by periods.\nDetect: one warm inference.\nCompare all: median of 3 runs.\nNPU includes CPU fallback.\nORT NPU outputs may vary."
+                if grounding
+                else "Left: foreground (+)\nRight: background (−)\nBedroom: click frame 1, then Track.\nNPU: Encoder + MemoryAttention.\nOther tracking operations: CPU.\n6 threads · no profile\nORT NPU: timing only. Outputs may be incorrect."
+            )
+
+        def switch_model(self, selector):
+            self.model = selector.get_active_id()
+            self.runner.close()
+            self.video_mode, self.video_frame = False, 0
+            self.points, self.mask, self.detections = [], None, []
+            self.recorded_backends.clear()
+            for cells in self.cells.values():
+                for cell in cells[1:]:
+                    cell.set_text("—")
+            try:
+                records = load_history(self.history_path)
+            except OSError as exc:
+                print("Cannot load measurement history:", exc, flush=True)
+                records = []
+            for record in records:
+                if record.get("model", "sam") == self.model:
+                    values = list(record["values"])
+                    values[-1] += " / " + record.get("model_revision", "legacy-qdq")
+                    for cell, text in zip(self.cells[record["backend"]][1:], values):
+                        cell.set_text(text)
+                    self.recorded_backends.add(record["backend"])
+            self.update_model_controls()
+            self.load_image()
+            self.submit("prepare")
 
         def switch(self, selector):
             self.backend = selector.get_active_id()
@@ -333,6 +459,7 @@ def main():
                 self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
                 self.video_frame = 0
             self.mask = None
+            self.detections = []
             self.load_image()
             self.submit("prepare")
 
@@ -384,6 +511,7 @@ def main():
                 self.video_mode = False
                 self.image_path = dialog.get_filename()
                 self.points, self.mask = [], None
+                self.detections = []
                 self.load_image()
                 self.submit("prepare")
             dialog.destroy()
@@ -450,11 +578,14 @@ def main():
                     if backend == self.backend and "mask" in result and self.points:
                         self.mask = result["mask"]
                         self.update_pixbuf()
+                    if backend == self.backend and "detections" in result:
+                        self.detections = result["detections"]
+                        self.update_pixbuf()
                     record = {k: v for k, v in result.items() if k != "mask"}
                     record.update(
                         image=self.image_path, points=self.points, threads=6, profiling=False
                     )
-                    self.results[backend] = record
+                    self.results[self.model + ":" + backend] = record
                     try:
                         (Path(__file__).parent / "last_results.json").write_text(
                             json.dumps(self.results, indent=2)
@@ -462,6 +593,9 @@ def main():
                     except OSError as exc:
                         print("Cannot save timings:", exc, flush=True)
                 elif kind in ("done", "error"):
+                    if kind == "error" and self.model == "grounding":
+                        self.detections = []
+                        self.update_pixbuf()
                     if kind == "done" and self.pending_jobs:
                         self.runner.submit(self.pending_jobs.pop(0))
                         continue

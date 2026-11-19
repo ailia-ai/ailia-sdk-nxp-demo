@@ -1,8 +1,8 @@
-# SAM 2.1 Tiny / i.MX95 Demo
+# SAM 2.1 Tiny and Grounding DINO / i.MX95 Demo
 
-An interactive segmentation demo for an i.MX95 HDMI display, with click-based segmentation and tracking across five Bedroom frames.
-Includes COCO-calibrated SAM 2.1 Tiny 512×512 models for comparing ailia and ORT on CPU and NPU.
-Demo images are stored in `images/truck.jpg` and `images/bedroom/`.
+An interactive HDMI demo comparing ailia and NXP ONNX Runtime on CPU and NPU.
+Select **SAM 2.1 Tiny** or **Grounding DINO** in the upper-left corner.
+SAM segments clicked objects and tracks them across five Bedroom frames; Grounding DINO detects objects described by an English prompt.
 
 ## Requirements
 
@@ -32,10 +32,9 @@ python3 scripts/copy_sdk.py --install-npu --package-dir ./python/ailia
 ailia SDK 1.7 (public release) does not support the NXP NPU. The commands above install the bundled ailia SDK 1.7 (NXP NPU-enabled version) in its place.
 Stop running applications before replacing the library.
 
-Model filenames use `sam2.1_tiny_<component>[_512]_<precision>.onnx`.
-The five 512-specific models are bundled; `int8` denotes quantized MatMul with other operations in FP32.
-The unmodified MLP, temporal-position projection, and auxiliary weights are downloaded from ailia-models, verified by SHA-256, and cached locally (not tracked in Git).
-The launcher also downloads these files when missing; subsequent launches can run offline.
+Converted models are bundled under `models/`. Unmodified SAM auxiliary files are downloaded from ailia-models, verified by SHA-256, and cached locally.
+The launcher downloads missing auxiliary files; subsequent launches can run offline.
+Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` files together.
 
 To save the pip-provided binary, run this before replacing it:
 
@@ -60,15 +59,15 @@ sh launch.sh --bedroom               # Five-frame tracking
 sh launch.sh --windowed              # Windowed mode
 sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
+sh launch.sh --model grounding --caption "person. truck. car."
 ```
 
-- Left-click: foreground point; right-click: background point
-- **Undo point / Clear points**: undo the last point or clear all points
 - **Open image**: select an image
 - **Compare all 4**: compare all four backends
-- **Track 5 frames**: track the object selected in the first frame. After tracking finishes, the demo returns to the first frame and accepts new clicks.
 
-Models stay in memory until you switch backends. Benchmark history persists across runs and application restarts.
+Models stay in memory until you switch models or backends. Grounding DINO also reopens when the prompt's token count changes.
+Both runtimes perform one excluded dummy inference at model Open. Comparisons report the median of three subsequent runs, excluding loading and drawing.
+Benchmark history is kept separately for each model and persists across application restarts.
 Logs are saved to `demo.log`, and benchmark history to `benchmark_history.jsonl`.
 When launching over SSH, set `XDG_RUNTIME_DIR` and `WAYLAND_DISPLAY` to match the Weston session.
 
@@ -86,7 +85,19 @@ icon=/path/to/ailia-sdk-nxp-demo/launcher.png
 path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
 ```
 
-## Benchmarks
+## SAM 2.1 Tiny
+
+### Controls and Models
+
+- Left-click: foreground point; right-click: background point
+- **Undo point / Clear points**: undo or clear points
+- **Track 5 frames**: track the selected object, then return to frame 1 to accept new clicks
+
+The five bundled 512-pixel models use the name `sam2.1_tiny_<component>_512_<precision>.onnx`.
+The INT8 Image Encoder mixes integer MatMul, QDQ Conv, and FP32 operations. Softmax and LayerNorm compute in FP32 with quantized inputs and outputs.
+Memory Attention uses integer MatMul with FP32 RoPE. Auxiliary models remain FP32.
+
+### Benchmarks
 
 Measured on 2026-11-18 on i.MX95 with model revision `coco-val2017-v1`.
 NXP ORT 1.24.3 / ailia SDK 1.7 (NXP NPU-enabled version), six CPU threads, profiling disabled.
@@ -113,7 +124,7 @@ In the app, still-image comparisons show medians of three runs; video timings sh
 Both ailia and ORT perform one excluded warm-up inference with the same dummy inputs when opening each model.
 The app's Sum column totals inference time, not UI response time.
 
-## Model Conversion
+### Model Conversion
 
 On a host PC, convert the public SAM 2.1 Tiny ONNX models from
 [SAM2 in ailia-models](https://github.com/ailia-ai/ailia-models/tree/master/image_segmentation/segment-anything-2).
@@ -139,6 +150,64 @@ Memory Attention uses integer MatMul while retaining FP32 RoPE. Auxiliary models
 
 Generated models are saved under `models/` in the output directory. Calibration records are saved as `manifest.json`, `ranges_*.json`, and `completion.json`.
 Run the same command to resume an interrupted conversion. Generated models are not automatically copied over the bundled models.
+
+## Grounding DINO
+
+### Controls and Model
+
+Enter English category names separated by periods, such as `person. truck. car.`, then press **Detect**.
+Bounding boxes, labels, and confidence scores appear on the image. **Compare all 4** measures the same image and prompt on each backend.
+
+The Swin-T model uses a 400×599 letterboxed image and up to 256 text tokens.
+Its 347 fixed-weight MatMuls use tensor-wise UINT8 activations and channel-wise INT8 weights through standard ONNX `MatMulInteger` nodes. Other operations remain FP32.
+The graph is rearranged to use the SDK's existing DeformableAttention fusion; dynamic Attention stays on CPU.
+The bundled SDK binary is unchanged. ORT NPU outputs may vary between inferences.
+
+### Benchmarks
+
+To measure all four backends without opening the GUI:
+
+```sh
+PYTHONPATH=./python python3 scripts/benchmark_grounding.py --output /tmp/grounding-results.json
+```
+
+Measured on i.MX95 on 2026-11-19 with revision `grounding-coco-val2017-v1`,
+the unchanged bundled ailia SDK 1.7 (`566f2f71b`), and NXP ORT 1.24.3.
+Six CPU threads, profiling disabled, one excluded dummy inference at Open,
+then the median of three runs. Input: `images/truck.jpg`, prompt:
+`person. truck. car. bicycle. dog.`. Loading and pre/post-processing are excluded.
+
+| Runtime | CPU (ms) | NPU + CPU fallback (ms) |
+|---|---:|---:|
+| ailia SDK 1.7 | 7,788.1 | 3,924.9 |
+| NXP ONNX Runtime 1.24.3 | 7,545.9 | 7,011.9 |
+
+All four runs detected the truck. This is a functional check, not a detection-accuracy benchmark.
+Model hashes and calibration provenance are recorded in `models/grounding_manifest.json`.
+
+### Model Conversion
+
+Convert the public `groundingdino_swint_ogc.onnx` from
+[Grounding DINO example in ailia-models](https://github.com/ailia-ai/ailia-models/tree/master/object_detection/groundingdino).
+Use the same complete COCO val2017 image and annotation directories as SAM:
+
+```sh
+curl --fail --location --output groundingdino_swint_ogc.onnx \
+  https://storage.googleapis.com/ailia-models/groundingdino/groundingdino_swint_ogc.onnx
+python3 -m pip install -r scripts/requirements-calibration.txt
+python3 scripts/calibrate_grounding.py \
+  --source groundingdino_swint_ogc.onnx \
+  --coco-images /path/to/coco/val2017 \
+  --coco-annotations /path/to/coco/annotations/instances_val2017.json \
+  --output /path/to/grounding-calibrated \
+  --workers 3 --threads 3
+```
+
+Global Min/Max calibration processes all 5,000 images with the 80 COCO category names as the text prompt.
+Image preprocessing and tokenization are shared with the demo. The input model is promoted to FP32 before collecting activation ranges.
+The output is `models/groundingdino_swint_ogc_400x599_int8.onnx` with external weight shards.
+`manifest.json`, `ranges.json`, and `completion.json` record the calibration inputs, ranges, and artifact hashes.
+Rerun the same command to resume an interrupted calibration. Copy the ONNX file and all weight shards together after completion.
 
 ## Demo Images and Licenses
 
