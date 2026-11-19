@@ -10,6 +10,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from depth_inputs import REVISION as DEPTH_REVISION
+from depth_inputs import colorize
 from engine import BACKENDS, fit_rect, image_point
 from grounding_inputs import DEFAULT_PROMPT
 from grounding_inputs import REVISION as GROUNDING_REVISION
@@ -29,12 +31,10 @@ def reset_tracking_view(view):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", type=Path, default=Path(__file__).parent / "models")
-    parser.add_argument(
-        "--image", type=Path, default=Path(__file__).parent / "images" / "truck.jpg"
-    )
+    parser.add_argument("--image", type=Path)
     parser.add_argument("--windowed", action="store_true")
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
-    parser.add_argument("--model", choices=("sam", "grounding"), default="sam")
+    parser.add_argument("--model", choices=("sam", "grounding", "depth"), default="sam")
     parser.add_argument("--caption", default=DEFAULT_PROMPT, help="Grounding DINO detection prompt")
     parser.add_argument(
         "--bedroom", action="store_true", help="Open the five-frame memory tracking demo"
@@ -52,8 +52,14 @@ def main():
     args = parser.parse_args()
     if args.autoplay_bedroom:
         args.bedroom = True
-    if args.model == "grounding":
+    if args.model != "sam":
         args.bedroom = args.autoplay_bedroom = False
+    if args.image is None:
+        args.image = (
+            Path(__file__).parent
+            / "images"
+            / ("bedroom/00000.jpg" if args.model == "depth" else "truck.jpg")
+        )
     import gi
 
     gi.require_version("Gtk", "3.0")
@@ -62,12 +68,13 @@ def main():
 
     class Demo(Gtk.Window):
         def __init__(self):
-            super().__init__(title="SAM 2.1 / Grounding DINO | i.MX95")
+            super().__init__(title="ailia Vision Demo | i.MX95")
             self.set_default_size(1280, 720)
             self.connect("destroy", self.shutdown)
             self.points, self.mask, self.busy = [], None, False
             self.model = args.model
             self.detections = []
+            self.depth = None
             self.results = {}
             self.closing = False
             self.video_mode = args.bedroom
@@ -106,15 +113,18 @@ def main():
             self.model_selector = Gtk.ComboBoxText()
             self.model_selector.append("sam", "SAM 2.1 Tiny")
             self.model_selector.append("grounding", "Grounding DINO")
+            self.model_selector.append("depth", "Depth Anything V2")
             self.model_selector.set_active_id(self.model)
             self.model_selector.connect("changed", self.switch_model)
             heading.pack_start(self.model_selector, False, False, 0)
             self.title_label = Gtk.Label(xalign=0)
             self.title_label.get_style_context().add_class("title")
             heading.pack_start(self.title_label, True, True, 0)
-            logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                str(Path(__file__).parent / "images" / "ailia.jpg"), 56, 56, True
-            ))
+            logo = Gtk.Image.new_from_pixbuf(
+                GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(Path(__file__).parent / "images" / "ailia.jpg"), 56, 56, True
+                )
+            )
             logo.set_tooltip_text("ailia")
             heading.pack_end(logo, False, False, 0)
             root.pack_start(heading, False, False, 0)
@@ -152,6 +162,22 @@ def main():
             self.prompt_box.pack_start(detect, False, False, 0)
             self.controls.extend([self.prompt_entry, detect])
             side.pack_start(self.prompt_box, False, False, 0)
+            self.depth_controls = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            self.depth_button = Gtk.Button(label="Estimate depth")
+            self.depth_button.connect("clicked", lambda *_: self.submit("estimate"))
+            self.depth_controls.pack_start(self.depth_button, False, False, 0)
+            self.show_depth = Gtk.CheckButton(label="Show depth map")
+            self.show_depth.set_active(True)
+            self.show_depth.connect("toggled", lambda *_: self.update_pixbuf())
+            self.depth_controls.pack_start(self.show_depth, False, False, 0)
+            self.depth_range = Gtk.ComboBoxText()
+            for maximum in (5, 10, 20):
+                self.depth_range.append(str(maximum), f"Display range: 0–{maximum} m")
+            self.depth_range.set_active_id("5")
+            self.depth_range.connect("changed", lambda *_: self.update_pixbuf())
+            self.depth_controls.pack_start(self.depth_range, False, False, 0)
+            side.pack_start(self.depth_controls, False, False, 0)
+            self.controls.append(self.depth_button)
             self.sam_controls = []
             for title, callback in [
                 (f"Compare all {len(BACKENDS)}", self.benchmark),
@@ -287,15 +313,19 @@ def main():
                     backend=backend,
                     values=values,
                     image=image,
-                    model_revision=GROUNDING_REVISION
-                    if self.model == "grounding"
-                    else MODEL_REVISION,
+                    model_revision={"grounding": GROUNDING_REVISION, "depth": DEPTH_REVISION}.get(
+                        self.model, MODEL_REVISION
+                    ),
                     model=self.model,
                 )
             self.show_measurement(record)
 
         def load_image(self):
-            if self.video_mode:
+            if (
+                self.video_mode
+                or Path(self.image_path).resolve().parent
+                == (Path(__file__).parent / "images" / "bedroom").resolve()
+            ):
                 self.attribution.set_text(
                     "Demo images: Segment Anything official repository (SAM 2 / bedroom) — github.com/facebookresearch/sam2"
                 )
@@ -324,6 +354,13 @@ def main():
 
         def update_pixbuf(self):
             rgb = self.rgb.copy()
+            if self.model == "depth" and self.depth is not None and self.show_depth.get_active():
+                rgb = colorize(
+                    self.depth,
+                    rgb.shape[1],
+                    rgb.shape[0],
+                    maximum=float(self.depth_range.get_active_id()),
+                )
             if self.model == "grounding":
                 height, width = rgb.shape[:2]
                 for item in self.detections:
@@ -375,6 +412,16 @@ def main():
                 cr.stroke()
 
         def click(self, _area, event):
+            if self.model == "depth" and self.depth is not None and not self.busy:
+                point = image_point(event.x, event.y, self.rect)
+                if point is not None:
+                    height, width = self.depth.shape
+                    x = min(width - 1, int(point[0] * width))
+                    y = min(height - 1, int(point[1] * height))
+                    self.status.set_text(
+                        f"Estimated depth at clicked pixel: {self.depth[y, x]:.2f} m"
+                    )
+                return
             if self.model != "sam" or self.busy or event.button not in (1, 3):
                 return
             if self.video_mode and self.video_frame != 0:
@@ -414,21 +461,27 @@ def main():
 
         def update_model_controls(self):
             grounding = self.model == "grounding"
+            sam = self.model == "sam"
             self.title_label.set_text(
-                "Grounding DINO / 400 × 599 / i.MX95"
+                "Depth Anything V2 Metric Small / 518 × 518 / i.MX95"
+                if self.model == "depth"
+                else "Grounding DINO / 400 × 599 / i.MX95"
                 if grounding
                 else "SAM 2.1 Tiny / 512 × 512 / i.MX95"
             )
             self.prompt_box.set_visible(grounding)
+            self.depth_controls.set_visible(self.model == "depth")
             for control in self.sam_controls:
-                control.set_visible(not grounding)
-            self.table_headers[1].set_text("Inference (ms)" if grounding else "Encoder (ms)")
+                control.set_visible(sam)
+            self.table_headers[1].set_text("Encoder (ms)" if sam else "Inference (ms)")
             for column in (2, 3, 4):
-                self.table_headers[column].set_visible(not grounding)
+                self.table_headers[column].set_visible(sam)
                 for cells in self.cells.values():
-                    cells[column].set_visible(not grounding)
+                    cells[column].set_visible(sam)
             self.info.set_text(
-                "Enter English category names separated by periods.\nDetect: one warm inference.\nCompare all: median of 3 runs.\nNPU includes CPU fallback.\nORT NPU outputs may vary."
+                "Indoor metric depth (Hypersim).\nDark: near / Bright: far.\nDisplay range changes colors only.\nClick to inspect estimated depth.\nailia NPU: fixed + dynamic MatMul.\nORT NPU: fixed MatMul only.\nCompare all: median of 3 runs.\n6 threads · no profile"
+                if self.model == "depth"
+                else "Enter English category names separated by periods.\nDetect: one warm inference.\nCompare all: median of 3 runs.\nNPU includes CPU fallback.\nORT NPU outputs may vary."
                 if grounding
                 else "Left: foreground (+)\nRight: background (−)\nBedroom: click frame 1, then Track.\nNPU: Encoder + MemoryAttention.\nOther tracking operations: CPU.\n6 threads · no profile\nORT NPU: timing only. Outputs may be incorrect."
             )
@@ -438,6 +491,9 @@ def main():
             self.runner.close()
             self.video_mode, self.video_frame = False, 0
             self.points, self.mask, self.detections = [], None, []
+            self.depth = None
+            if self.model == "depth":
+                self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
             self.recorded_backends.clear()
             for cells in self.cells.values():
                 for cell in cells[1:]:
@@ -460,6 +516,7 @@ def main():
 
         def switch(self, selector):
             self.backend = selector.get_active_id()
+            self.depth = None
             if self.video_mode:
                 self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
                 self.video_frame = 0
@@ -517,6 +574,7 @@ def main():
                 self.image_path = dialog.get_filename()
                 self.points, self.mask = [], None
                 self.detections = []
+                self.depth = None
                 self.load_image()
                 self.submit("prepare")
             dialog.destroy()
@@ -586,7 +644,10 @@ def main():
                     if backend == self.backend and "detections" in result:
                         self.detections = result["detections"]
                         self.update_pixbuf()
-                    record = {k: v for k, v in result.items() if k != "mask"}
+                    if backend == self.backend and "depth" in result:
+                        self.depth = result["depth"]
+                        self.update_pixbuf()
+                    record = {k: v for k, v in result.items() if k not in ("mask", "depth")}
                     record.update(
                         image=self.image_path, points=self.points, threads=6, profiling=False
                     )
@@ -598,6 +659,9 @@ def main():
                     except OSError as exc:
                         print("Cannot save timings:", exc, flush=True)
                 elif kind in ("done", "error"):
+                    if kind == "error" and self.model == "depth":
+                        self.depth = None
+                        self.update_pixbuf()
                     if kind == "error" and self.model == "grounding":
                         self.detections = []
                         self.update_pixbuf()

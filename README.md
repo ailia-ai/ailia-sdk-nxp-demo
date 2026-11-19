@@ -1,8 +1,9 @@
-# SAM 2.1 Tiny and Grounding DINO / i.MX95 Demo
+# ailia Vision / i.MX95 Demo
 
 An interactive HDMI demo comparing ailia and NXP ONNX Runtime on CPU and NPU.
-Select **SAM 2.1 Tiny** or **Grounding DINO** in the upper-left corner.
+Select **SAM 2.1 Tiny**, **Grounding DINO**, or **Depth Anything V2** in the upper-left corner.
 SAM segments clicked objects and tracks them across five Bedroom frames; Grounding DINO detects objects described by an English prompt.
+Depth Anything V2 estimates indoor metric depth.
 
 ## Requirements
 
@@ -60,6 +61,7 @@ sh launch.sh --windowed              # Windowed mode
 sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
 sh launch.sh --model grounding --caption "person. truck. car."
+sh launch.sh --model depth            # Indoor depth, Bedroom image
 ```
 
 - **Open image**: select an image
@@ -208,6 +210,69 @@ Image preprocessing and tokenization are shared with the demo. The input model i
 The output is `models/groundingdino_swint_ogc_400x599_int8.onnx` with external weight shards.
 `manifest.json`, `ranges.json`, and `completion.json` record the calibration inputs, ranges, and artifact hashes.
 Rerun the same command to resume an interrupted calibration. Copy the ONNX file and all weight shards together after completion.
+
+## Depth Anything V2 Metric Depth Small
+
+### Controls
+
+Select **Depth Anything V2** or run `sh launch.sh --model depth`. The indoor
+Hypersim Small model starts with the Bedroom image. Open an image, press
+**Estimate depth**, or **Compare all 4**. Toggle **Show depth map** to see the
+original image; click a pixel to read its estimated distance.
+All backends share the selected display range (0–5 m by default; 10 m and
+20 m are also available). Dark means near, bright means far. Changing the
+display range only changes colors, not the estimated distances.
+
+### Model
+
+Input is RGB, square-resized to 518 × 518 with ImageNet normalization.
+COCO val2017 global Min/Max calibration quantizes the 48 fixed-weight MatMuls
+to static tensor-wise UINT8 activations and channel-wise INT8 weights, expressed
+as standard ONNX QuantizeLinear / MatMulInteger / Cast / Mul nodes.
+ailia NPU also executes the 24 dynamic Attention MatMuls using tiled,
+uncompressed INT8; Softmax and convolutions remain CPU operations.
+NXP ORT offloads the fixed-weight MatMuls; dynamic attention remains on CPU.
+The graph is not fully INT8. Runtime quantization can change depth estimates;
+this demo does not validate absolute distance accuracy.
+
+### Benchmarks
+
+COCO-calibrated model, Bedroom frame `00000.jpg`, 518 × 518, six threads.
+One excluded Open-time dummy inference, then the median of three runs;
+profiling, loading, preprocessing and drawing are excluded.
+
+| Runtime | Inference (ms) |
+|---|---:|
+| ailia CPU | 3665.5 |
+| ailia NPU (fixed + dynamic MatMul) | **2646.4** |
+| NXP ORT CPU | 3319.6 |
+| NXP ORT Neutron EP (fixed MatMul) | 3110.8 |
+
+ailia SDK 1.7 NXP NPU build; NXP ORT 1.24.3. On this image, the ailia NPU
+output differs from FP32 ORT CPU by 6.06 cm on average (31.82 cm maximum).
+This is an output comparison, not a ground-truth depth accuracy measurement.
+
+### Model Conversion
+
+Download the original ailia-models ONNX, then calibrate with **all 5,000 COCO
+val2017 images** on the development host:
+
+```sh
+python3 -m pip install -r scripts/requirements-calibration.txt
+curl -fL https://storage.googleapis.com/ailia-models/depth_anything_v2/depth_anything_v2_metric_hypersim_vits.onnx \
+  -o /path/to/depth_anything_v2_metric_hypersim_vits.onnx
+python3 scripts/calibrate_depth.py \
+  --source /path/to/depth_anything_v2_metric_hypersim_vits.onnx \
+  --coco-images /path/to/coco/val2017 \
+  --coco-annotations /path/to/coco/annotations/instances_val2017.json \
+  --output /path/to/depth-calibrated
+```
+
+After `completion.json` confirms 5,000 images, copy
+`depth_anything_v2_metric_hypersim_vits_518_int8.onnx` into `models/`.
+Restart the demo after replacing the model.
+Rerun the same command to resume. Image hashes, ranges and completion checks
+are saved in the output folder; no COCO images are bundled with the demo.
 
 ## Demo Images and Licenses
 

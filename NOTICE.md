@@ -35,6 +35,16 @@ This is a demo conversion, not an official upstream model release.
 distributed with the ailia-models Grounding DINO example.
 Original BERT project: https://github.com/google-research/bert (Apache 2.0).
 
+## Depth Anything V2
+
+The Metric Depth Hypersim Small model derives from the ailia-models ONNX export:
+https://github.com/ailia-ai/ailia-models/tree/master/depth_estimation/depth_anything_v2
+Original model: https://huggingface.co/depth-anything/Depth-Anything-V2-Metric-Hypersim-Small
+See `licenses/DEPTH_ANYTHING_LICENSE` (Apache License 2.0).
+The demo conversion fixes the input to 518 pixels and uses COCO val2017
+calibration for fixed-weight INT8 MatMuls. Dynamic MatMuls are quantized by
+the ailia NPU runtime. This is a modified demo model, not an upstream release.
+
 ## Demo images
 
 The ailia logo (`images/ailia.jpg`) is from https://ailia.ai/models/img/more_ax.jpg.

@@ -5,6 +5,8 @@ import json
 import unittest
 from pathlib import Path
 
+from depth_inputs import MODEL as DEPTH_MODEL
+from depth_inputs import REVISION as DEPTH_REVISION
 from grounding_inputs import MODEL as GROUNDING_MODEL
 from grounding_inputs import REVISION as GROUNDING_REVISION
 from settings import ENCODER, MEMORY_ATTENTION, MODEL_REVISION
@@ -12,6 +14,19 @@ from warmup import inputs_for_model
 
 
 class ModelManifestTests(unittest.TestCase):
+    def test_depth_production_model(self):
+        root = Path(__file__).resolve().parents[1] / "models"
+        manifest = json.loads((root / "depth_manifest.json").read_text())
+        self.assertEqual(manifest["revision"], DEPTH_REVISION)
+        self.assertTrue(manifest["calibration"]["production"])
+        self.assertEqual(manifest["calibration"]["images"], 5000)
+        self.assertTrue(manifest["runtime"]["dynamic_matmul_npu"])
+        path = root / DEPTH_MODEL
+        self.assertLess(path.stat().st_size, 100 * 1024 * 1024)
+        self.assertEqual(
+            hashlib.sha256(path.read_bytes()).hexdigest(), manifest["models"][DEPTH_MODEL]["sha256"]
+        )
+
     def test_grounding_production_model_and_shards(self):
         root = Path(__file__).resolve().parents[1] / "models"
         manifest = json.loads((root / "grounding_manifest.json").read_text())

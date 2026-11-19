@@ -1,6 +1,10 @@
 """SAM2.1 Tiny 512 inference; no GUI dependency, no profiling in timings."""
 
+import ctypes
 import gc
+import os
+import signal
+import sys
 import time
 from pathlib import Path
 
@@ -186,11 +190,30 @@ class Engine:
         )
 
 
+def bind_worker_lifetime():
+    """Release native NPU allocations even if Wayland terminates the GUI abruptly."""
+    if not sys.platform.startswith("linux"):
+        return True
+    parent = os.getppid()
+    if parent == 1:
+        return False
+    libc = ctypes.CDLL(None, use_errno=True)
+    libc.prctl.argtypes = [ctypes.c_int] + [ctypes.c_ulong] * 4
+    libc.prctl.restype = ctypes.c_int
+    if libc.prctl(1, signal.SIGTERM, 0, 0, 0) != 0:  # PR_SET_PDEATHSIG
+        error = ctypes.get_errno()
+        raise OSError(error, os.strerror(error))
+    return os.getppid() == parent
+
+
 def worker(directory, requests, responses):
+    if not bind_worker_lifetime():
+        return
     engine = None
     video_engine = None
     cache = None
     grounding = None
+    depth_engine = None
 
     def select_backend(backend):
         nonlocal engine, video_engine, cache
@@ -214,6 +237,31 @@ def worker(directory, requests, responses):
         if job is None:
             return
         try:
+            if job.get("model") == "depth":
+                from depth import DepthEngine
+
+                for backend in backend_order(job, job["action"] == "benchmark"):
+                    responses.put(
+                        dict(kind="progress", text="Loading / running Depth / " + backend)
+                    )
+                    if depth_engine is None or depth_engine.backend != backend:
+                        depth_engine = None
+                        gc.collect()
+                        depth_engine = DepthEngine(directory, backend)
+                    result = depth_engine.run(job["image"], compare=job["action"] == "benchmark")
+                    responses.put(
+                        dict(
+                            kind="result",
+                            model="depth",
+                            backend=backend,
+                            action=job["action"],
+                            **result,
+                        )
+                    )
+                responses.put(
+                    dict(kind="done", text="Ready — open an image or press Estimate depth.")
+                )
+                continue
             if job.get("model", "sam") == "grounding":
                 from grounding import GroundingEngine
 
