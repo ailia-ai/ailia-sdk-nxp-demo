@@ -112,6 +112,11 @@ def main():
             self.title_label = Gtk.Label(xalign=0)
             self.title_label.get_style_context().add_class("title")
             heading.pack_start(self.title_label, True, True, 0)
+            logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                str(Path(__file__).parent / "images" / "ailia.jpg"), 56, 56, True
+            ))
+            logo.set_tooltip_text("ailia")
+            heading.pack_end(logo, False, False, 0)
             root.pack_start(heading, False, False, 0)
             body = Gtk.Box(spacing=18)
             root.pack_start(body, True, True, 0)

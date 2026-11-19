@@ -37,6 +37,8 @@ Original BERT project: https://github.com/google-research/bert (Apache 2.0).
 
 ## Demo images
 
+The ailia logo (`images/ailia.jpg`) is from https://ailia.ai/models/img/more_ax.jpg.
+
 The demo images are from the **official Segment Anything repositories**:
 
 - `images/truck.jpg`: https://github.com/facebookresearch/segment-anything/blob/main/notebooks/images/truck.jpg
