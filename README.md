@@ -44,9 +44,8 @@ The launcher downloads missing public models; subsequent launches can run offlin
 Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` weight files together.
 Git LFS is not required. Calibration records for the four calibrated models are
 under [`calibration/`](calibration/). Benchmark tables are maintained here;
-generated timing logs are not tracked. Tables identify the measured runtime
-revision; Depth Anything was measured with `c97d853c4`, and Grounding DINO
-with the subsequent local integer fusion/packing update.
+generated timing logs are not tracked. Each table identifies its measured runtime
+revision; results from earlier revisions are retained until remeasured.
 
 To save the pip-provided binary, run this before replacing it:
 
@@ -136,7 +135,7 @@ The published graph is unchanged, including its attention-map outputs.
 Same public INT4 model, batch 1, six CPU threads, one excluded dummy inference
 at Open, then ten runs without profiling. Network time excludes preprocessing,
 classification postprocessing and rendering. Measured on 2026-11-20 with the
-bundled ailia runtime `35b291e04` and `images/vit/input.jpg`.
+ailia runtime `35b291e04` and `images/vit/input.jpg`.
 
 | Runtime | Median inference | FPS |
 | --- | ---: | ---: |
@@ -326,7 +325,7 @@ PYTHONPATH=./python python3 scripts/benchmark_grounding.py --output /tmp/groundi
 ```
 
 Measured on i.MX95 on 2026-11-20 with the fully calibrated
-`grounding-coco-val2017-ql-v3` model, ailia SDK 1.7 (`35b291e04`) and
+`grounding-coco-val2017-ql-v3` model, ailia SDK 1.7 (`65b87e8b2`) and
 NXP ORT 1.24.3 (512 MiB CMA allocation).
 Six CPU threads, profiling disabled, one excluded dummy inference at Open,
 then the median of three runs. Input: `images/grounding_dino/demo.jpg`, prompt:
@@ -334,8 +333,12 @@ then the median of three runs. Input: `images/grounding_dino/demo.jpg`, prompt:
 
 | Runtime | CPU (ms) | NPU (ms) |
 |---|---:|---:|
-| ailia SDK 1.7 | 9,307.0 | 3,901.9 |
-| NXP ONNX Runtime 1.24.3 | 7,529.0 | 6,978.2 |
+| ailia SDK 1.7 | 5,898.4 | 3,864.2 |
+| NXP ONNX Runtime 1.24.3 | 7,530.5 | 6,978.2 |
+
+The ORT NPU result is retained from the preceding measurement with the same model
+and settings. The CPU packing update preserves ailia's full output tensors exactly
+on this test image.
 
 All four conditions produced 15 detections, including seven horses.
 ailia CPU and NPU returned identical boxes and scores. Compared with the previous
@@ -410,18 +413,19 @@ this demo does not validate absolute distance accuracy.
 
 Full COCO fixed-attention model `depth-coco-val2017-ql-v3`, Bedroom frame
 `00000.jpg`, 518 × 518, six threads. Measured on 2026-11-20 with ailia runtime
-`35b291e04` and NXP ORT 1.24.3 (512 MiB CMA allocation).
+`65b87e8b2` and NXP ORT 1.24.3 (512 MiB CMA allocation).
 One excluded Open-time dummy inference, then the median of three runs;
 profiling, loading, preprocessing and drawing are excluded.
 
 | Runtime | Inference (ms) |
 |---|---:|
-| ailia CPU | 3310.5 |
-| ailia NPU | **2217.1** |
-| NXP ORT CPU | 3031.3 |
-| NXP ORT NPU (Neutron EP) | 2820.7 |
+| ailia CPU | 2746.6 |
+| ailia NPU | **2225.0** |
+| NXP ORT CPU | 3033.7 |
+| NXP ORT NPU (Neutron EP) | 2828.3 |
 
-On this image, ailia CPU and NPU outputs are identical. Relative to the previous
+On this image, ailia CPU and NPU outputs are identical and unchanged by the CPU
+packing update. Relative to the previous
 dynamic-quantization model on ailia NPU, the mean absolute difference is 17.92 cm
 (40.93 cm maximum). Relative to ORT CPU on the same fixed model, it is 4.58 cm
 (33.66 cm maximum). These are output comparisons, not ground-truth depth accuracy.

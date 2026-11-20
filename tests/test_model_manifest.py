@@ -14,6 +14,15 @@ from warmup import inputs_for_model
 
 
 class ModelManifestTests(unittest.TestCase):
+    def test_bundled_runtime_provenance(self):
+        root = Path(__file__).resolve().parents[1]
+        digest = hashlib.sha256((root / "sdk/linux/arm64-v8a/libailia.so").read_bytes()).hexdigest()
+        grounding = json.loads((root / "models/grounding_manifest.json").read_text())
+        depth = json.loads((root / "models/depth_manifest.json").read_text())["runtime"]
+        self.assertEqual(grounding["runtime_sha256"], digest)
+        self.assertEqual(depth["sdk_sha256"], digest)
+        self.assertEqual(grounding["runtime_source_revision"], depth["source_revision"])
+
     def test_depth_production_model(self):
         root = Path(__file__).resolve().parents[1] / "models"
         manifest = json.loads((root / "depth_manifest.json").read_text())

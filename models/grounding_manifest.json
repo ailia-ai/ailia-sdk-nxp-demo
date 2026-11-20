@@ -1,15 +1,16 @@
 {
   "revision": "grounding-coco-val2017-ql-v3",
-  "runtime_source_revision": "35b291e04ead56bbdacb3c5493c5dd596b0cea3a",
-  "runtime_source_update": "Shared fixed/dynamic coefficient execution, ordered FLOAT/FP16/UINT8 epilogue and shape-based dispatch",
-  "runtime_sha256": "51d7ce6ad54b4da1fcd54399be2b706e8dcd3c5834fa0ee8126de3d2970c8f9a",
+  "runtime_source_revision": "65b87e8b254f6e8c699914f18eb3f9e39fb3a6e3",
+  "runtime_source_update": "Cached constant CPU MatMulInteger weights and shared direct NEON RHS packing, retaining exact integer outputs",
+  "runtime_sha256": "27ebfd8b0e0d9d69ab4f523dcb438b5d9b02155dcece8c8a776f9d4079ef7adf",
   "runtime_source_files": {
     "library/npu/neutron/NeutronMatMulInteger.h": "9155b991b969828c0134166c818a31a52ee7ac4ef97600eb99abe44f0028c5c7",
     "library/npu/neutron/NeutronIntegerMatMulPolicy.h": "7f89c5ca7b4dbdc67402ae870e36087306ad24b0cdcc9348ec9e7c8ff683e0ac",
     "library/npu/neutron/NeutronSegmentBuilder.cpp": "b55505f7bb0aa427e375ee14fb631361a9b26ed2b052f88a915de6846b9a8ad6",
     "library/npu/neutron/NeutronScaledInteger.h": "91391fc6fb78a23acc26a62063b897df84a1461365d2e38530bed26324eea374",
-    "library/core/layers/basics/IntegerMatMulExecution.h": "805fa954d35ba933d39ba9edb11b4f9688661bbfe86d91e6d8c15fbc78e49607",
-    "library/core/layers/basics/IntegerMatMulKernel.h": "3729595f65135c558b1f8cfaedecad2ce6f6786a7b6d2fc57f3f771c4291121a",
+    "library/core/layers/basics/DynamicIntegerLayers.h": "85d9795ec56909b9e046f6fbaaa6f1ade42cecb386c6d897e35c8f16d5ccbab3",
+    "library/core/layers/basics/IntegerMatMulExecution.h": "761803e71064ed1bb8210b708d5e691336d3520faddba974f272be0884f23ce7",
+    "library/core/layers/basics/IntegerMatMulKernel.h": "df7f0228725420dcfc7890854ed9b8a9f478913f1093ed1faa92a5b65540c85b",
     "library/npu/neutron/NeutronQuantizedDynamicMatMul.h": "30e437dc683edd01fe9cbf3f8b7410b8d92866791d148cbf2d4aefa67ece6830"
   },
   "source_url": "https://storage.googleapis.com/ailia-models/groundingdino/groundingdino_swint_ogc.onnx",

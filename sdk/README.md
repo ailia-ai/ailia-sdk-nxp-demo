@@ -7,7 +7,7 @@ Also includes spatial ConvInteger, compressed fixed weights, fused UINT8
 epilogues/lookup tables, and native integer feature-map operations.
 CPU 2D ConvInteger uses bounded spatial tiles, shared NEON SDOT kernels and
 cached fixed weights, with exact INT32 accumulation and zero-point correction.
-Runtime source revision: `35b291e04`, including dynamic-integer fusion and
+Runtime source revision: `65b87e8b2`, including dynamic-integer fusion and
 direct SDOT packing, refactored into shared CPU execution, ordered output
 conversion and shape-based dispatch, with the automatic NXP execution policy
 (standard ONNX integer-operator backend). NPU placement, weight staging and
@@ -19,6 +19,8 @@ Small or narrow dynamic integer products use fused NEON MatMul/Cast/scaling
 with parallel direct RHS packing; sufficiently large products use NPU tiles.
 Constant and dynamic quantization coefficients share this execution policy
 and CPU kernel, including ordered FLOAT/FP16/UINT8 output conversion.
+Standalone CPU MatMulInteger caches packed constant weights and shares the direct
+NEON RHS packer; dynamic weights and zero points remain per-inference inputs.
 The bundled integer models require this runtime; replace models and library
 together. Dedicated static-QDQ MatMul/Conv NPU pattern recognition was removed.
 This is not the public pip SDK binary. See `../NOTICE.md` and the SDK terms

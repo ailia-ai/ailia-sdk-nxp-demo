@@ -27,8 +27,8 @@
     "dynamic_matmuls": 24,
     "dynamic_execution": "standard ONNX fixed QuantizeLinear on both dynamic operands, MatMulInteger, Cast, Mul; ailia NPU uses uncompressed row tiles",
     "implicit_float_quantization": false,
-    "source_revision": "35b291e04ead56bbdacb3c5493c5dd596b0cea3a",
-    "sdk_sha256": "51d7ce6ad54b4da1fcd54399be2b706e8dcd3c5834fa0ee8126de3d2970c8f9a"
+    "source_revision": "65b87e8b254f6e8c699914f18eb3f9e39fb3a6e3",
+    "sdk_sha256": "27ebfd8b0e0d9d69ab4f523dcb438b5d9b02155dcece8c8a776f9d4079ef7adf"
   },
   "models": {
     "depth_anything_v2_metric_hypersim_vits_518_int8.onnx": {
