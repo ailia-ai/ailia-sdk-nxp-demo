@@ -11,7 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from settings import BACKENDS, CPU_THREADS, ENCODER, configure_npu, preprocess_image
+from settings import BACKENDS, CPU_THREADS, ENCODER, preprocess_image
 
 
 def fit_rect(width, height, image_width, image_height):
@@ -108,7 +108,6 @@ class Engine:
         self.backend = backend
         self.directory = Path(directory)
         # Shared settings from the measured SAM512 QDQ configuration.
-        configure_npu()
         start = time.perf_counter()
         cache = cache if cache is not None else SessionCache(backend)
         self.encoder = cache.get(self.directory / ENCODER, backend, backend.endswith("_npu"))

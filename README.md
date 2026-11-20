@@ -34,6 +34,10 @@ python3 scripts/copy_sdk.py --install-npu --package-dir ./python/ailia
 ailia SDK 1.7 (public release) does not support the NXP NPU. The commands above install the bundled ailia SDK 1.7 (NXP NPU-enabled version) in its place.
 Stop running applications before replacing the library.
 
+The bundled runtime selects NPU execution from operator types, shapes and
+available memory. No NPU tuning environment variables or per-model switches
+are required. Older benchmark tables below identify their measured runtime.
+
 Converted models are bundled under `models/`. Unmodified SAM auxiliary files are downloaded from ailia-models, verified by SHA-256, and cached locally.
 The launcher downloads missing auxiliary files; subsequent launches can run offline.
 Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` weight files together.
@@ -111,7 +115,7 @@ path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
 The bundled `models/yolox_s_320_int8.onnx` uses all 5,000 COCO val2017 images
 for MinMax calibration. Convolution weights are per-channel INT8; feature maps
 are UINT8. Swish uses lookup tables; final detection formatting remains FP32.
-ailia NPU enables device requantization (`AILIA_NEUTRON_CONV_DEVICE_OUTPUT=1`).
+ailia NPU automatically uses device requantization for supported operations.
 This uses different rounding from the CPU path, so outputs are not bit-identical.
 
 ### Benchmark
@@ -134,7 +138,7 @@ nodes were assigned to Neutron EP. The ORT Neutron row is not NPU convolution.
 
 Earlier FP32 CPU reference, same input and measurement protocol: **ailia 267.8 ms**,
 **NXP ORT 293.1 ms**. ailia NPU INT8 is 2.33× faster than ailia CPU FP32.
-The bundled runtime is `764f675f2`; all four INT8 rows were remeasured with
+These benchmark results use runtime `764f675f2`; all four INT8 rows were measured with
 profiling disabled. CPU outputs are bit-identical to the pre-optimization
 runtime on the test image.
 
@@ -255,8 +259,9 @@ Bounding boxes, labels, and confidence scores appear on the image. **Compare all
 
 The Swin-T model uses a 400×599 letterboxed image and up to 256 text tokens.
 Its 347 fixed-weight MatMuls use tensor-wise UINT8 activations and channel-wise INT8 weights through standard ONNX `MatMulInteger` nodes. Other operations remain FP32.
-The graph is rearranged to use the SDK's existing DeformableAttention fusion; dynamic Attention stays on CPU.
-The bundled SDK binary is unchanged. ORT NPU outputs may vary between inferences.
+The graph is rearranged to use the SDK's existing DeformableAttention fusion.
+Dynamic Attention placement is selected automatically by the runtime.
+ORT NPU outputs may vary between inferences.
 
 ### Benchmarks
 

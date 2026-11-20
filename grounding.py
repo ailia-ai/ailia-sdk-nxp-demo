@@ -1,7 +1,6 @@
 """Resident Grounding DINO runtime, separate from SAM's tracking state."""
 
 import gc
-import os
 import time
 from pathlib import Path
 
@@ -10,7 +9,6 @@ import numpy as np
 
 from engine import Session
 from grounding_inputs import HEIGHT, MODEL, WIDTH, Tokenizer, detections, preprocess
-from settings import configure_npu
 
 
 class GroundingEngine:
@@ -19,10 +17,6 @@ class GroundingEngine:
         self.tokenizer = Tokenizer(self.directory / "grounding_tokenizer" / "vocab.txt")
         self.session = None
         self.token_count = None
-        configure_npu()
-        # The measured fastest configuration keeps dynamic Attention on CPU.
-        os.environ["AILIA_NEUTRON_DYNAMIC_ATTENTION"] = "0"
-        os.environ["AILIA_NEUTRON_DYNAMIC_MATMUL"] = "0"
 
     def run(self, path, caption, compare=False):
         image = path if isinstance(path, np.ndarray) else cv2.imread(str(path))

@@ -1,6 +1,5 @@
 """YOLOX-S 320 UINT8 features / INT8 weights, shared demo and evaluation code."""
 
-import os
 import time
 from pathlib import Path
 
@@ -69,10 +68,6 @@ def decode(output, threshold=0.4, nms=0.45):
 class YoloEngine:
     def __init__(self, directory, backend, model=MODEL):
         from engine import Session
-        from settings import configure_npu
-
-        configure_npu()
-        os.environ["AILIA_NEUTRON_CONV_DEVICE_OUTPUT"] = "1"
         self.backend = backend
         start = time.perf_counter()
         self.session = Session(

@@ -10,7 +10,7 @@ import numpy as np
 
 from engine import ENCODER, Session
 from sam2_video_predictor import SAM2VideoPredictor
-from settings import BACKENDS, MEMORY_ATTENTION, configure_npu, preprocess_image
+from settings import BACKENDS, MEMORY_ATTENTION, preprocess_image
 
 
 class TimedSession:
@@ -56,7 +56,6 @@ class VideoEngine:
         capture=None,
         cache=None,
     ):
-        configure_npu()
         self.directory = Path(directory)
         self.backend = backend
         models = self.directory / "models"

@@ -62,12 +62,13 @@ class DepthTests(unittest.TestCase):
         self.assertFalse(np.array_equal(near, colorize(depth, 2, 2, maximum=5)))
         np.testing.assert_array_equal(depth, before)
 
-    def test_resident_session_and_dynamic_flags(self):
+    def test_resident_session_without_environment_changes(self):
         session = Mock(version="test")
         session.run.return_value = [np.ones((1, 518, 518), np.float32)]
         with patch.dict(os.environ), patch("depth.Session", return_value=session) as factory:
+            before = dict(os.environ)
             engine = DepthEngine(ROOT / "models", "ailia_npu")
-            self.assertEqual(os.environ["AILIA_NEUTRON_DYNAMIC_MATMUL"], "1")
+            self.assertEqual(dict(os.environ), before)
             engine.run(ROOT / "images/bedroom/00000.jpg")
             result = engine.run(np.zeros((240, 320, 3), np.uint8), compare=True)
             self.assertEqual(factory.call_count, 1)

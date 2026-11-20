@@ -1,13 +1,11 @@
-"""Shared preprocessing and environment defaults must preserve model inputs."""
+"""Shared preprocessing must preserve model inputs."""
 
-import os
 import unittest
-from unittest.mock import patch
 
 import cv2
 import numpy as np
 
-from settings import configure_npu, preprocess_image
+from settings import preprocess_image
 
 
 class SettingsTests(unittest.TestCase):
@@ -22,13 +20,6 @@ class SettingsTests(unittest.TestCase):
         np.testing.assert_array_equal(result, expected.transpose(2, 0, 1))
         self.assertEqual(result.dtype, np.float32)
         self.assertTrue(result.flags.c_contiguous)
-
-    def test_explicit_environment_is_preserved(self):
-        with patch.dict(os.environ, {"AILIA_NEUTRON_DYNAMIC_ATTENTION": "0"}, clear=True):
-            configure_npu()
-            self.assertEqual(os.environ["AILIA_NEUTRON_DYNAMIC_ATTENTION"], "0")
-            self.assertEqual(os.environ["NEUTRON_CMA_512SLOTS"], "1")
-
 
 if __name__ == "__main__":
     unittest.main()

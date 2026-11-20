@@ -1,7 +1,5 @@
 """Shared model, CPU-thread and NPU settings for the demo."""
 
-import os
-
 import cv2
 import numpy as np
 
@@ -11,16 +9,6 @@ BACKENDS = ("ailia_cpu", "ailia_npu", "ort_cpu", "ort_npu")
 ENCODER = "sam2.1_tiny_image_encoder_512_int8.onnx"
 MEMORY_ATTENTION = "sam2.1_tiny_memory_attention_512_int8.onnx"
 MODEL_REVISION = "coco-val2017-v1"
-
-
-def configure_npu():
-    """Apply demo defaults without overriding explicit environment settings."""
-    for name in (
-        "NEUTRON_CMA_512SLOTS",
-        "AILIA_NEUTRON_QDQ_STREAM_WEIGHTS",
-        "AILIA_NEUTRON_DYNAMIC_ATTENTION",
-    ):
-        os.environ.setdefault(name, "1")
 
 
 def preprocess_image(image):

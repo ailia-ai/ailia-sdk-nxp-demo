@@ -1,6 +1,5 @@
 """Resident Metric Depth Small runtime with dynamic MatMul NPU execution."""
 
-import os
 import time
 from pathlib import Path
 
@@ -9,16 +8,12 @@ import numpy as np
 
 from depth_inputs import MODEL, SIZE, preprocess
 from engine import Session
-from settings import configure_npu
 
 
 class DepthEngine:
     def __init__(self, directory, backend):
         self.directory, self.backend = Path(directory), backend
         self.session = None
-        configure_npu()
-        os.environ["AILIA_NEUTRON_DYNAMIC_ATTENTION"] = "1"
-        os.environ["AILIA_NEUTRON_DYNAMIC_MATMUL"] = "1"
 
     def run(self, path, compare=False):
         image = path if isinstance(path, np.ndarray) else cv2.imread(str(path))
