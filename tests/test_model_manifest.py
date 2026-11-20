@@ -45,11 +45,11 @@ class ModelManifestTests(unittest.TestCase):
     def test_public_model_names_and_warmup_contract(self):
         root = Path(__file__).resolve().parents[1] / "models"
         manifest = json.loads((root / "manifest.json").read_text())
-        self.assertEqual(len(manifest["downloads"]), 3)
+        self.assertEqual(len(manifest["downloads"]), 4)
         for name, record in manifest["downloads"].items():
             with self.subTest(model=name):
                 self.assertEqual(Path(name).name, name)
-                self.assertTrue(name.startswith("sam2.1_tiny_"))
+                self.assertTrue(name.startswith("sam2.1_tiny_") or name == "vit_b16_224_int4.onnx")
                 self.assertTrue(record["url"].startswith("https://"))
                 self.assertRegex(record["sha256"], r"^[0-9a-f]{64}$")
                 if name.endswith(".onnx"):

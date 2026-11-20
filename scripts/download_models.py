@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the unmodified SAM 2.1 auxiliary models from ailia-models."""
+"""Download unmodified public models from ailia-models, verifying their hashes."""
 
 import argparse
 import hashlib

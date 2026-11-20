@@ -1,10 +1,11 @@
 # ailia Vision / i.MX95 Demo
 
 An interactive HDMI demo comparing ailia and NXP ONNX Runtime on CPU and NPU.
-Select **SAM 2.1 Tiny**, **Grounding DINO**, **Depth Anything V2**, or **YOLOX-S 320** in the upper-left corner.
+Select **SAM 2.1 Tiny**, **Grounding DINO**, **Depth Anything V2**, **YOLOX-S 320**, or **ViT-B/16 INT4** in the upper-left corner.
 SAM segments clicked objects and tracks them across five Bedroom frames; Grounding DINO detects objects described by an English prompt.
 Depth Anything V2 estimates indoor metric depth.
 YOLOX-S detects the 80 COCO object categories without a text prompt.
+ViT classifies images into ImageNet categories and displays the top five results.
 
 ## Requirements
 
@@ -38,10 +39,10 @@ The bundled runtime selects NPU execution from operator types, shapes and
 available memory. No NPU tuning environment variables or per-model switches
 are required. Benchmark tables below identify their measured runtime.
 
-Converted models are bundled under `models/`. Unmodified SAM auxiliary files are downloaded from ailia-models, verified by SHA-256, and cached locally.
-The launcher downloads missing auxiliary files; subsequent launches can run offline.
+Converted models are bundled under `models/`. Unmodified SAM auxiliary files and ViT INT4 are downloaded from ailia-models, verified by SHA-256, and cached locally.
+The launcher downloads missing public models; subsequent launches can run offline.
 Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` weight files together.
-Git LFS is not required. Calibration records for all four models are
+Git LFS is not required. Calibration records for the four calibrated models are
 under [`calibration/`](calibration/). Benchmark tables are maintained here;
 generated timing logs are not tracked.
 
@@ -71,18 +72,27 @@ sh launch.sh --image /path/to/image.jpg
 sh launch.sh --model grounding --caption "Horse. Clouds. Grasses. Sky. Hill."
 sh launch.sh --model depth            # Indoor depth, Bedroom image
 sh launch.sh --model yolox            # YOLOX-S 320 object detection
-sh launch.sh --camera 1               # Use camera index 1 when enabling USB input
-sh launch.sh --video-input /tmp/test.avi  # Start looping a video as live input
+sh launch.sh --model vit              # ViT-B/16 INT4 image classification
+sh launch.sh --camera 1               # Start continuous inference with camera 1
+sh launch.sh --video-input /tmp/test.avi  # Diagnostic camera replay without USB hardware
 ```
 
-All four models support **Use USB camera** and **Open video…**. Toggle
-**USB camera / video** off to return to image input. USB UVC cameras are detected
-automatically; use `--camera INDEX` to select a specific device.
+Use the **Image / Video / Camera** buttons above the preview:
+
+- **Image**: use the model's bundled image or **Open image…**.
+- **Video**: SAM 2 only. Click the target in the first Bedroom frame, then
+  **Track 5 frames**. Tracking uses memory and returns to frame 1 when finished.
+- **Camera**: all five models. USB UVC input automatically starts continuous
+  inference, without a Start or Detect step. **Reconnect** retries a missing camera.
+
+USB cameras are detected automatically; use `--camera INDEX` for a specific device.
 Only the latest frame is processed, with one inference in flight; models stay loaded
-between frames. Live network timings appear below the status line
-without overwriting benchmark history. **Compare all 4** measures the current frame.
+between frames. Live network timings and processing FPS appear in the right panel
+without overwriting benchmark history. **Compare current frame** holds one frame
+for all four backends, then continuous inference resumes.
 SAM applies the clicked foreground/background points independently to each frame;
-live input does not use Bedroom's memory tracking. Video files loop at end of file.
+camera input does not use Bedroom's memory tracking. `--video-input` is a diagnostic
+camera substitute that loops at end of file, not a separate video mode for other models.
 To test without a camera on the device, run
 `PYTHONPATH=python python3 scripts/test_live_video.py`. This creates a temporary
 MJPEG video and runs two frames through every model on ailia NPU and ORT CPU.
@@ -109,6 +119,42 @@ To add a launcher to the Weston panel, append the following to `weston.ini`:
 icon=/path/to/ailia-sdk-nxp-demo/launcher.png
 path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
 ```
+
+## ViT-B/16 INT4
+
+Uses the public ailia-models `ViT-B_16-224-int4.onnx`, cached as
+`models/vit_b16_224_int4.onnx`. Fixed MatMul weights use 4-bit MatMulNBits;
+other operations remain floating point. No activation calibration is required.
+Input is RGB, resized to 224 × 224 and normalized to [-1, 1].
+Select **Classify** for a still image; Camera classifies each incoming frame automatically.
+The published graph is unchanged, including its attention-map outputs.
+
+### Benchmark
+
+Same public INT4 model, batch 1, six CPU threads, one excluded dummy inference
+at Open, then ten runs without profiling. Network time excludes preprocessing,
+classification postprocessing and rendering. Measured on 2026-11-20 with the
+bundled ailia runtime `ac22f5086` and `images/vit/input.jpg`.
+
+| Runtime | Median inference | FPS |
+| --- | ---: | ---: |
+| ailia CPU | 780.6 ms | 1.28 |
+| ailia NPU | 329.4 ms | 3.04 |
+| NXP ORT 1.24.3 CPU | 677.3 ms | 1.48 |
+| NXP ORT 1.24.3 NPU (Neutron EP) | 674.8 ms | 1.48 |
+
+The ORT NPU selection logged a Neutron allocation failure and fell back to CPU
+for this graph in the current HDMI environment; it is not a pure NPU measurement.
+
+All four backends classified the example as **Labrador retriever** in all ten runs.
+
+To reproduce each backend measurement:
+
+```sh
+PYTHONPATH=python python3 scripts/benchmark_vit.py --backend ailia_npu --output /tmp/vit-ailia-npu.json
+```
+
+Other backend choices are `ailia_cpu`, `ort_cpu`, and `ort_npu`.
 
 ## YOLOX-S 320
 
@@ -373,7 +419,7 @@ are saved in the output folder; no COCO images are bundled with the demo.
 ## Demo Images and Licenses
 
 Grounding DINO uses `images/grounding_dino/demo.jpg` and YOLOX uses
-`images/yolox/input.jpg`, copied from their respective ailia-models examples.
+`images/yolox/input.jpg`; ViT uses `images/vit/input.jpg`, copied from their respective ailia-models examples.
 Selecting a model loads its example image; **Open Image** selects a custom input.
 SAM 2 and Depth Anything use images from the official Segment Anything repositories:
 [truck.jpg](https://github.com/facebookresearch/segment-anything/blob/main/notebooks/images/truck.jpg) and
@@ -384,5 +430,5 @@ See [NOTICE.md](NOTICE.md) for attribution and licenses.
 
 `app.py` is the shared GUI; `runtime.py` manages inference sessions and worker requests.
 Model-specific code lives in `scenes/`: `sam2.py`, `sam2_video.py`,
-`grounding_dino.py`, `depth_anything_v2.py`, and `yolox.py`.
+`grounding_dino.py`, `depth_anything_v2.py`, `yolox.py`, and `vit.py`.
 `scripts/` contains model conversion and benchmark commands; `images/` contains demo inputs.

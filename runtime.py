@@ -128,6 +128,7 @@ def worker(directory, requests, responses):
     grounding = None
     depth_engine = None
     yolox_engine = None
+    vit_engine = None
 
     def select_backend(backend):
         nonlocal engine, video_engine, cache
@@ -151,6 +152,27 @@ def worker(directory, requests, responses):
         if job is None:
             return
         try:
+            if job.get("model") == "vit":
+                from scenes.vit import VitEngine
+
+                for backend in backend_order(job, job["action"] == "benchmark"):
+                    responses.put(dict(kind="progress", text="Loading / running ViT / " + backend))
+                    if vit_engine is None or vit_engine.backend != backend:
+                        vit_engine = None
+                        gc.collect()
+                        vit_engine = VitEngine(directory, backend)
+                    result = vit_engine.run(job["image"], compare=job["action"] == "benchmark")
+                    responses.put(
+                        dict(
+                            kind="result",
+                            model="vit",
+                            backend=backend,
+                            action=job["action"],
+                            **result,
+                        )
+                    )
+                responses.put(dict(kind="done", text="Ready — press Classify or open an image."))
+                continue
             if job.get("model") == "yolox":
                 from scenes.yolox import YoloEngine
 
@@ -298,6 +320,7 @@ def worker(directory, requests, responses):
             cache = None
             grounding = None
             yolox_engine = None
+            vit_engine = None
             gc.collect()
             responses.put(
                 dict(kind="error", action=job["action"], text=f"{type(exc).__name__}: {exc}")

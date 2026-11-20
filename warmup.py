@@ -15,6 +15,8 @@ def inputs_for_model(name):
 
     if name == ENCODER:
         return {"input_image": zeros(1, 3, 512, 512)}
+    if name == "vit_b16_224_int4.onnx":
+        return {"input": zeros(1, 3, 224, 224)}
     if name == "sam2.1_tiny_prompt_encoder_512_fp32.onnx":
         return dict(
             coords=zeros(1, 1, 2),

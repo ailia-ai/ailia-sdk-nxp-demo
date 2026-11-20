@@ -8,6 +8,7 @@ DEFAULT_IMAGES = {
     "grounding": "grounding_dino/demo.jpg",
     "depth": "bedroom/00000.jpg",
     "yolox": "yolox/input.jpg",
+    "vit": "vit/input.jpg",
 }
 
 

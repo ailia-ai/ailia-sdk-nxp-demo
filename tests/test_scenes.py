@@ -19,7 +19,7 @@ class SceneImages(unittest.TestCase):
         checksums = dict(
             reversed(line.split()) for line in (ROOT / "SHA256SUMS").read_text().splitlines()
         )
-        for model in ("grounding", "yolox"):
+        for model in ("grounding", "yolox", "vit"):
             path = default_image(model)
             self.assertEqual(
                 hashlib.sha256(path.read_bytes()).hexdigest(),

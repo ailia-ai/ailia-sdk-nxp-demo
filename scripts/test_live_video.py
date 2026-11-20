@@ -25,8 +25,8 @@ def main():
     parser.add_argument(
         "--models",
         nargs="+",
-        choices=("sam", "grounding", "depth", "yolox"),
-        default=["sam", "grounding", "depth", "yolox"],
+        choices=("sam", "grounding", "depth", "yolox", "vit"),
+        default=["sam", "grounding", "depth", "yolox", "vit"],
     )
     parser.add_argument(
         "--timeout", type=float, default=600, help="Per-frame timeout, including first model Open"
@@ -78,10 +78,14 @@ def main():
                                 raise RuntimeError(result["text"])
                             if result["kind"] == "result":
                                 seen = True
-                                key = {"sam": "mask", "depth": "depth"}.get(model, "detections")
+                                key = {
+                                    "sam": "mask",
+                                    "depth": "depth",
+                                    "vit": "classifications",
+                                }.get(model, "detections")
                                 if key not in result:
                                     raise RuntimeError(f"Missing output: {key}")
-                                if key != "detections" and not np.isfinite(result[key]).all():
+                                if key in ("mask", "depth") and not np.isfinite(result[key]).all():
                                     raise RuntimeError("Non-finite output")
                                 print(
                                     json.dumps(

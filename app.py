@@ -5,6 +5,7 @@ import argparse
 import json
 import queue
 import signal
+import time
 from pathlib import Path
 
 import cv2
@@ -19,8 +20,16 @@ from scenes.depth_anything_v2_inputs import REVISION as DEPTH_REVISION
 from scenes.depth_anything_v2_inputs import colorize
 from scenes.grounding_dino_inputs import DEFAULT_PROMPT
 from scenes.grounding_dino_inputs import REVISION as GROUNDING_REVISION
+from scenes.vit import REVISION as VIT_REVISION
 from scenes.yolox import REVISION as YOLOX_REVISION
 from settings import MODEL_REVISION
+
+
+def input_mode_for_model(model, mode):
+    """Only SAM's five-frame memory tracker exposes Video mode."""
+    if mode not in ("image", "video", "camera"):
+        raise ValueError(f"Unknown input mode: {mode}")
+    return "image" if mode == "video" and model != "sam" else mode
 
 
 def reset_tracking_view(view):
@@ -37,12 +46,16 @@ def main():
     parser.add_argument("--image", type=Path)
     parser.add_argument("--windowed", action="store_true")
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
-    parser.add_argument("--model", choices=("sam", "grounding", "depth", "yolox"), default="sam")
+    parser.add_argument(
+        "--model", choices=("sam", "grounding", "depth", "yolox", "vit"), default="sam"
+    )
     parser.add_argument("--caption", default=DEFAULT_PROMPT, help="Grounding DINO detection prompt")
     parser.add_argument(
         "--camera", type=int, help="Camera index (default: auto-detect USB UVC camera)"
     )
-    parser.add_argument("--video-input", type=Path, help="Loop a video file instead of USB camera")
+    parser.add_argument(
+        "--video-input", type=Path, help="Diagnostic camera replay from a looping video file"
+    )
     parser.add_argument(
         "--bedroom", action="store_true", help="Open the five-frame memory tracking demo"
     )
@@ -84,7 +97,17 @@ def main():
             self.camera_index = args.camera
             self.live_frame = None
             self.after_live = None
-            self.video_mode = args.bedroom
+            self.input_mode = (
+                "camera"
+                if args.camera is not None or args.video_input
+                else "video"
+                if args.bedroom
+                else "image"
+            )
+            self.syncing_mode = False
+            self.live_started = None
+            self.live_snapshot_scheduled = False
+            self.video_mode = self.input_mode == "video"
             self.video_frame = 0
             self.video_records = []
             self.autoplay_pending = args.autoplay_bedroom
@@ -109,6 +132,8 @@ def main():
                 row:selected { background-color: #c0d9ee; color: #14202b; }
                 label { font-size: 14px; }
                 .title { font-size: 23px; font-weight: bold; }
+                .input-mode:checked, .primary { background-color: #b9dce9; color: #10212e; }
+                .muted { color: #afc0cc; }
             """)
             Gtk.StyleContext.add_provider_for_screen(
                 Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
@@ -122,24 +147,41 @@ def main():
             self.model_selector.append("grounding", "Grounding DINO")
             self.model_selector.append("depth", "Depth Anything V2")
             self.model_selector.append("yolox", "YOLOX-S 320")
+            self.model_selector.append("vit", "ViT-B/16 INT4")
             self.model_selector.set_active_id(self.model)
             self.model_selector.connect("changed", self.switch_model)
             heading.pack_start(self.model_selector, False, False, 0)
             self.title_label = Gtk.Label(xalign=0)
+            self.title_label.set_ellipsize(3)
             self.title_label.get_style_context().add_class("title")
             heading.pack_start(self.title_label, True, True, 0)
             logo = Gtk.Image.new_from_pixbuf(
                 GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(Path(__file__).parent / "images" / "ailia.jpg"), 56, 56, True
+                    str(Path(__file__).parent / "images" / "ailia.jpg"), 40, 40, True
                 )
             )
             logo.set_tooltip_text("ailia")
             heading.pack_end(logo, False, False, 0)
             root.pack_start(heading, False, False, 0)
+            source_bar = Gtk.Box(spacing=8)
+            self.mode_buttons = {}
+            for mode, label in (("image", "Image"), ("video", "Video"), ("camera", "Camera")):
+                button = Gtk.ToggleButton(label=label)
+                button.get_style_context().add_class("input-mode")
+                button.connect("toggled", self.mode_toggled, mode)
+                self.mode_buttons[mode] = button
+                source_bar.pack_start(button, False, False, 0)
+            self.source_label = Gtk.Label(xalign=1)
+            self.source_label.set_ellipsize(3)
+            source_bar.pack_start(self.source_label, True, True, 8)
+            self.source_button = Gtk.Button(label="Open image…")
+            self.source_button.connect("clicked", self.choose_source)
+            source_bar.pack_end(self.source_button, False, False, 0)
+            root.pack_start(source_bar, False, False, 0)
             body = Gtk.Box(spacing=18)
             root.pack_start(body, True, True, 0)
             self.canvas = Gtk.DrawingArea()
-            self.canvas.set_size_request(400, 280)
+            self.canvas.set_size_request(320, 180)
             self.canvas.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
             self.canvas.connect("draw", self.draw)
             self.canvas.connect("button-press-event", self.click)
@@ -147,6 +189,7 @@ def main():
             side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             side.set_size_request(250, -1)
             body.pack_start(side, False, False, 0)
+            side.pack_start(Gtk.Label(label="Runtime", xalign=0), False, False, 0)
             self.selector = Gtk.ComboBoxText()
             for key in BACKENDS:
                 runtime, device = key.split("_")
@@ -157,15 +200,7 @@ def main():
             self.selector.connect("changed", self.switch)
             side.pack_start(self.selector, False, False, 0)
             self.controls = [self.model_selector, self.selector]
-            self.live_button = Gtk.ToggleButton(label="USB camera / video")
-            self.live_button.connect("toggled", self.toggle_live)
-            side.pack_start(self.live_button, False, False, 0)
-            video_button = Gtk.Button(label="Open video…")
-            video_button.connect("clicked", self.open_video)
-            side.pack_start(video_button, False, False, 0)
-            camera_button = Gtk.Button(label="Use USB camera")
-            camera_button.connect("clicked", self.use_camera)
-            side.pack_start(camera_button, False, False, 0)
+            self.controls.append(self.source_button)
             self.prompt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
             self.prompt_box.pack_start(
                 Gtk.Label(label="Detection prompt (English)", xalign=0), False, False, 0
@@ -175,6 +210,7 @@ def main():
             self.prompt_entry.connect("activate", lambda *_: self.submit("detect"))
             self.prompt_box.pack_start(self.prompt_entry, False, False, 0)
             detect = Gtk.Button(label="Detect")
+            self.grounding_button = detect
             detect.connect("clicked", lambda *_: self.submit("detect"))
             self.prompt_box.pack_start(detect, False, False, 0)
             self.controls.extend([self.prompt_entry, detect])
@@ -183,6 +219,14 @@ def main():
             self.yolox_button.connect("clicked", lambda *_: self.submit("detect"))
             side.pack_start(self.yolox_button, False, False, 0)
             self.controls.append(self.yolox_button)
+            self.vit_button = Gtk.Button(label="Classify")
+            self.vit_button.connect("clicked", lambda *_: self.submit("classify"))
+            side.pack_start(self.vit_button, False, False, 0)
+            self.controls.append(self.vit_button)
+            self.classification_label = Gtk.Label(xalign=0)
+            self.classification_label.set_line_wrap(True)
+            self.classification_label.set_max_width_chars(28)
+            side.pack_start(self.classification_label, False, False, 0)
             self.depth_controls = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
             self.depth_button = Gtk.Button(label="Estimate depth")
             self.depth_button.connect("clicked", lambda *_: self.submit("estimate"))
@@ -200,37 +244,52 @@ def main():
             side.pack_start(self.depth_controls, False, False, 0)
             self.controls.append(self.depth_button)
             self.sam_controls = []
+            point_controls = Gtk.Box(spacing=6)
+            side.pack_start(point_controls, False, False, 0)
             for title, callback in [
-                (f"Compare all {len(BACKENDS)}", self.benchmark),
                 ("Undo point", self.undo),
                 ("Clear points", self.clear),
-                ("Open image…", self.open_image),
-                ("Bedroom (5 frames)", self.bedroom),
-                ("Track 5 frames", self.track),
             ]:
                 button = Gtk.Button(label=title)
                 button.connect("clicked", callback)
                 self.controls.append(button)
-                if title not in (f"Compare all {len(BACKENDS)}", "Open image…"):
-                    self.sam_controls.append(button)
-                side.pack_start(button, False, False, 0)
+                self.sam_controls.append(button)
+                point_controls.pack_start(button, True, True, 0)
+            self.track_button = Gtk.Button(label="Track 5 frames")
+            self.track_button.get_style_context().add_class("primary")
+            self.track_button.connect("clicked", self.track)
+            side.pack_start(self.track_button, False, False, 0)
+            self.controls.append(self.track_button)
             info = Gtk.Label(
                 label="Left: foreground (+)\nRight: background (−)\nBedroom: click frame 1, then Track.\nNPU: Encoder + MemoryAttention.\nOther tracking operations: CPU.\nINT8 integer-v1 · 6 threads · no profile\nORT NPU: timing only.\nOutputs may be incorrect or vary.",
                 xalign=0,
             )
             info.set_line_wrap(True)
             self.info = info
+            self.info.set_max_width_chars(30)
             side.pack_start(info, False, False, 0)
             quit_button = Gtk.Button(label="Exit")
             quit_button.connect("clicked", lambda *_: self.destroy())
             side.pack_end(quit_button, False, False, 0)
             self.status = Gtk.Label(label="Starting…", xalign=0)
-            self.status.set_line_wrap(True)
-            root.pack_start(self.status, False, False, 0)
+            self.status.set_ellipsize(3)
+            self.status.set_max_width_chars(30)
+            side.pack_start(self.status, False, False, 0)
             self.live_timing = Gtk.Label(xalign=0)
-            root.pack_start(self.live_timing, False, False, 0)
-            grid = Gtk.Grid(column_spacing=28, row_spacing=10)
-            root.pack_start(grid, False, False, 0)
+            self.live_timing.set_line_wrap(True)
+            self.live_timing.set_max_width_chars(30)
+            side.pack_start(self.live_timing, False, False, 0)
+            bottom = Gtk.Box(spacing=18)
+            root.pack_start(bottom, False, False, 0)
+            grid = Gtk.Grid(column_spacing=24, row_spacing=6)
+            grid.set_hexpand(True)
+            bottom.pack_start(grid, True, True, 0)
+            self.compare_button = Gtk.Button(label="Compare all 4")
+            self.compare_button.set_size_request(250, -1)
+            self.compare_button.set_valign(Gtk.Align.CENTER)
+            self.compare_button.connect("clicked", self.benchmark)
+            bottom.pack_end(self.compare_button, False, False, 0)
+            self.controls.append(self.compare_button)
             self.table_headers = []
             for col, text in enumerate(
                 [
@@ -244,7 +303,7 @@ def main():
             ):
                 label = Gtk.Label(label=text, xalign=0)
                 self.table_headers.append(label)
-                grid.attach(label, col, 0, 1, 1)
+                grid.attach(label, 0, col, 1, 1)
             self.cells = {}
             for row, backend in enumerate(BACKENDS, 1):
                 cells = [
@@ -252,7 +311,9 @@ def main():
                     for t in [backend.replace("_", " "), "—", "—", "—", "—", "not measured"]
                 ]
                 for col, cell in enumerate(cells):
-                    grid.attach(cell, col, row, 1, 1)
+                    cell.set_hexpand(True)
+                    cell.set_ellipsize(3)
+                    grid.attach(cell, row, col, 1, 1)
                 self.cells[backend] = cells
             self.recorded_backends = set()
             self.history_path = Path(__file__).parent / "benchmark_history.jsonl"
@@ -284,79 +345,99 @@ def main():
             except OSError as exc:
                 print("Cannot load measurement history:", exc, flush=True)
             self.note = Gtk.Label(xalign=0)
-            self.note.set_line_wrap(True)
+            self.note.set_ellipsize(3)
+            self.note.get_style_context().add_class("muted")
             root.pack_start(self.note, False, False, 0)
             self.attribution = Gtk.Label(xalign=0)
-            self.attribution.set_line_wrap(True)
+            self.attribution.set_ellipsize(3)
             root.pack_start(self.attribution, False, False, 0)
             self.load_image()
-            self.show_all()
+            # Hide mode-specific controls before mapping the window; otherwise
+            # GTK sizes a 720p window for every model's controls at once.
+            root.show_all()
             self.update_model_controls()
+            self.show()
             if not args.windowed:
                 self.fullscreen()
             GLib.timeout_add(30, self.poll)
             GLib.timeout_add(30, self.poll_capture)
-            if args.video_input:
-                self.live_button.set_active(True)
+            if self.input_mode == "camera":
+                self.start_camera()
             else:
                 self.submit("prepare")
 
-        def use_camera(self, *_):
-            args.video_input = None
-            if self.live_button.get_active():
-                self.toggle_live(self.live_button)
-            else:
-                self.live_button.set_active(True)
-
-        def toggle_live(self, button):
-            self.after_live = None
+        def stop_capture(self):
             if self.capture is not None:
                 self.capture.close()
                 self.capture = None
+
+        def mode_toggled(self, button, mode):
+            if self.syncing_mode:
+                return
+            if button.get_active():
+                self.select_input_mode(mode)
+            else:
+                self.update_model_controls()
+
+        def select_input_mode(self, mode):
+            mode = input_mode_for_model(self.model, mode)
+            self.after_live = None
+            self.stop_capture()
             if self.busy:
-                # Discard an in-flight result from the previous source. An idle
-                # worker can retain its already-warmed sessions.
                 self.runner.close()
             self.pending_jobs = []
             self.busy = False
             for control in self.controls:
                 control.set_sensitive(True)
+            self.input_mode = mode
             self.live_frame = None
             self.live_timing.set_text("")
             self.points, self.mask, self.detections, self.depth = [], None, [], None
-            self.video_mode = False
-            self.update_pixbuf()
-            if button.get_active():
-                try:
-                    source = str(args.video_input) if args.video_input else find_camera(args.camera)
-                except ValueError as exc:
-                    button.set_active(False)
-                    self.live_timing.set_text("Live input stopped: " + str(exc))
-                    return
-                if isinstance(source, int):
-                    self.camera_index = source
-                self.capture = LiveInput(source)
-                self.attribution.set_text(f"Live input: {source}")
-                self.note.set_text(
-                    "Live: latest frame only; network time excludes capture/display. SAM uses fixed click prompts, not memory tracking."
-                )
-                self.status.set_text("Opening camera/video…")
+            self.video_mode, self.video_frame = mode == "video", 0
+            self.image_path = str(
+                Path(__file__).parent / "images/bedroom/00000.jpg"
+                if self.video_mode
+                else default_image(self.model)
+            )
+            self.update_model_controls()
+            self.load_image()
+            if mode == "camera":
+                self.start_camera()
             else:
-                self.load_image()
                 self.submit("prepare")
 
-        def open_video(self, *_):
-            dialog = Gtk.FileChooserDialog(
-                title="Select video", parent=self, action=Gtk.FileChooserAction.OPEN
+        def choose_source(self, *_):
+            if self.input_mode == "image":
+                self.open_image()
+            elif self.input_mode == "video":
+                self.select_input_mode("video")
+            else:
+                self.select_input_mode("camera")
+
+        def start_camera(self):
+            # Camera mode is continuously inferred, without a Start/Detect step.
+            self.live_snapshot_scheduled = False
+            self.rgb = np.zeros((480, 640, 3), np.uint8)
+            self.update_pixbuf()
+            self.note.set_text(
+                "Camera: continuous inference on the latest frame. Compare freezes one frame, then resumes."
             )
-            dialog.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Open", Gtk.ResponseType.OK)
-            if dialog.run() == Gtk.ResponseType.OK:
-                args.video_input = Path(dialog.get_filename())
-                if self.live_button.get_active():
-                    self.toggle_live(self.live_button)
-                else:
-                    self.live_button.set_active(True)
-            dialog.destroy()
+            try:
+                source = str(args.video_input) if args.video_input else find_camera(args.camera)
+                self.capture = LiveInput(source)
+            except (ValueError, OSError) as exc:
+                self.status.set_text(str(exc))
+                self.source_label.set_text("Camera not connected")
+                return
+            if isinstance(source, int):
+                self.camera_index = source
+            self.source_label.set_text(
+                "Camera replay: " + Path(source).name
+                if isinstance(source, str)
+                else f"USB camera {source}"
+            )
+            self.attribution.set_text("Input: " + self.source_label.get_text())
+            self.status.set_text("Opening camera…")
 
         def poll_capture(self):
             if self.closing:
@@ -368,11 +449,12 @@ def main():
                 return True
             kind, value = item
             if kind == "error":
-                self.live_button.set_active(False)
+                self.stop_capture()
                 self.status.set_text(value)
-                self.live_timing.set_text("Live input stopped: " + value)
+                self.live_timing.set_text("Disconnected — press Reconnect.")
                 return True
             self.live_frame = value
+            self.live_started = time.monotonic()
             self.submit("live")
             return True
 
@@ -426,12 +508,14 @@ def main():
                         "grounding": GROUNDING_REVISION,
                         "depth": DEPTH_REVISION,
                         "yolox": YOLOX_REVISION,
+                        "vit": VIT_REVISION,
                     }.get(self.model, MODEL_REVISION),
                     model=self.model,
                 )
             self.show_measurement(record)
 
         def load_image(self):
+            self.classification_label.set_text("")
             if self.capture is not None:
                 self.update_pixbuf()
                 return
@@ -453,6 +537,7 @@ def main():
             elif Path(self.image_path).resolve() in (
                 default_image("grounding"),
                 default_image("yolox"),
+                default_image("vit"),
             ):
                 self.attribution.set_text(
                     "Demo image: ailia-models test image — github.com/ailia-ai/ailia-models"
@@ -463,6 +548,9 @@ def main():
                 "Video: actual per-frame times, not 3-run medians. Sum = network calls; excludes loading/drawing. NPU includes CPU fallback."
                 if self.video_mode
                 else "ailia / ORT: warm-up at model Open. ailia memory mode 11. Compare all: median of 3 runs. Times exclude loading/drawing. NPU includes CPU fallback."
+            )
+            self.source_label.set_text(
+                "Bedroom · frame 1 / 5" if self.video_mode else Path(self.image_path).name
             )
             self.note.set_text(
                 self.note.get_text() + " Previous values retained; check input/time in history."
@@ -561,6 +649,9 @@ def main():
         def submit(self, action):
             if self.busy:
                 return
+            if self.input_mode == "camera" and action != "live" and self.live_frame is None:
+                self.status.set_text("Waiting for a camera frame…")
+                return
             self.busy = True
             for control in self.controls:
                 control.set_sensitive(action == "live")
@@ -589,8 +680,24 @@ def main():
         def update_model_controls(self):
             grounding = self.model == "grounding"
             sam = self.model == "sam"
+            camera = self.input_mode == "camera"
+            self.syncing_mode = True
+            for mode, button in self.mode_buttons.items():
+                button.set_active(mode == self.input_mode)
+                button.set_sensitive(mode != "video" or sam)
+            self.syncing_mode = False
+            self.mode_buttons["video"].set_tooltip_text(
+                "SAM 2 five-frame memory tracking" if sam else "Video is available for SAM 2 only"
+            )
+            self.source_button.set_label(
+                "Reconnect" if camera else "Reset to frame 1" if self.video_mode else "Open image…"
+            )
+            self.track_button.set_visible(sam and self.video_mode)
+            self.compare_button.set_label("Compare current frame" if camera else "Compare all 4")
             self.title_label.set_text(
-                "YOLOX-S / 320 × 320 / i.MX95"
+                "ViT-B/16 INT4 / 224 × 224 / i.MX95"
+                if self.model == "vit"
+                else "YOLOX-S / 320 × 320 / i.MX95"
                 if self.model == "yolox"
                 else "Depth Anything V2 Metric Small / 518 × 518 / i.MX95"
                 if self.model == "depth"
@@ -599,8 +706,12 @@ def main():
                 else "SAM 2.1 Tiny / 512 × 512 / i.MX95"
             )
             self.prompt_box.set_visible(grounding)
-            self.yolox_button.set_visible(self.model == "yolox")
+            self.grounding_button.set_visible(grounding and not camera)
+            self.yolox_button.set_visible(self.model == "yolox" and not camera)
+            self.vit_button.set_visible(self.model == "vit" and not camera)
+            self.classification_label.set_visible(self.model == "vit")
             self.depth_controls.set_visible(self.model == "depth")
+            self.depth_button.set_visible(self.model == "depth" and not camera)
             for control in self.sam_controls:
                 control.set_visible(sam)
             self.table_headers[1].set_text("Encoder (ms)" if sam else "Inference (ms)")
@@ -608,19 +719,33 @@ def main():
                 self.table_headers[column].set_visible(sam)
                 for cells in self.cells.values():
                     cells[column].set_visible(sam)
+            self.table_headers[5].hide()
+            for cells in self.cells.values():
+                cells[5].hide()
             self.info.set_text(
-                "YOLOX-S 320 / COCO 80 classes.\nCOCO val2017 calibration: 5,000 images.\nUINT8 features / INT8 Conv weights.\nCompare all: median of 3 runs.\n6 threads · no profile"
+                "ImageNet · top 5 classes"
+                if self.model == "vit"
+                else "Continuous detection on each camera frame."
+                if camera and self.model in ("yolox", "grounding")
+                else "Click a target; subsequent camera frames reuse those points."
+                if camera and sam
+                else "Continuous depth estimation."
+                if camera
+                else "YOLOX-S · 320 × 320\nCOCO · 80 classes"
                 if self.model == "yolox"
-                else "Indoor metric depth (Hypersim).\nDark: near / Bright: far.\nDisplay range changes colors only.\nClick to inspect estimated depth.\nailia NPU: fixed + dynamic MatMul.\nORT NPU: fixed MatMul only.\nCompare all: median of 3 runs.\n6 threads · no profile"
+                else "Indoor metric depth.\nClick to inspect distance."
                 if self.model == "depth"
-                else "Enter English category names separated by periods.\nDetect: one warm inference.\nCompare all: median of 3 runs.\nNPU includes CPU fallback.\nORT NPU outputs may vary."
+                else "Separate category names with periods."
                 if grounding
-                else "Left: foreground (+)\nRight: background (−)\nBedroom: click frame 1, then Track.\nNPU: Encoder + MemoryAttention.\nOther tracking operations: CPU.\n6 threads · no profile\nORT NPU: timing only. Outputs may be incorrect."
+                else "Click the target on frame 1, then Track 5 frames."
+                if self.video_mode
+                else "Left click: foreground (+)\nRight click: background (−)"
             )
 
         def switch_model(self, selector):
             self.after_live = None
             self.model = selector.get_active_id()
+            self.input_mode = input_mode_for_model(self.model, self.input_mode)
             self.live_timing.set_text("")
             self.runner.close()
             self.busy = False
@@ -647,7 +772,10 @@ def main():
                     self.recorded_backends.add(record["backend"])
             self.update_model_controls()
             self.load_image()
-            self.submit("prepare")
+            if self.input_mode != "camera":
+                self.submit("prepare")
+            elif self.capture is None:
+                self.start_camera()
 
         def switch(self, selector):
             self.after_live = None
@@ -664,7 +792,8 @@ def main():
             self.mask = None
             self.detections = []
             self.load_image()
-            self.submit("prepare")
+            if self.input_mode != "camera":
+                self.submit("prepare")
 
         def benchmark(self, *_):
             if self.capture is not None and self.busy:
@@ -677,15 +806,7 @@ def main():
                 self.submit("benchmark")
 
         def bedroom(self, *_):
-            if self.capture is not None:
-                self.live_button.set_active(False)
-                self.runner.close()
-                self.busy = False
-            self.video_mode, self.video_frame = True, 0
-            self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
-            self.points, self.mask, self.video_records = [], None, []
-            self.load_image()
-            self.submit("prepare")
+            self.select_input_mode("video")
 
         def track(self, *_, compare=False):
             if not self.video_mode or not self.points:
@@ -719,15 +840,14 @@ def main():
                 filt.add_mime_type(mime)
             dialog.add_filter(filt)
             if dialog.run() == Gtk.ResponseType.OK:
-                if self.capture is not None:
-                    self.live_button.set_active(False)
-                    self.runner.close()
-                    self.busy = False
+                self.stop_capture()
+                self.input_mode = "image"
                 self.video_mode = False
                 self.image_path = dialog.get_filename()
                 self.points, self.mask = [], None
                 self.detections = []
                 self.depth = None
+                self.update_model_controls()
                 self.load_image()
                 self.submit("prepare")
             dialog.destroy()
@@ -744,7 +864,13 @@ def main():
                     break
                 kind = result["kind"]
                 if kind == "progress":
-                    self.status.set_text(result["text"])
+                    self.status.set_text(
+                        "Camera · continuous inference"
+                        if self.input_mode == "camera"
+                        and self.live_timing.get_text()
+                        and not self.pending_jobs
+                        else result["text"]
+                    )
                 elif kind == "video_frame":
                     backend = result["backend"]
                     times = result["times_ms"]
@@ -767,6 +893,7 @@ def main():
                         self.video_frame = result["frame"]
                         self.mask = result["mask"]
                         self.load_image()
+                        self.source_label.set_text(f"Bedroom · frame {self.video_frame + 1} / 5")
                     self.status.set_text(
                         f"{backend} frame {result['frame'] + 1}/5 | MemoryAttention {times['memory_attention']:.1f} ms | processing {result['total_ms']:.1f} ms"
                     )
@@ -793,9 +920,11 @@ def main():
                     # Preparing an image must not erase an existing benchmark
                     # (especially the last full video measurement).
                     if result.get("action") == "live":
+                        elapsed = time.monotonic() - self.live_started if self.live_started else 0
                         self.live_timing.set_text(
-                            f"{backend}: {enc:.1f} ms inference / {click or 0:.1f} ms prompt + decoder"
+                            f"Inference: {enc + (click or 0):.1f} ms\nProcessing: {1 / elapsed if elapsed else 0:.2f} FPS"
                         )
+                        self.status.set_text("Camera · continuous inference")
                     elif result.get("action") != "prepare" or backend not in self.recorded_backends:
                         self.record_measurement(
                             backend,
@@ -816,6 +945,13 @@ def main():
                     if backend == self.backend and "depth" in result:
                         self.depth = result["depth"]
                         self.update_pixbuf()
+                    if backend == self.backend and "classifications" in result:
+                        self.classification_label.set_text(
+                            "\n".join(
+                                f"{item['score']:.1%}  {item['label'].split(',')[0]}"
+                                for item in result["classifications"]
+                            )
+                        )
                     if result.get("action") == "live":
                         continue
                     record = {k: v for k, v in result.items() if k not in ("mask", "depth")}
@@ -830,6 +966,8 @@ def main():
                     except OSError as exc:
                         print("Cannot save timings:", exc, flush=True)
                 elif kind in ("done", "error"):
+                    if kind == "error" and self.model == "vit":
+                        self.classification_label.set_text("")
                     if kind == "error" and self.model == "depth":
                         self.depth = None
                         self.update_pixbuf()
@@ -843,10 +981,12 @@ def main():
                     self.busy = False
                     for control in self.controls:
                         control.set_sensitive(True)
+                    if self.input_mode != "camera":
+                        self.update_model_controls()
                     if self.capture is None or kind == "error":
                         self.status.set_text(result.get("text", "Ready — click the image."))
                     if kind == "error" and self.capture is not None:
-                        self.live_button.set_active(False)
+                        self.stop_capture()
                         self.status.set_text(result["text"])
                         self.live_timing.set_text("Live input stopped: " + result["text"])
                     if self.after_live and kind == "done":
@@ -862,23 +1002,33 @@ def main():
                         self.autoplay_pending = False
                         if kind == "done":
                             GLib.idle_add(self.track)
-                    if args.snapshot:
+                    if args.snapshot and (self.capture is None or not self.live_snapshot_scheduled):
+                        self.live_snapshot_scheduled = self.capture is not None
                         GLib.timeout_add(300, self.snapshot)
             if self.runner.process is not None and not self.runner.process.is_alive():
+                self.stop_capture()
+                self.runner.close()
+                self.busy = False
+                self.pending_jobs = []
+                for control in self.controls:
+                    control.set_sensitive(True)
                 self.status.set_text(
-                    "Inference process stopped. Close and restart the demo. See demo.log."
+                    "Inference stopped. Reconnect or select an input to retry. See demo.log."
                 )
-                return False
             return True
 
         def snapshot(self):
             import cairo
 
+            self.check_resize()
             surface = cairo.ImageSurface(
                 cairo.FORMAT_ARGB32, self.get_allocated_width(), self.get_allocated_height()
             )
             Gtk.Widget.draw(self, cairo.Context(surface))
-            surface.write_to_png(str(args.snapshot))
+            destination = Path(args.snapshot)
+            temporary = destination.with_name("." + destination.name + ".tmp")
+            surface.write_to_png(str(temporary))
+            temporary.replace(destination)
             return False
 
         def shutdown(self, *_):

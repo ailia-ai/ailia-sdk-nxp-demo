@@ -4,6 +4,10 @@
   "source_url": "https://storage.googleapis.com/ailia-models/segment-anything-2.1/",
   "converter": "scripts/calibrate_sam2.py",
   "downloads": {
+    "vit_b16_224_int4.onnx": {
+      "url": "https://storage.googleapis.com/ailia-models/vit/ViT-B_16-224-int4.onnx",
+      "sha256": "def82afbaa78396b307e6899983cb9271f50cf19023c5a65eb58ae4b51aa0c94"
+    },
     "sam2.1_tiny_mlp_fp32.onnx": {
       "url": "https://storage.googleapis.com/ailia-models/segment-anything-2.1/mlp_hiera_t_2.1.onnx",
       "sha256": "dba4c5eab2ce46d1071de2d606b604ab2657f8b56fc1d564be661e5b40b10102"

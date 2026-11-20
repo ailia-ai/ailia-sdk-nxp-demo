@@ -57,6 +57,12 @@ tables. This is a modified demo model, not an official Megvii or NXP release.
 
 ## Demo images
 
+ViT uses the published ailia-models ViT-B/16 INT4 ONNX model:
+https://storage.googleapis.com/ailia-models/vit/ViT-B_16-224-int4.onnx
+Its ImageNet labels and `images/vit/input.jpg` come from
+https://github.com/ailia-ai/ailia-models/tree/master/image_classification/vit.
+See `licenses/VIT_LICENSE` for the model's upstream license.
+
 The ailia logo (`images/ailia.jpg`) is from https://ailia.ai/models/img/more_ax.jpg.
 
 The SAM 2 and depth demo images are from the **official Segment Anything repositories**:
