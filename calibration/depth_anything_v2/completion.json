@@ -1,0 +1,16 @@
+{
+  "activation": "static UINT8 tensor-wise",
+  "calibrated_images": 5000,
+  "dynamic_attention": "24 floating MatMuls; ailia runtime dynamic INT8 NPU enabled",
+  "files": {
+    "depth_anything_v2_metric_hypersim_vits_518_int8.onnx": "e5941a48339b26445710a143062f5b78bbb7452e3ee2961f67f702fafe512a62"
+  },
+  "fixed_matmuls": 48,
+  "manifest_sha256": "ceb55e3483645cf4628d1dd6da88b9f65ea4c75f337eca03d7935ebded790590",
+  "method": "global MinMax",
+  "production": true,
+  "ranges_sha256": "b13704501ecefceacc95643bad655ee7b36ad7bff6d8139e6093962499ccdad1",
+  "revision": "depth-coco-val2017-v1",
+  "source_sha256": "8c7c2932e8be8720db8aae66a2b83a80db35b7d1a7ac990bf43bc69042d0eba0",
+  "weight": "INT8 channel-wise"
+}

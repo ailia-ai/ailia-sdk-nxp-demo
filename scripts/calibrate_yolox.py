@@ -34,7 +34,7 @@ def preprocess(path, size):
     return np.ascontiguousarray(padded.transpose(2, 0, 1)[None], dtype=np.float32)
 
 
-def convert(source, coco_images, coco_annotations, output):
+def convert(source, coco_images, coco_annotations, output, report=None):
     size, image_count = 320, 5000
     expected = "bcb994c44386898f26617a273d98cd678ce6bb8afcc296dc825a0dd29e05a1da"
     if hashlib.sha256(source.read_bytes()).hexdigest() != expected:
@@ -251,7 +251,9 @@ def convert(source, coco_images, coco_annotations, output):
         "parameters": {k: [float(s), int(z)] for k, (s, z) in params.items()},
         "note": "UINT8 feature maps; Conv FLOAT epilogues fuse on NPU. Kernel fallbacks require profiling.",
     }
-    output.with_suffix(".calibration.json").write_text(json.dumps(record, indent=2))
+    report = report or output.with_suffix(".calibration.json")
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text(json.dumps(record, indent=2))
     print(output, record["operators"], flush=True)
 
 
@@ -259,5 +261,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     for name in ("source", "coco-images", "coco-annotations", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--report", type=Path, help="Calibration record destination")
     args = parser.parse_args()
-    convert(args.source, args.coco_images, args.coco_annotations, args.output)
+    convert(args.source, args.coco_images, args.coco_annotations, args.output, args.report)

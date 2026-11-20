@@ -36,7 +36,10 @@ Stop running applications before replacing the library.
 
 Converted models are bundled under `models/`. Unmodified SAM auxiliary files are downloaded from ailia-models, verified by SHA-256, and cached locally.
 The launcher downloads missing auxiliary files; subsequent launches can run offline.
-Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` files together.
+Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` weight files together.
+Git LFS is not required. Calibration records for all four models are
+under [`calibration/`](calibration/). Benchmark tables are maintained here;
+generated timing logs are not tracked.
 
 To save the pip-provided binary, run this before replacing it:
 
@@ -133,8 +136,7 @@ Earlier FP32 CPU reference, same input and measurement protocol: **ailia 267.8 m
 **NXP ORT 293.1 ms**. ailia NPU INT8 is 2.33× faster than ailia CPU FP32.
 The bundled runtime is `764f675f2`; all four INT8 rows were remeasured with
 profiling disabled. CPU outputs are bit-identical to the pre-optimization
-runtime on the test image. Raw timings and protocol are in
-[`benchmarks/yolox_s_320/`](benchmarks/yolox_s_320/).
+runtime on the test image.
 
 ### Accuracy
 
@@ -161,16 +163,17 @@ python3 scripts/calibrate_yolox.py \
   --source yolox_s.opt.onnx \
   --coco-images /path/to/val2017 \
   --coco-annotations /path/to/annotations/instances_val2017.json \
-  --output models/yolox_s_320_int8.onnx
+  --output models/yolox_s_320_int8.onnx \
+  --report calibration/yolox/report.json
 ```
 
-The converter requires all 5,000 images and writes a calibration report beside
-the model. To measure one backend on the device:
+The converter requires all 5,000 images and writes the calibration report to
+the requested location. To measure one backend on the device:
 
 ```sh
 PYTHONPATH=./python python3 scripts/benchmark_yolox.py \
   --models models --image images/truck.jpg --backend ailia_npu \
-  --output benchmarks/yolox_ailia_npu.json
+  --output /tmp/yolox_ailia_npu.json
 ```
 
 For accuracy evaluation, use `scripts/evaluate_yolox.py --annotations ...

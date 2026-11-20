@@ -1,0 +1,194 @@
+{
+  "/blocks.0/attn/Reshape_1_output_0": [
+    -10.745743751525879,
+    11.509560585021973
+  ],
+  "/blocks.0/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    22.433130264282227
+  ],
+  "/blocks.0/norm1/LayerNormalization_output_0": [
+    -14.554549217224121,
+    14.27807331085205
+  ],
+  "/blocks.0/norm2/LayerNormalization_output_0": [
+    -41.364349365234375,
+    124.89784240722656
+  ],
+  "/blocks.1/attn/Reshape_1_output_0": [
+    -6.64764404296875,
+    6.191260814666748
+  ],
+  "/blocks.1/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    18.779809951782227
+  ],
+  "/blocks.1/norm1/LayerNormalization_output_0": [
+    -27.28253746032715,
+    25.425708770751953
+  ],
+  "/blocks.1/norm2/LayerNormalization_output_0": [
+    -24.6420841217041,
+    24.28746795654297
+  ],
+  "/blocks.10/attn/Reshape_1_output_0": [
+    -2.808476209640503,
+    3.062147855758667
+  ],
+  "/blocks.10/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    6.202271461486816
+  ],
+  "/blocks.10/norm1/LayerNormalization_output_0": [
+    -26.22414207458496,
+    38.388248443603516
+  ],
+  "/blocks.10/norm2/LayerNormalization_output_0": [
+    -25.313175201416016,
+    34.07712173461914
+  ],
+  "/blocks.11/attn/Reshape_1_output_0": [
+    -3.7825870513916016,
+    4.2972731590271
+  ],
+  "/blocks.11/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    6.098610877990723
+  ],
+  "/blocks.11/norm1/LayerNormalization_output_0": [
+    -24.522220611572266,
+    39.155479431152344
+  ],
+  "/blocks.11/norm2/LayerNormalization_output_0": [
+    -18.552303314208984,
+    21.110065460205078
+  ],
+  "/blocks.2/attn/Reshape_1_output_0": [
+    -4.153086185455322,
+    4.065567970275879
+  ],
+  "/blocks.2/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    18.0064697265625
+  ],
+  "/blocks.2/norm1/LayerNormalization_output_0": [
+    -33.2597541809082,
+    31.89453125
+  ],
+  "/blocks.2/norm2/LayerNormalization_output_0": [
+    -32.749000549316406,
+    27.441543579101562
+  ],
+  "/blocks.3/attn/Reshape_1_output_0": [
+    -3.190187931060791,
+    3.65291166305542
+  ],
+  "/blocks.3/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    4.598236560821533
+  ],
+  "/blocks.3/norm1/LayerNormalization_output_0": [
+    -30.25844383239746,
+    29.255990982055664
+  ],
+  "/blocks.3/norm2/LayerNormalization_output_0": [
+    -17.087879180908203,
+    31.125864028930664
+  ],
+  "/blocks.4/attn/Reshape_1_output_0": [
+    -3.32096004486084,
+    3.2434916496276855
+  ],
+  "/blocks.4/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    4.757212162017822
+  ],
+  "/blocks.4/norm1/LayerNormalization_output_0": [
+    -17.915687561035156,
+    21.659128189086914
+  ],
+  "/blocks.4/norm2/LayerNormalization_output_0": [
+    -17.299243927001953,
+    31.339487075805664
+  ],
+  "/blocks.5/attn/Reshape_1_output_0": [
+    -2.867060661315918,
+    3.1141648292541504
+  ],
+  "/blocks.5/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    5.079971790313721
+  ],
+  "/blocks.5/norm1/LayerNormalization_output_0": [
+    -18.390567779541016,
+    21.24233055114746
+  ],
+  "/blocks.5/norm2/LayerNormalization_output_0": [
+    -16.286874771118164,
+    32.09290313720703
+  ],
+  "/blocks.6/attn/Reshape_1_output_0": [
+    -3.3409087657928467,
+    3.6045665740966797
+  ],
+  "/blocks.6/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    5.537813186645508
+  ],
+  "/blocks.6/norm1/LayerNormalization_output_0": [
+    -19.8324031829834,
+    23.901294708251953
+  ],
+  "/blocks.6/norm2/LayerNormalization_output_0": [
+    -18.705699920654297,
+    34.20170593261719
+  ],
+  "/blocks.7/attn/Reshape_1_output_0": [
+    -2.5882554054260254,
+    2.6333632469177246
+  ],
+  "/blocks.7/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    6.525637149810791
+  ],
+  "/blocks.7/norm1/LayerNormalization_output_0": [
+    -24.051424026489258,
+    24.855792999267578
+  ],
+  "/blocks.7/norm2/LayerNormalization_output_0": [
+    -21.449277877807617,
+    23.499914169311523
+  ],
+  "/blocks.8/attn/Reshape_1_output_0": [
+    -3.5441153049468994,
+    3.1512868404388428
+  ],
+  "/blocks.8/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    6.755794048309326
+  ],
+  "/blocks.8/norm1/LayerNormalization_output_0": [
+    -23.013700485229492,
+    32.414947509765625
+  ],
+  "/blocks.8/norm2/LayerNormalization_output_0": [
+    -25.057170867919922,
+    24.680253982543945
+  ],
+  "/blocks.9/attn/Reshape_1_output_0": [
+    -3.6199898719787598,
+    3.615989923477173
+  ],
+  "/blocks.9/mlp/act/Mul_1_output_0": [
+    -0.16997122764587402,
+    9.658882141113281
+  ],
+  "/blocks.9/norm1/LayerNormalization_output_0": [
+    -32.14824676513672,
+    30.314783096313477
+  ],
+  "/blocks.9/norm2/LayerNormalization_output_0": [
+    -22.25682830810547,
+    23.10247039794922
+  ]
+}

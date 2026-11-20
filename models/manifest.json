@@ -25,14 +25,18 @@
     "memory_inputs": "FP32 tracking of deterministic translated views, not real videos",
     "image_encoder_calls": 25000,
     "memory_attention_calls": 20000,
-    "manifest_sha256": "83c6783f1eb5eec5186941eb482b8caad79adddd11278a5c5732fc199e35c522"
+    "manifest_sha256": "83c6783f1eb5eec5186941eb482b8caad79adddd11278a5c5732fc199e35c522",
+    "records": "../calibration/sam2"
   },
   "models": {
     "sam2.1_tiny_image_encoder_512_int8.onnx": {
       "source": "image_encoder_hiera_t_2.1.onnx",
       "source_sha256": "636c759b11d908bbe922242aef535d16211bcf440df570b90ff3bf3cba9e88f1",
       "sha256": "d2cb67d5fb8c3fa63523e98df4b10d721c9415cd5d1c4dc68eb65963802c05bc",
-      "options": ["--include-shared", "--nxp-ep-benchmark"],
+      "options": [
+        "--include-shared",
+        "--nxp-ep-benchmark"
+      ],
       "converted_matmuls": 75,
       "ort_neutron_warning": "Timing only: Invalid args and varying outputs remain; not accuracy-qualified."
     },
@@ -40,7 +44,9 @@
       "source": "memory_attention_6d_hiera_t_2.1.onnx",
       "source_sha256": "84bbdf8ebeb1fe8d159b4a382a2faf2d60dd59f5d0d84644381ad35af94e0dd1",
       "sha256": "a0cc510265783ce9e64a00c63293b4c077f32c2ca81af8ef32eb235d2ab6598d",
-      "options": ["--include-shared"],
+      "options": [
+        "--include-shared"
+      ],
       "converted_matmuls": 64
     }
   }

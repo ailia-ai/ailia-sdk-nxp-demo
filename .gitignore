@@ -12,6 +12,7 @@ sdk/from-pip/
 last_results.json
 video_results.json
 benchmark_history.jsonl
+benchmarks/
 screen.png
 *.tmp
 .DS_Store

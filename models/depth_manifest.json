@@ -8,12 +8,18 @@
     "dataset": "COCO val2017",
     "images": 5000,
     "method": "global MinMax",
-    "input_shape": [1, 3, 518, 518],
+    "input_shape": [
+      1,
+      3,
+      518,
+      518
+    ],
     "preprocessing": "RGB cubic square resize, ImageNet normalization",
     "activation": "static UINT8 tensor-wise",
     "weight": "INT8 channel-wise",
     "manifest_sha256": "ceb55e3483645cf4628d1dd6da88b9f65ea4c75f337eca03d7935ebded790590",
-    "ranges_sha256": "b13704501ecefceacc95643bad655ee7b36ad7bff6d8139e6093962499ccdad1"
+    "ranges_sha256": "b13704501ecefceacc95643bad655ee7b36ad7bff6d8139e6093962499ccdad1",
+    "records": "../calibration/depth_anything_v2"
   },
   "runtime": {
     "dynamic_matmul_npu": true,

@@ -1,0 +1,18 @@
+{
+  "activation": "UINT8 tensor-wise",
+  "calibrated_images": 5000,
+  "caption": "person. bicycle. car. motorcycle. airplane. bus. train. truck. boat. traffic light. fire hydrant. stop sign. parking meter. bench. bird. cat. dog. horse. sheep. cow. elephant. bear. zebra. giraffe. backpack. umbrella. handbag. tie. suitcase. frisbee. skis. snowboard. sports ball. kite. baseball bat. baseball glove. skateboard. surfboard. tennis racket. bottle. wine glass. cup. fork. knife. spoon. bowl. banana. apple. sandwich. orange. broccoli. carrot. hot dog. pizza. donut. cake. chair. couch. potted plant. bed. dining table. toilet. tv. laptop. mouse. remote. keyboard. cell phone. microwave. oven. toaster. sink. refrigerator. book. clock. vase. scissors. teddy bear. hair drier. toothbrush.",
+  "files": {
+    "groundingdino_swint_ogc_400x599_int8.data00": "111bd319bb077e90b5eebe233cc7b48b335e61aef759bfacf9c02665293af5c7",
+    "groundingdino_swint_ogc_400x599_int8.data01": "7c486e0456e8330bb0bb6bc421a835dc1f5084c89bdc55ba1b8b3680ff1da474",
+    "groundingdino_swint_ogc_400x599_int8.data02": "81d5a5541e576fc0e37d9f30651fa619f8435ad785f626d6fbcc7769b8734a9c",
+    "groundingdino_swint_ogc_400x599_int8.onnx": "7b812e1136a1803a6644d147457557df750d62ad572e5926d1e00f28300d04fe"
+  },
+  "fixed_matmuls": 347,
+  "manifest_sha256": "1309494f899a7aa35941dda4b53d83852cac3a3e4b98c8f5d2e918e07985a822",
+  "method": "global MinMax",
+  "msda_branches": 48,
+  "production": true,
+  "ranges_sha256": "f0e710a59e257fe58186c0e3149347663d484418d77ebcd15891571799b493d0",
+  "weight": "INT8 channel-wise"
+}

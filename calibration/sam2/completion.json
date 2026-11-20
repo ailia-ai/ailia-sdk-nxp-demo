@@ -1,0 +1,35 @@
+{
+  "calls": {
+    "image_encoder": 25000,
+    "mask_decoder": 25000,
+    "memory_attention": 20000,
+    "memory_encoder": 25000,
+    "mlp": 25000,
+    "obj_ptr_tpos_proj": 50000,
+    "prompt_encoder": 25000
+  },
+  "conversion": {
+    "image_encoder": {
+      "constant_rhs": 51,
+      "dynamic_rhs": 24
+    },
+    "memory_attention": {
+      "constant_rhs": 40,
+      "dynamic_rhs": 24
+    }
+  },
+  "images": 5000,
+  "manifest_sha256": "83c6783f1eb5eec5186941eb482b8caad79adddd11278a5c5732fc199e35c522",
+  "model_sha256": {
+    "decoder_512.onnx": "060bdebd056e835a8de370d78fdb6d440a2b8ae1b9fe2e7ed7a729b882f65394",
+    "image_encoder_512_integer.onnx": "d2cb67d5fb8c3fa63523e98df4b10d721c9415cd5d1c4dc68eb65963802c05bc",
+    "memory_attention_512_integer.onnx": "a0cc510265783ce9e64a00c63293b4c077f32c2ca81af8ef32eb235d2ab6598d",
+    "memory_encoder_512.onnx": "5d6bb7cc80a925f514dd64fa1bba0b755482785a4d4a83f14e6f63385b3a1ab5",
+    "mlp_original.onnx": "d8f3d3e711c93f21c8aa7366bde014f21822117d7f155d1936a8e8c7abfc8a2d",
+    "obj_ptr_tpos_proj_original.onnx": "94c127ea5d71c6a0ae625b789c3ec09e3dc9e3f65594cd24e97a06b6fe877a8f",
+    "pretrained_weights.npz": "d46889f00799802198cb31549e768c6b104e5f7d57f40d16acf90a60f889b548",
+    "prompt_512.onnx": "267e34611b0f089fba7ef9b9d77a1529d133ea6f7fed6b5b829e9f2cf10dd23c"
+  },
+  "production": true,
+  "status": "calibrated; deployment requires independent accuracy and device validation"
+}

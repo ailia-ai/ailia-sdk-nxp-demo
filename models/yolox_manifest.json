@@ -4,12 +4,17 @@
   "source": "https://storage.googleapis.com/ailia-models/yolox/yolox_s.opt.onnx",
   "source_sha256": "bcb994c44386898f26617a273d98cd678ce6bb8afcc296dc825a0dd29e05a1da",
   "converter": "scripts/calibrate_yolox.py",
-  "input_shape": [1, 3, 320, 320],
+  "input_shape": [
+    1,
+    3,
+    320,
+    320
+  ],
   "calibration": {
     "dataset": "COCO val2017",
     "images": 5000,
     "method": "MinMax",
-    "report": "yolox_s_320_int8.calibration.json",
+    "report": "../calibration/yolox/report.json",
     "report_sha256": "e31e8f936faab24c5aae31a7f46b0ce7b63eb6d2b5faf1050ad3e1ffba4dc04f"
   },
   "models": {

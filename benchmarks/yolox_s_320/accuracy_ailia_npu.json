@@ -1,7 +1,0 @@
-{
-  "images": 5000,
-  "AP": 0.2899884495938915,
-  "AP50": 0.44774292369344626,
-  "AP75": 0.3058785167114828,
-  "note": "COCO val2017 reused for calibration; not an independent test set."
-}

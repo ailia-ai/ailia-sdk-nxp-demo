@@ -1,0 +1,1066 @@
+{
+  "/backbone/backbone.0/layers.0/blocks.0/Reshape_5_output_0": [
+    -8.307272911071777,
+    9.045602798461914
+  ],
+  "/backbone/backbone.0/layers.0/blocks.0/attn/Reshape_1_output_0": [
+    -4.764425754547119,
+    4.962170124053955
+  ],
+  "/backbone/backbone.0/layers.0/blocks.0/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    17.580001831054688
+  ],
+  "/backbone/backbone.0/layers.0/blocks.0/norm2/LayerNormalization_output_0": [
+    -16.921953201293945,
+    16.903560638427734
+  ],
+  "/backbone/backbone.0/layers.0/blocks.1/Reshape_5_output_0": [
+    -9.201835632324219,
+    7.690218448638916
+  ],
+  "/backbone/backbone.0/layers.0/blocks.1/attn/Reshape_3_output_0": [
+    -3.874570608139038,
+    3.5463151931762695
+  ],
+  "/backbone/backbone.0/layers.0/blocks.1/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    12.043657302856445
+  ],
+  "/backbone/backbone.0/layers.0/blocks.1/norm2/LayerNormalization_output_0": [
+    -19.457870483398438,
+    15.700484275817871
+  ],
+  "/backbone/backbone.0/layers.0/downsample/norm/LayerNormalization_output_0": [
+    -6.455962181091309,
+    7.042790412902832
+  ],
+  "/backbone/backbone.0/layers.1/blocks.0/Reshape_5_output_0": [
+    -4.209296703338623,
+    3.814383029937744
+  ],
+  "/backbone/backbone.0/layers.1/blocks.0/attn/Reshape_1_output_0": [
+    -3.119271993637085,
+    3.535184860229492
+  ],
+  "/backbone/backbone.0/layers.1/blocks.0/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    9.196799278259277
+  ],
+  "/backbone/backbone.0/layers.1/blocks.0/norm2/LayerNormalization_output_0": [
+    -7.066668510437012,
+    7.130470275878906
+  ],
+  "/backbone/backbone.0/layers.1/blocks.1/Reshape_5_output_0": [
+    -8.584465980529785,
+    7.928433418273926
+  ],
+  "/backbone/backbone.0/layers.1/blocks.1/attn/Reshape_3_output_0": [
+    -4.301685333251953,
+    4.546229362487793
+  ],
+  "/backbone/backbone.0/layers.1/blocks.1/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    6.828408241271973
+  ],
+  "/backbone/backbone.0/layers.1/blocks.1/norm2/LayerNormalization_output_0": [
+    -10.465217590332031,
+    10.663286209106445
+  ],
+  "/backbone/backbone.0/layers.1/downsample/norm/LayerNormalization_output_0": [
+    -5.702693462371826,
+    5.644237518310547
+  ],
+  "/backbone/backbone.0/layers.2/blocks.0/Reshape_5_output_0": [
+    -2.8932955265045166,
+    2.9493134021759033
+  ],
+  "/backbone/backbone.0/layers.2/blocks.0/attn/Reshape_1_output_0": [
+    -2.67565655708313,
+    2.75842547416687
+  ],
+  "/backbone/backbone.0/layers.2/blocks.0/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    6.736661911010742
+  ],
+  "/backbone/backbone.0/layers.2/blocks.0/norm2/LayerNormalization_output_0": [
+    -6.136947154998779,
+    8.024505615234375
+  ],
+  "/backbone/backbone.0/layers.2/blocks.1/Reshape_5_output_0": [
+    -4.277983665466309,
+    4.706319808959961
+  ],
+  "/backbone/backbone.0/layers.2/blocks.1/attn/Reshape_3_output_0": [
+    -3.3793835639953613,
+    3.2986013889312744
+  ],
+  "/backbone/backbone.0/layers.2/blocks.1/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    5.843562602996826
+  ],
+  "/backbone/backbone.0/layers.2/blocks.1/norm2/LayerNormalization_output_0": [
+    -9.364053726196289,
+    11.525487899780273
+  ],
+  "/backbone/backbone.0/layers.2/blocks.2/Reshape_5_output_0": [
+    -5.171713352203369,
+    6.476234436035156
+  ],
+  "/backbone/backbone.0/layers.2/blocks.2/attn/Reshape_1_output_0": [
+    -5.569525241851807,
+    4.397599220275879
+  ],
+  "/backbone/backbone.0/layers.2/blocks.2/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    8.521200180053711
+  ],
+  "/backbone/backbone.0/layers.2/blocks.2/norm2/LayerNormalization_output_0": [
+    -13.548680305480957,
+    14.902795791625977
+  ],
+  "/backbone/backbone.0/layers.2/blocks.3/Reshape_5_output_0": [
+    -5.928769111633301,
+    7.483211517333984
+  ],
+  "/backbone/backbone.0/layers.2/blocks.3/attn/Reshape_3_output_0": [
+    -5.189087867736816,
+    4.517402648925781
+  ],
+  "/backbone/backbone.0/layers.2/blocks.3/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    9.333931922912598
+  ],
+  "/backbone/backbone.0/layers.2/blocks.3/norm2/LayerNormalization_output_0": [
+    -16.35527229309082,
+    16.948312759399414
+  ],
+  "/backbone/backbone.0/layers.2/blocks.4/Reshape_5_output_0": [
+    -7.8582282066345215,
+    10.611422538757324
+  ],
+  "/backbone/backbone.0/layers.2/blocks.4/attn/Reshape_1_output_0": [
+    -6.175235271453857,
+    5.472264766693115
+  ],
+  "/backbone/backbone.0/layers.2/blocks.4/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    18.845462799072266
+  ],
+  "/backbone/backbone.0/layers.2/blocks.4/norm2/LayerNormalization_output_0": [
+    -21.777917861938477,
+    19.203683853149414
+  ],
+  "/backbone/backbone.0/layers.2/blocks.5/Reshape_5_output_0": [
+    -8.427345275878906,
+    11.277026176452637
+  ],
+  "/backbone/backbone.0/layers.2/blocks.5/attn/Reshape_3_output_0": [
+    -7.257725715637207,
+    6.438901901245117
+  ],
+  "/backbone/backbone.0/layers.2/blocks.5/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    36.541141510009766
+  ],
+  "/backbone/backbone.0/layers.2/blocks.5/norm2/LayerNormalization_output_0": [
+    -29.68216896057129,
+    20.91409683227539
+  ],
+  "/backbone/backbone.0/layers.2/downsample/norm/LayerNormalization_output_0": [
+    -32.8751106262207,
+    3.652651786804199
+  ],
+  "/backbone/backbone.0/layers.3/blocks.0/Reshape_5_output_0": [
+    -9.396049499511719,
+    6.268829345703125
+  ],
+  "/backbone/backbone.0/layers.3/blocks.0/attn/Reshape_1_output_0": [
+    -4.17972993850708,
+    5.162513732910156
+  ],
+  "/backbone/backbone.0/layers.3/blocks.0/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    28.208660125732422
+  ],
+  "/backbone/backbone.0/layers.3/blocks.0/norm2/LayerNormalization_output_0": [
+    -29.14383316040039,
+    36.962791442871094
+  ],
+  "/backbone/backbone.0/layers.3/blocks.1/Reshape_5_output_0": [
+    -10.834503173828125,
+    7.399694442749023
+  ],
+  "/backbone/backbone.0/layers.3/blocks.1/attn/Reshape_3_output_0": [
+    -5.545630931854248,
+    6.429897308349609
+  ],
+  "/backbone/backbone.0/layers.3/blocks.1/mlp/act/Mul_1_output_0": [
+    -0.16995307803153992,
+    30.866966247558594
+  ],
+  "/backbone/backbone.0/layers.3/blocks.1/norm2/LayerNormalization_output_0": [
+    -43.29897689819336,
+    52.16352462768555
+  ],
+  "/bbox_embed.0/Relu_1_output_0": [
+    0.0,
+    3.126119375228882
+  ],
+  "/bbox_embed.0/Relu_output_0": [
+    0.0,
+    4.287708282470703
+  ],
+  "/bbox_embed.0_1/Relu_1_output_0": [
+    0.0,
+    3.462801933288574
+  ],
+  "/bbox_embed.0_1/Relu_output_0": [
+    0.0,
+    4.083769798278809
+  ],
+  "/bbox_embed.0_2/Relu_1_output_0": [
+    0.0,
+    3.5985472202301025
+  ],
+  "/bbox_embed.0_2/Relu_output_0": [
+    0.0,
+    4.349804878234863
+  ],
+  "/bbox_embed.0_3/Relu_1_output_0": [
+    0.0,
+    3.6605093479156494
+  ],
+  "/bbox_embed.0_3/Relu_output_0": [
+    0.0,
+    3.809271812438965
+  ],
+  "/bbox_embed.0_4/Relu_1_output_0": [
+    0.0,
+    4.1425018310546875
+  ],
+  "/bbox_embed.0_4/Relu_output_0": [
+    0.0,
+    4.60671329498291
+  ],
+  "/bbox_embed.0_5/Relu_1_output_0": [
+    0.0,
+    4.579463958740234
+  ],
+  "/bbox_embed.0_5/Relu_output_0": [
+    0.0,
+    4.566795825958252
+  ],
+  "/bert/embeddings/LayerNorm/LayerNormalization_output_0": [
+    -4.014216899871826,
+    3.7685039043426514
+  ],
+  "/bert/encoder/layer.0/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -10.32406997680664,
+    17.577180862426758
+  ],
+  "/bert/encoder/layer.0/attention/self/Reshape_3_output_0": [
+    -4.118350982666016,
+    3.6979024410247803
+  ],
+  "/bert/encoder/layer.0/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    7.40798282623291
+  ],
+  "/bert/encoder/layer.0/output/LayerNorm/LayerNormalization_output_0": [
+    -3.5196704864501953,
+    3.2073023319244385
+  ],
+  "/bert/encoder/layer.1/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -13.122513771057129,
+    18.583580017089844
+  ],
+  "/bert/encoder/layer.1/attention/self/Reshape_3_output_0": [
+    -1.8055872917175293,
+    1.6418328285217285
+  ],
+  "/bert/encoder/layer.1/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    7.4182233810424805
+  ],
+  "/bert/encoder/layer.1/output/LayerNorm/LayerNormalization_output_0": [
+    -4.149398326873779,
+    8.148954391479492
+  ],
+  "/bert/encoder/layer.10/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -12.613497734069824,
+    30.541217803955078
+  ],
+  "/bert/encoder/layer.10/attention/self/Reshape_3_output_0": [
+    -4.382961750030518,
+    3.4372594356536865
+  ],
+  "/bert/encoder/layer.10/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    7.906983375549316
+  ],
+  "/bert/encoder/layer.10/output/LayerNorm/LayerNormalization_output_0": [
+    -6.860994815826416,
+    3.252624273300171
+  ],
+  "/bert/encoder/layer.11/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -14.955790519714355,
+    8.09815502166748
+  ],
+  "/bert/encoder/layer.11/attention/self/Reshape_3_output_0": [
+    -3.9450783729553223,
+    3.106580972671509
+  ],
+  "/bert/encoder/layer.11/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    11.998427391052246
+  ],
+  "/bert/encoder/layer.11/output/LayerNorm/LayerNormalization_output_0": [
+    -3.128459930419922,
+    3.2130508422851562
+  ],
+  "/bert/encoder/layer.2/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -10.525461196899414,
+    16.059206008911133
+  ],
+  "/bert/encoder/layer.2/attention/self/Reshape_3_output_0": [
+    -2.8261635303497314,
+    2.97725510597229
+  ],
+  "/bert/encoder/layer.2/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    4.332261085510254
+  ],
+  "/bert/encoder/layer.2/output/LayerNorm/LayerNormalization_output_0": [
+    -5.230498313903809,
+    9.55232048034668
+  ],
+  "/bert/encoder/layer.3/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -11.265700340270996,
+    65.609130859375
+  ],
+  "/bert/encoder/layer.3/attention/self/Reshape_3_output_0": [
+    -2.581857681274414,
+    2.842410087585449
+  ],
+  "/bert/encoder/layer.3/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    4.9908366203308105
+  ],
+  "/bert/encoder/layer.3/output/LayerNorm/LayerNormalization_output_0": [
+    -4.183443069458008,
+    10.737250328063965
+  ],
+  "/bert/encoder/layer.4/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -14.557125091552734,
+    85.38719177246094
+  ],
+  "/bert/encoder/layer.4/attention/self/Reshape_3_output_0": [
+    -1.6077567338943481,
+    1.6851638555526733
+  ],
+  "/bert/encoder/layer.4/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    4.8746514320373535
+  ],
+  "/bert/encoder/layer.4/output/LayerNorm/LayerNormalization_output_0": [
+    -4.316980838775635,
+    9.547462463378906
+  ],
+  "/bert/encoder/layer.5/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -18.410945892333984,
+    81.30345916748047
+  ],
+  "/bert/encoder/layer.5/attention/self/Reshape_3_output_0": [
+    -1.8142729997634888,
+    2.4628849029541016
+  ],
+  "/bert/encoder/layer.5/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    4.571577548980713
+  ],
+  "/bert/encoder/layer.5/output/LayerNorm/LayerNormalization_output_0": [
+    -5.10353422164917,
+    9.444290161132812
+  ],
+  "/bert/encoder/layer.6/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -22.977848052978516,
+    73.83897399902344
+  ],
+  "/bert/encoder/layer.6/attention/self/Reshape_3_output_0": [
+    -2.4988343715667725,
+    2.6624557971954346
+  ],
+  "/bert/encoder/layer.6/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    4.300148010253906
+  ],
+  "/bert/encoder/layer.6/output/LayerNorm/LayerNormalization_output_0": [
+    -5.0220866203308105,
+    8.588613510131836
+  ],
+  "/bert/encoder/layer.7/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -21.430566787719727,
+    62.07773971557617
+  ],
+  "/bert/encoder/layer.7/attention/self/Reshape_3_output_0": [
+    -2.8256592750549316,
+    3.075387477874756
+  ],
+  "/bert/encoder/layer.7/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    5.438593864440918
+  ],
+  "/bert/encoder/layer.7/output/LayerNorm/LayerNormalization_output_0": [
+    -4.3765339851379395,
+    8.338034629821777
+  ],
+  "/bert/encoder/layer.8/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -16.540916442871094,
+    51.38929748535156
+  ],
+  "/bert/encoder/layer.8/attention/self/Reshape_3_output_0": [
+    -3.137948989868164,
+    2.9289536476135254
+  ],
+  "/bert/encoder/layer.8/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    5.85781192779541
+  ],
+  "/bert/encoder/layer.8/output/LayerNorm/LayerNormalization_output_0": [
+    -3.6926157474517822,
+    7.243310451507568
+  ],
+  "/bert/encoder/layer.9/attention/output/LayerNorm/LayerNormalization_output_0": [
+    -7.119685649871826,
+    26.050498962402344
+  ],
+  "/bert/encoder/layer.9/attention/self/Reshape_3_output_0": [
+    -3.216078519821167,
+    3.935537576675415
+  ],
+  "/bert/encoder/layer.9/intermediate/intermediate_act_fn/Mul_1_output_0": [
+    -0.16995306313037872,
+    6.973676681518555
+  ],
+  "/bert/encoder/layer.9/output/LayerNorm/LayerNormalization_output_0": [
+    -4.69700813293457,
+    3.8087692260742188
+  ],
+  "/transformer/Tile_1_output_0": [
+    -1.1181640625,
+    1.09375
+  ],
+  "/transformer/Where_7_output_0": [
+    -2.325592517852783,
+    1.2847840785980225
+  ],
+  "/transformer/decoder/Cast_14_output_0": [
+    -1.0,
+    1.0
+  ],
+  "/transformer/decoder/Cast_19_output_0": [
+    -1.0,
+    1.0
+  ],
+  "/transformer/decoder/Cast_24_output_0": [
+    -1.0,
+    1.0
+  ],
+  "/transformer/decoder/Cast_29_output_0": [
+    -1.0,
+    1.0
+  ],
+  "/transformer/decoder/Cast_4_output_0": [
+    -1.0,
+    1.0
+  ],
+  "/transformer/decoder/Cast_9_output_0": [
+    -1.0,
+    1.0
+  ],
+  "/transformer/decoder/Transpose_1_output_0": [
+    -2.7940752506256104,
+    3.8735785484313965
+  ],
+  "/transformer/decoder/Transpose_2_output_0": [
+    -3.3843348026275635,
+    3.9231488704681396
+  ],
+  "/transformer/decoder/Transpose_3_output_0": [
+    -3.264005184173584,
+    3.964416742324829
+  ],
+  "/transformer/decoder/Transpose_4_output_0": [
+    -3.4386377334594727,
+    3.9710912704467773
+  ],
+  "/transformer/decoder/Transpose_5_output_0": [
+    -4.047804355621338,
+    3.486527681350708
+  ],
+  "/transformer/decoder/Transpose_output_0": [
+    -2.8843255043029785,
+    3.565692901611328
+  ],
+  "/transformer/decoder/bbox_embed.0/Relu_1_output_0": [
+    0.0,
+    4.001256942749023
+  ],
+  "/transformer/decoder/bbox_embed.0/Relu_output_0": [
+    0.0,
+    5.399463653564453
+  ],
+  "/transformer/decoder/bbox_embed.0_1/Relu_1_output_0": [
+    0.0,
+    3.636199474334717
+  ],
+  "/transformer/decoder/bbox_embed.0_1/Relu_output_0": [
+    0.0,
+    5.187967300415039
+  ],
+  "/transformer/decoder/bbox_embed.0_2/Relu_1_output_0": [
+    0.0,
+    3.8517277240753174
+  ],
+  "/transformer/decoder/bbox_embed.0_2/Relu_output_0": [
+    0.0,
+    5.497359275817871
+  ],
+  "/transformer/decoder/bbox_embed.0_3/Relu_1_output_0": [
+    0.0,
+    3.222371816635132
+  ],
+  "/transformer/decoder/bbox_embed.0_3/Relu_output_0": [
+    0.0,
+    4.771581172943115
+  ],
+  "/transformer/decoder/bbox_embed.0_4/Relu_1_output_0": [
+    0.0,
+    2.8992550373077393
+  ],
+  "/transformer/decoder/bbox_embed.0_4/Relu_output_0": [
+    0.0,
+    4.968276500701904
+  ],
+  "/transformer/decoder/layers.0/Add_2_output_0": [
+    -11.962401390075684,
+    15.53844928741455
+  ],
+  "/transformer/decoder/layers.0/Add_output_0": [
+    -10.849668502807617,
+    11.278995513916016
+  ],
+  "/transformer/decoder/layers.0/Relu_output_0": [
+    0.0,
+    17.11617660522461
+  ],
+  "/transformer/decoder/layers.0/Transpose_output_0": [
+    -11.126322746276855,
+    11.889254570007324
+  ],
+  "/transformer/decoder/layers.0/cross_attn/Transpose_9_output_0": [
+    -1.9672541618347168,
+    1.979414939880371
+  ],
+  "/transformer/decoder/layers.0/norm1/LayerNormalization_output_0": [
+    -19.81756019592285,
+    22.319454193115234
+  ],
+  "/transformer/decoder/layers.0/norm3/LayerNormalization_output_0": [
+    -4.204653263092041,
+    9.439303398132324
+  ],
+  "/transformer/decoder/layers.1/Add_2_output_0": [
+    -18.528675079345703,
+    23.009126663208008
+  ],
+  "/transformer/decoder/layers.1/Add_output_0": [
+    -10.797211647033691,
+    11.220425605773926
+  ],
+  "/transformer/decoder/layers.1/Relu_output_0": [
+    0.0,
+    15.732683181762695
+  ],
+  "/transformer/decoder/layers.1/Transpose_output_0": [
+    -10.499752044677734,
+    12.157917976379395
+  ],
+  "/transformer/decoder/layers.1/cross_attn/Transpose_9_output_0": [
+    -2.2150368690490723,
+    1.5368728637695312
+  ],
+  "/transformer/decoder/layers.1/norm1/LayerNormalization_output_0": [
+    -17.026702880859375,
+    25.15839195251465
+  ],
+  "/transformer/decoder/layers.1/norm3/LayerNormalization_output_0": [
+    -6.860360145568848,
+    13.097900390625
+  ],
+  "/transformer/decoder/layers.2/Add_2_output_0": [
+    -19.375232696533203,
+    21.619714736938477
+  ],
+  "/transformer/decoder/layers.2/Add_output_0": [
+    -10.659951210021973,
+    11.206646919250488
+  ],
+  "/transformer/decoder/layers.2/Relu_output_0": [
+    0.0,
+    13.135431289672852
+  ],
+  "/transformer/decoder/layers.2/Transpose_output_0": [
+    -10.974349975585938,
+    11.793335914611816
+  ],
+  "/transformer/decoder/layers.2/cross_attn/Transpose_9_output_0": [
+    -1.4818602800369263,
+    2.087877035140991
+  ],
+  "/transformer/decoder/layers.2/norm1/LayerNormalization_output_0": [
+    -15.694443702697754,
+    23.720640182495117
+  ],
+  "/transformer/decoder/layers.2/norm3/LayerNormalization_output_0": [
+    -7.7601094245910645,
+    13.100424766540527
+  ],
+  "/transformer/decoder/layers.3/Add_2_output_0": [
+    -19.257816314697266,
+    21.766128540039062
+  ],
+  "/transformer/decoder/layers.3/Add_output_0": [
+    -10.747238159179688,
+    11.195838928222656
+  ],
+  "/transformer/decoder/layers.3/Relu_output_0": [
+    0.0,
+    13.284102439880371
+  ],
+  "/transformer/decoder/layers.3/Transpose_output_0": [
+    -11.163036346435547,
+    11.813261985778809
+  ],
+  "/transformer/decoder/layers.3/cross_attn/Transpose_9_output_0": [
+    -2.2388646602630615,
+    1.5653775930404663
+  ],
+  "/transformer/decoder/layers.3/norm1/LayerNormalization_output_0": [
+    -15.064140319824219,
+    23.776615142822266
+  ],
+  "/transformer/decoder/layers.3/norm3/LayerNormalization_output_0": [
+    -9.696036338806152,
+    15.813908576965332
+  ],
+  "/transformer/decoder/layers.4/Add_2_output_0": [
+    -25.501760482788086,
+    19.064260482788086
+  ],
+  "/transformer/decoder/layers.4/Add_output_0": [
+    -10.762673377990723,
+    12.008448600769043
+  ],
+  "/transformer/decoder/layers.4/Relu_output_0": [
+    0.0,
+    14.5626859664917
+  ],
+  "/transformer/decoder/layers.4/Transpose_output_0": [
+    -11.164199829101562,
+    11.676883697509766
+  ],
+  "/transformer/decoder/layers.4/cross_attn/Transpose_9_output_0": [
+    -1.95775306224823,
+    1.6172593832015991
+  ],
+  "/transformer/decoder/layers.4/norm1/LayerNormalization_output_0": [
+    -13.083807945251465,
+    20.203418731689453
+  ],
+  "/transformer/decoder/layers.4/norm3/LayerNormalization_output_0": [
+    -11.658415794372559,
+    14.78597354888916
+  ],
+  "/transformer/decoder/layers.5/Add_2_output_0": [
+    -14.060877799987793,
+    15.242780685424805
+  ],
+  "/transformer/decoder/layers.5/Add_output_0": [
+    -11.759160995483398,
+    11.189406394958496
+  ],
+  "/transformer/decoder/layers.5/Relu_output_0": [
+    0.0,
+    8.351734161376953
+  ],
+  "/transformer/decoder/layers.5/Transpose_output_0": [
+    -14.676082611083984,
+    11.355063438415527
+  ],
+  "/transformer/decoder/layers.5/cross_attn/Transpose_9_output_0": [
+    -2.020719051361084,
+    1.548390507698059
+  ],
+  "/transformer/decoder/layers.5/norm1/LayerNormalization_output_0": [
+    -6.754680633544922,
+    11.641176223754883
+  ],
+  "/transformer/decoder/ref_point_head/Relu_output_0": [
+    0.0,
+    6.917623996734619
+  ],
+  "/transformer/decoder/ref_point_head_1/Relu_output_0": [
+    0.0,
+    6.6733527183532715
+  ],
+  "/transformer/decoder/ref_point_head_2/Relu_output_0": [
+    0.0,
+    6.45980167388916
+  ],
+  "/transformer/decoder/ref_point_head_3/Relu_output_0": [
+    0.0,
+    6.933607578277588
+  ],
+  "/transformer/decoder/ref_point_head_4/Relu_output_0": [
+    0.0,
+    6.89123010635376
+  ],
+  "/transformer/decoder/ref_point_head_5/Relu_output_0": [
+    0.0,
+    6.758052825927734
+  ],
+  "/transformer/enc_out_bbox_embed/Relu_1_output_0": [
+    0.0,
+    22.67608642578125
+  ],
+  "/transformer/enc_out_bbox_embed/Relu_output_0": [
+    0.0,
+    9.491230010986328
+  ],
+  "/transformer/enc_output_norm/LayerNormalization_output_0": [
+    -4.996383190155029,
+    4.522679328918457
+  ],
+  "/transformer/encoder/Transpose_11_output_0": [
+    -6.2120561599731445,
+    4.717708587646484
+  ],
+  "/transformer/encoder/Transpose_3_output_0": [
+    -11.773235321044922,
+    7.409514904022217
+  ],
+  "/transformer/encoder/Transpose_5_output_0": [
+    -9.37917709350586,
+    5.53612756729126
+  ],
+  "/transformer/encoder/Transpose_7_output_0": [
+    -4.121767997741699,
+    2.7683236598968506
+  ],
+  "/transformer/encoder/Transpose_9_output_0": [
+    -6.023942947387695,
+    4.027749538421631
+  ],
+  "/transformer/encoder/Transpose_output_0": [
+    -3.82047176361084,
+    4.167937755584717
+  ],
+  "/transformer/encoder/fusion_layers.0/Add_output_0": [
+    -3.540982723236084,
+    4.779059886932373
+  ],
+  "/transformer/encoder/fusion_layers.0/attn/Reshape_11_output_0": [
+    -5.162856578826904,
+    5.072722434997559
+  ],
+  "/transformer/encoder/fusion_layers.0/attn/Reshape_13_output_0": [
+    -5.761563777923584,
+    6.334322452545166
+  ],
+  "/transformer/encoder/fusion_layers.0/layer_norm_l/LayerNormalization_output_0": [
+    -2.9866831302642822,
+    2.5531740188598633
+  ],
+  "/transformer/encoder/fusion_layers.0/layer_norm_v/LayerNormalization_output_0": [
+    -3.5477182865142822,
+    4.8519368171691895
+  ],
+  "/transformer/encoder/fusion_layers.1/Add_output_0": [
+    -3.30718731880188,
+    3.1133010387420654
+  ],
+  "/transformer/encoder/fusion_layers.1/attn/Reshape_11_output_0": [
+    -4.446866989135742,
+    4.463423728942871
+  ],
+  "/transformer/encoder/fusion_layers.1/attn/Reshape_9_output_0": [
+    -5.129911422729492,
+    5.188846111297607
+  ],
+  "/transformer/encoder/fusion_layers.1/layer_norm_l/LayerNormalization_output_0": [
+    -11.120466232299805,
+    5.781325340270996
+  ],
+  "/transformer/encoder/fusion_layers.1/layer_norm_v/LayerNormalization_output_0": [
+    -3.1423802375793457,
+    3.092149257659912
+  ],
+  "/transformer/encoder/fusion_layers.2/Add_output_0": [
+    -3.0324923992156982,
+    2.9517743587493896
+  ],
+  "/transformer/encoder/fusion_layers.2/attn/Reshape_11_output_0": [
+    -4.827091217041016,
+    5.444736957550049
+  ],
+  "/transformer/encoder/fusion_layers.2/attn/Reshape_9_output_0": [
+    -4.667813777923584,
+    4.754051208496094
+  ],
+  "/transformer/encoder/fusion_layers.2/layer_norm_l/LayerNormalization_output_0": [
+    -6.837853908538818,
+    4.597756862640381
+  ],
+  "/transformer/encoder/fusion_layers.2/layer_norm_v/LayerNormalization_output_0": [
+    -3.0072460174560547,
+    2.983999729156494
+  ],
+  "/transformer/encoder/fusion_layers.3/Add_output_0": [
+    -3.188441276550293,
+    3.2958931922912598
+  ],
+  "/transformer/encoder/fusion_layers.3/attn/Reshape_11_output_0": [
+    -6.10579252243042,
+    5.150903701782227
+  ],
+  "/transformer/encoder/fusion_layers.3/attn/Reshape_9_output_0": [
+    -4.220592021942139,
+    4.356066703796387
+  ],
+  "/transformer/encoder/fusion_layers.3/layer_norm_l/LayerNormalization_output_0": [
+    -3.304894208908081,
+    2.4726901054382324
+  ],
+  "/transformer/encoder/fusion_layers.3/layer_norm_v/LayerNormalization_output_0": [
+    -3.1840360164642334,
+    3.141496181488037
+  ],
+  "/transformer/encoder/fusion_layers.4/Add_output_0": [
+    -3.4428744316101074,
+    2.8319036960601807
+  ],
+  "/transformer/encoder/fusion_layers.4/attn/Reshape_11_output_0": [
+    -5.020026206970215,
+    4.828945159912109
+  ],
+  "/transformer/encoder/fusion_layers.4/attn/Reshape_9_output_0": [
+    -4.093842029571533,
+    4.584589004516602
+  ],
+  "/transformer/encoder/fusion_layers.4/layer_norm_l/LayerNormalization_output_0": [
+    -5.19230842590332,
+    3.670302629470825
+  ],
+  "/transformer/encoder/fusion_layers.4/layer_norm_v/LayerNormalization_output_0": [
+    -3.445624351501465,
+    2.8847858905792236
+  ],
+  "/transformer/encoder/fusion_layers.5/Add_output_0": [
+    -5.195291519165039,
+    4.427979946136475
+  ],
+  "/transformer/encoder/fusion_layers.5/attn/Reshape_11_output_0": [
+    -4.209658622741699,
+    4.164836883544922
+  ],
+  "/transformer/encoder/fusion_layers.5/attn/Reshape_9_output_0": [
+    -3.3803369998931885,
+    2.885143280029297
+  ],
+  "/transformer/encoder/fusion_layers.5/layer_norm_l/LayerNormalization_output_0": [
+    -6.117339611053467,
+    4.549472332000732
+  ],
+  "/transformer/encoder/fusion_layers.5/layer_norm_v/LayerNormalization_output_0": [
+    -5.194662570953369,
+    4.445751667022705
+  ],
+  "/transformer/encoder/layers.0/Add_output_0": [
+    -4.325203895568848,
+    5.0659308433532715
+  ],
+  "/transformer/encoder/layers.0/Relu_output_0": [
+    0.0,
+    24.19038200378418
+  ],
+  "/transformer/encoder/layers.0/norm1/LayerNormalization_output_0": [
+    -9.833956718444824,
+    17.79481315612793
+  ],
+  "/transformer/encoder/layers.0/self_attn/Transpose_9_output_0": [
+    -4.833327293395996,
+    5.303811073303223
+  ],
+  "/transformer/encoder/layers.1/Add_output_0": [
+    -3.7994089126586914,
+    4.583529472351074
+  ],
+  "/transformer/encoder/layers.1/Relu_output_0": [
+    0.0,
+    19.841293334960938
+  ],
+  "/transformer/encoder/layers.1/norm1/LayerNormalization_output_0": [
+    -11.243919372558594,
+    15.870381355285645
+  ],
+  "/transformer/encoder/layers.1/self_attn/Transpose_9_output_0": [
+    -2.572465658187866,
+    2.973937511444092
+  ],
+  "/transformer/encoder/layers.2/Add_output_0": [
+    -3.5239720344543457,
+    5.3646440505981445
+  ],
+  "/transformer/encoder/layers.2/Relu_output_0": [
+    0.0,
+    20.267587661743164
+  ],
+  "/transformer/encoder/layers.2/norm1/LayerNormalization_output_0": [
+    -8.286018371582031,
+    14.195398330688477
+  ],
+  "/transformer/encoder/layers.2/self_attn/Transpose_9_output_0": [
+    -4.6495208740234375,
+    4.6031494140625
+  ],
+  "/transformer/encoder/layers.3/Add_output_0": [
+    -3.6958956718444824,
+    4.340270042419434
+  ],
+  "/transformer/encoder/layers.3/Relu_output_0": [
+    0.0,
+    17.724157333374023
+  ],
+  "/transformer/encoder/layers.3/norm1/LayerNormalization_output_0": [
+    -21.601083755493164,
+    9.348690032958984
+  ],
+  "/transformer/encoder/layers.3/self_attn/Transpose_9_output_0": [
+    -3.076732635498047,
+    4.26760196685791
+  ],
+  "/transformer/encoder/layers.4/Add_output_0": [
+    -3.617870807647705,
+    5.028725624084473
+  ],
+  "/transformer/encoder/layers.4/Relu_output_0": [
+    0.0,
+    23.0708065032959
+  ],
+  "/transformer/encoder/layers.4/norm1/LayerNormalization_output_0": [
+    -23.582780838012695,
+    11.564915657043457
+  ],
+  "/transformer/encoder/layers.4/self_attn/Transpose_9_output_0": [
+    -3.3404271602630615,
+    3.6007401943206787
+  ],
+  "/transformer/encoder/layers.5/Add_output_0": [
+    -5.4405412673950195,
+    5.214174270629883
+  ],
+  "/transformer/encoder/layers.5/Relu_output_0": [
+    0.0,
+    17.576801300048828
+  ],
+  "/transformer/encoder/layers.5/norm1/LayerNormalization_output_0": [
+    -10.795783996582031,
+    14.747298240661621
+  ],
+  "/transformer/encoder/layers.5/norm2/LayerNormalization_output_0": [
+    -2.325592517852783,
+    1.2847840785980225
+  ],
+  "/transformer/encoder/layers.5/self_attn/Transpose_9_output_0": [
+    -3.385894298553467,
+    3.0791869163513184
+  ],
+  "/transformer/encoder/text_layers.0/Add_output_0": [
+    -3.794262409210205,
+    5.167937755584717
+  ],
+  "/transformer/encoder/text_layers.0/Relu_output_0": [
+    0.0,
+    12.79457950592041
+  ],
+  "/transformer/encoder/text_layers.0/norm1/LayerNormalization_output_0": [
+    -9.070222854614258,
+    14.711858749389648
+  ],
+  "/transformer/encoder/text_layers.1/Add_output_0": [
+    -10.773235321044922,
+    8.409515380859375
+  ],
+  "/transformer/encoder/text_layers.1/Relu_output_0": [
+    0.0,
+    5.125149726867676
+  ],
+  "/transformer/encoder/text_layers.1/norm1/LayerNormalization_output_0": [
+    -20.231660842895508,
+    8.079971313476562
+  ],
+  "/transformer/encoder/text_layers.2/Add_output_0": [
+    -8.37917709350586,
+    6.528927803039551
+  ],
+  "/transformer/encoder/text_layers.2/Relu_output_0": [
+    0.0,
+    7.36466646194458
+  ],
+  "/transformer/encoder/text_layers.2/norm1/LayerNormalization_output_0": [
+    -21.654706954956055,
+    9.790762901306152
+  ],
+  "/transformer/encoder/text_layers.3/Add_output_0": [
+    -3.121767997741699,
+    3.7683236598968506
+  ],
+  "/transformer/encoder/text_layers.3/Relu_output_0": [
+    0.0,
+    9.036540985107422
+  ],
+  "/transformer/encoder/text_layers.3/norm1/LayerNormalization_output_0": [
+    -22.66690444946289,
+    6.605628490447998
+  ],
+  "/transformer/encoder/text_layers.4/Add_output_0": [
+    -5.023942947387695,
+    4.452295303344727
+  ],
+  "/transformer/encoder/text_layers.4/Relu_output_0": [
+    0.0,
+    13.907922744750977
+  ],
+  "/transformer/encoder/text_layers.4/norm1/LayerNormalization_output_0": [
+    -21.567729949951172,
+    7.8070759773254395
+  ],
+  "/transformer/encoder/text_layers.5/Add_output_0": [
+    -5.2120561599731445,
+    5.2729034423828125
+  ],
+  "/transformer/encoder/text_layers.5/Relu_output_0": [
+    0.0,
+    18.188013076782227
+  ],
+  "/transformer/encoder/text_layers.5/norm1/LayerNormalization_output_0": [
+    -14.807751655578613,
+    9.83051872253418
+  ],
+  "/transformer/encoder/text_layers.5/norm2/LayerNormalization_output_0": [
+    -4.512522220611572,
+    1.9529727697372437
+  ]
+}
