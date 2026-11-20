@@ -69,7 +69,7 @@ class DepthTests(unittest.TestCase):
             engine = DepthEngine(ROOT / "models", "ailia_npu")
             self.assertEqual(os.environ["AILIA_NEUTRON_DYNAMIC_MATMUL"], "1")
             engine.run(ROOT / "images/bedroom/00000.jpg")
-            result = engine.run(ROOT / "images/bedroom/00000.jpg", compare=True)
+            result = engine.run(np.zeros((240, 320, 3), np.uint8), compare=True)
             self.assertEqual(factory.call_count, 1)
             self.assertEqual(session.run.call_count, 4)
             self.assertEqual(len(result["inference_runs_ms"]), 3)

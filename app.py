@@ -16,6 +16,7 @@ from engine import BACKENDS, fit_rect, image_point
 from grounding_inputs import DEFAULT_PROMPT
 from grounding_inputs import REVISION as GROUNDING_REVISION
 from history import append_history, load_history
+from live_input import LiveInput, find_camera
 from runtime_worker import RuntimeWorker
 from settings import MODEL_REVISION
 from yolox import REVISION as YOLOX_REVISION
@@ -37,6 +38,10 @@ def main():
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
     parser.add_argument("--model", choices=("sam", "grounding", "depth", "yolox"), default="sam")
     parser.add_argument("--caption", default=DEFAULT_PROMPT, help="Grounding DINO detection prompt")
+    parser.add_argument(
+        "--camera", type=int, help="Camera index (default: auto-detect USB UVC camera)"
+    )
+    parser.add_argument("--video-input", type=Path, help="Loop a video file instead of USB camera")
     parser.add_argument(
         "--bedroom", action="store_true", help="Open the five-frame memory tracking demo"
     )
@@ -78,6 +83,10 @@ def main():
             self.depth = None
             self.results = {}
             self.closing = False
+            self.capture = None
+            self.camera_index = args.camera
+            self.live_frame = None
+            self.after_live = None
             self.video_mode = args.bedroom
             self.video_frame = 0
             self.video_records = []
@@ -151,6 +160,15 @@ def main():
             self.selector.connect("changed", self.switch)
             side.pack_start(self.selector, False, False, 0)
             self.controls = [self.model_selector, self.selector]
+            self.live_button = Gtk.ToggleButton(label="USB camera / video")
+            self.live_button.connect("toggled", self.toggle_live)
+            side.pack_start(self.live_button, False, False, 0)
+            video_button = Gtk.Button(label="Open video…")
+            video_button.connect("clicked", self.open_video)
+            side.pack_start(video_button, False, False, 0)
+            camera_button = Gtk.Button(label="Use USB camera")
+            camera_button.connect("clicked", self.use_camera)
+            side.pack_start(camera_button, False, False, 0)
             self.prompt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
             self.prompt_box.pack_start(
                 Gtk.Label(label="Detection prompt (English)", xalign=0), False, False, 0
@@ -212,6 +230,8 @@ def main():
             self.status = Gtk.Label(label="Starting…", xalign=0)
             self.status.set_line_wrap(True)
             root.pack_start(self.status, False, False, 0)
+            self.live_timing = Gtk.Label(xalign=0)
+            root.pack_start(self.live_timing, False, False, 0)
             grid = Gtk.Grid(column_spacing=28, row_spacing=10)
             root.pack_start(grid, False, False, 0)
             self.table_headers = []
@@ -277,8 +297,87 @@ def main():
             self.update_model_controls()
             if not args.windowed:
                 self.fullscreen()
-            GLib.timeout_add(100, self.poll)
-            self.submit("prepare")
+            GLib.timeout_add(30, self.poll)
+            GLib.timeout_add(30, self.poll_capture)
+            if args.video_input:
+                self.live_button.set_active(True)
+            else:
+                self.submit("prepare")
+
+        def use_camera(self, *_):
+            args.video_input = None
+            if self.live_button.get_active():
+                self.toggle_live(self.live_button)
+            else:
+                self.live_button.set_active(True)
+
+        def toggle_live(self, button):
+            self.after_live = None
+            if self.capture is not None:
+                self.capture.close()
+                self.capture = None
+            if self.busy:
+                # Discard an in-flight result from the previous source. An idle
+                # worker can retain its already-warmed sessions.
+                self.runner.close()
+            self.pending_jobs = []
+            self.busy = False
+            for control in self.controls:
+                control.set_sensitive(True)
+            self.live_frame = None
+            self.live_timing.set_text("")
+            self.points, self.mask, self.detections, self.depth = [], None, [], None
+            self.video_mode = False
+            self.update_pixbuf()
+            if button.get_active():
+                try:
+                    source = str(args.video_input) if args.video_input else find_camera(args.camera)
+                except ValueError as exc:
+                    button.set_active(False)
+                    self.live_timing.set_text("Live input stopped: " + str(exc))
+                    return
+                if isinstance(source, int):
+                    self.camera_index = source
+                self.capture = LiveInput(source)
+                self.attribution.set_text(f"Live input: {source}")
+                self.note.set_text(
+                    "Live: latest frame only; network time excludes capture/display. SAM uses fixed click prompts, not memory tracking."
+                )
+                self.status.set_text("Opening camera/video…")
+            else:
+                self.load_image()
+                self.submit("prepare")
+
+        def open_video(self, *_):
+            dialog = Gtk.FileChooserDialog(
+                title="Select video", parent=self, action=Gtk.FileChooserAction.OPEN
+            )
+            dialog.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Open", Gtk.ResponseType.OK)
+            if dialog.run() == Gtk.ResponseType.OK:
+                args.video_input = Path(dialog.get_filename())
+                if self.live_button.get_active():
+                    self.toggle_live(self.live_button)
+                else:
+                    self.live_button.set_active(True)
+            dialog.destroy()
+
+        def poll_capture(self):
+            if self.closing:
+                return False
+            if self.capture is None or self.busy:
+                return True
+            item = self.capture.read()
+            if item is None:
+                return True
+            kind, value = item
+            if kind == "error":
+                self.live_button.set_active(False)
+                self.status.set_text(value)
+                self.live_timing.set_text("Live input stopped: " + value)
+                return True
+            self.live_frame = value
+            self.submit("live")
+            return True
 
         def show_measurement(self, record):
             backend = record["backend"]
@@ -301,8 +400,15 @@ def main():
             if len(self.history_rows) > 200:
                 self.history_rows.remove(self.history_rows.get_iter_first())
 
+        def input_name(self):
+            if self.capture is not None:
+                return (
+                    str(args.video_input) if args.video_input else f"USB camera {self.camera_index}"
+                )
+            return self.image_path
+
         def record_measurement(self, backend, values, image=None):
-            image = self.image_path if image is None else image
+            image = self.input_name() if image is None else image
             try:
                 record = append_history(
                     self.history_path,
@@ -329,6 +435,9 @@ def main():
             self.show_measurement(record)
 
         def load_image(self):
+            if self.capture is not None:
+                self.update_pixbuf()
+                return
             if (
                 self.video_mode
                 or Path(self.image_path).resolve().parent
@@ -430,7 +539,11 @@ def main():
                         f"Estimated depth at clicked pixel: {self.depth[y, x]:.2f} m"
                     )
                 return
-            if self.model != "sam" or self.busy or event.button not in (1, 3):
+            if (
+                self.model != "sam"
+                or (self.busy and self.capture is None)
+                or event.button not in (1, 3)
+            ):
                 return
             if self.video_mode and self.video_frame != 0:
                 self.status.set_text("Press Bedroom to return to frame 1 before adding points.")
@@ -446,7 +559,7 @@ def main():
                 return
             self.busy = True
             for control in self.controls:
-                control.set_sensitive(False)
+                control.set_sensitive(action == "live")
             self.status.set_text("Working… " + self.backend)
             backends = (
                 [backend for backend in BACKENDS if backend != self.backend] + [self.backend]
@@ -457,7 +570,9 @@ def main():
                 dict(
                     action=action,
                     backend=backend,
-                    image=self.image_path,
+                    image=self.live_frame.copy()
+                    if self.capture is not None and self.live_frame is not None
+                    else self.image_path,
                     points=list(self.points),
                     video_mode=self.video_mode,
                     model=self.model,
@@ -500,8 +615,12 @@ def main():
             )
 
         def switch_model(self, selector):
+            self.after_live = None
             self.model = selector.get_active_id()
+            self.live_timing.set_text("")
             self.runner.close()
+            self.busy = False
+            self.pending_jobs = []
             self.video_mode, self.video_frame = False, 0
             self.points, self.mask, self.detections = [], None, []
             self.depth = None
@@ -528,6 +647,12 @@ def main():
             self.submit("prepare")
 
         def switch(self, selector):
+            self.after_live = None
+            self.live_timing.set_text("")
+            if self.capture is not None:
+                self.runner.close()
+                self.busy = False
+                self.pending_jobs = []
             self.backend = selector.get_active_id()
             self.depth = None
             if self.video_mode:
@@ -539,12 +664,20 @@ def main():
             self.submit("prepare")
 
         def benchmark(self, *_):
+            if self.capture is not None and self.busy:
+                self.after_live = "benchmark"
+                self.status.set_text("Compare all queued after the current frame.")
+                return
             if self.video_mode:
                 self.track(compare=True)
             else:
                 self.submit("benchmark")
 
         def bedroom(self, *_):
+            if self.capture is not None:
+                self.live_button.set_active(False)
+                self.runner.close()
+                self.busy = False
             self.video_mode, self.video_frame = True, 0
             self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
             self.points, self.mask, self.video_records = [], None, []
@@ -583,6 +716,10 @@ def main():
                 filt.add_mime_type(mime)
             dialog.add_filter(filt)
             if dialog.run() == Gtk.ResponseType.OK:
+                if self.capture is not None:
+                    self.live_button.set_active(False)
+                    self.runner.close()
+                    self.busy = False
                 self.video_mode = False
                 self.image_path = dialog.get_filename()
                 self.points, self.mask = [], None
@@ -596,6 +733,8 @@ def main():
             if self.closing:
                 return False
             while True:
+                if self.runner.responses is None:
+                    break
                 try:
                     result = self.runner.responses.get_nowait()
                 except queue.Empty:
@@ -638,9 +777,23 @@ def main():
                 elif kind == "result":
                     backend = result["backend"]
                     enc, click = result["encoder_ms"], result.get("click_ms")
+                    if (
+                        self.capture is not None
+                        and backend == self.backend
+                        and self.live_frame is not None
+                    ):
+                        # Display the exact inferred frame, never a newer camera frame
+                        # underneath stale boxes, masks, or depth values.
+                        self.rgb = cv2.cvtColor(self.live_frame, cv2.COLOR_BGR2RGB)
+                        self.mask, self.detections, self.depth = None, [], None
+                        self.update_pixbuf()
                     # Preparing an image must not erase an existing benchmark
                     # (especially the last full video measurement).
-                    if result.get("action") != "prepare" or backend not in self.recorded_backends:
+                    if result.get("action") == "live":
+                        self.live_timing.set_text(
+                            f"{backend}: {enc:.1f} ms inference / {click or 0:.1f} ms prompt + decoder"
+                        )
+                    elif result.get("action") != "prepare" or backend not in self.recorded_backends:
                         self.record_measurement(
                             backend,
                             [
@@ -660,9 +813,11 @@ def main():
                     if backend == self.backend and "depth" in result:
                         self.depth = result["depth"]
                         self.update_pixbuf()
+                    if result.get("action") == "live":
+                        continue
                     record = {k: v for k, v in result.items() if k not in ("mask", "depth")}
                     record.update(
-                        image=self.image_path, points=self.points, threads=6, profiling=False
+                        image=self.input_name(), points=self.points, threads=6, profiling=False
                     )
                     self.results[self.model + ":" + backend] = record
                     try:
@@ -685,7 +840,15 @@ def main():
                     self.busy = False
                     for control in self.controls:
                         control.set_sensitive(True)
-                    self.status.set_text(result.get("text", "Ready — click the image."))
+                    if self.capture is None or kind == "error":
+                        self.status.set_text(result.get("text", "Ready — click the image."))
+                    if kind == "error" and self.capture is not None:
+                        self.live_button.set_active(False)
+                        self.status.set_text(result["text"])
+                        self.live_timing.set_text("Live input stopped: " + result["text"])
+                    if self.after_live and kind == "done":
+                        action, self.after_live = self.after_live, None
+                        self.submit(action)
                     if self.video_mode and result.get("action") in ("video", "video_compare"):
                         reset_tracking_view(self)
                         if kind == "done":
@@ -717,6 +880,8 @@ def main():
 
         def shutdown(self, *_):
             self.closing = True
+            if self.capture is not None:
+                self.capture.close()
             self.runner.close()
             Gtk.main_quit()
 

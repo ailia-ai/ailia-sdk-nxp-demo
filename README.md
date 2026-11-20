@@ -64,7 +64,21 @@ sh launch.sh --image /path/to/image.jpg
 sh launch.sh --model grounding --caption "person. truck. car."
 sh launch.sh --model depth            # Indoor depth, Bedroom image
 sh launch.sh --model yolox            # YOLOX-S 320 object detection
+sh launch.sh --camera 1               # Use camera index 1 when enabling USB input
+sh launch.sh --video-input /tmp/test.avi  # Start looping a video as live input
 ```
+
+All four models support **Use USB camera** and **Open video…**. Toggle
+**USB camera / video** off to return to image input. USB UVC cameras are detected
+automatically; use `--camera INDEX` to select a specific device.
+Only the latest frame is processed, with one inference in flight; models stay loaded
+between frames. Live network timings appear below the status line
+without overwriting benchmark history. **Compare all 4** measures the current frame.
+SAM applies the clicked foreground/background points independently to each frame;
+live input does not use Bedroom's memory tracking. Video files loop at end of file.
+To test without a camera on the device, run
+`PYTHONPATH=python python3 scripts/test_live_video.py`. This creates a temporary
+MJPEG video and runs two frames through every model on ailia NPU and ORT CPU.
 
 - **Open image**: select an image
 - **Compare all 4**: compare all four backends
@@ -104,19 +118,22 @@ then ten runs without profiling. Times exclude preprocessing, NMS and rendering.
 
 | Runtime | Median inference | FPS |
 | --- | ---: | ---: |
-| ailia CPU | 19,075.1 ms | 0.05 |
-| ailia NPU | 115.0 ms | 8.70 |
-| NXP ORT 1.24.3 CPU | 803.1 ms | 1.25 |
-| NXP ORT 1.24.3 Neutron EP | 797.8 ms | 1.25 |
+| ailia CPU | 436.2 ms | 2.29 |
+| ailia NPU | 114.8 ms | 8.71 |
+| NXP ORT 1.24.3 CPU | 793.7 ms | 1.26 |
+| NXP ORT 1.24.3 Neutron EP | 796.6 ms | 1.26 |
 
 These CPU figures measure the same ConvInteger graph, not an optimized FP32
-model. ailia's 2D ConvInteger CPU fallback is slow. A separate ORT profile
+model. ailia uses tiled NEON INT8 kernels with cached fixed weights on CPU.
+A separate ORT profile
 assigned all 83 ConvInteger nodes to CPU; only QuantizeLinear/DequantizeLinear
 nodes were assigned to Neutron EP. The ORT Neutron row is not NPU convolution.
 
-FP32 CPU reference, same input and measurement protocol: **ailia 267.8 ms**,
+Earlier FP32 CPU reference, same input and measurement protocol: **ailia 267.8 ms**,
 **NXP ORT 293.1 ms**. ailia NPU INT8 is 2.33× faster than ailia CPU FP32.
-The bundled runtime is `380dd1135`; raw timings and protocol are in
+The bundled runtime is `764f675f2`; all four INT8 rows were remeasured with
+profiling disabled. CPU outputs are bit-identical to the pre-optimization
+runtime on the test image. Raw timings and protocol are in
 [`benchmarks/yolox_s_320/`](benchmarks/yolox_s_320/).
 
 ### Accuracy

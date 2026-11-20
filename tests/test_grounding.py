@@ -60,7 +60,7 @@ class GroundingTests(unittest.TestCase):
         ):
             engine = GroundingEngine(ROOT / "models", "ailia_npu")
             engine.run(ROOT / "images/truck.jpg", "truck.")
-            engine.run(ROOT / "images/truck.jpg", "person.", compare=True)
+            engine.run(np.zeros((240, 320, 3), np.uint8), "person.", compare=True)
             self.assertEqual(factory.call_count, 1)
             self.assertEqual(session.run.call_count, 4)
             engine.run(ROOT / "images/truck.jpg", "person. truck.")

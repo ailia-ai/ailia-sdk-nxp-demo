@@ -49,3 +49,4 @@ class RuntimeWorker:
         self.process = None
         self.backend = None
         self.model = None
+        self.requests = self.responses = None

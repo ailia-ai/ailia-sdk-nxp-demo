@@ -12,8 +12,10 @@
   "statistic": "median",
   "profiling_during_timing": false,
   "scope": "Inference only, excluding loading, preprocessing, NMS and rendering",
-  "runtime_source_commit": "380dd1135",
-  "runtime_sha256": "7b359133e7745385298cca5adcbd6dfd8b27c50d6f7f7edaa170f5b8039add02",
+  "runtime_source_commit": "764f675f2",
+  "runtime_sha256": "7b3cbb613e14541fc90d182f061f5de496dad9fc0f6c70bd36c7ee9c8c462828",
+  "runtime_validation": "65 exact ConvInteger kernel cases on both portable and SDOT paths; 60 CPU/NPU operator comparisons; YOLOX CPU output bit-identical to the pre-optimization runtime on truck.jpg.",
+  "fp32_reference_runtime_source_commit": "380dd1135",
   "model_sha256": "aca6d3952a09e7c2d6151af5b4c1c8e8ebb2905f9baba9ee1c0d47586f606fce",
   "accuracy": {
     "dataset": "COCO val2017, all 5000 images (also used for calibration)",

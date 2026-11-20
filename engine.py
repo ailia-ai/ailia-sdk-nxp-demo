@@ -128,8 +128,8 @@ class Engine:
         self.features = None
 
     def prepare(self, path):
-        self.path = str(path)
-        image = cv2.imread(self.path)
+        self.path = None if isinstance(path, np.ndarray) else str(path)
+        image = path if isinstance(path, np.ndarray) else cv2.imread(self.path)
         if image is None:
             raise ValueError("Cannot read image: " + self.path)
         start = time.perf_counter()
@@ -339,7 +339,11 @@ def worker(directory, requests, responses):
                     from video import VideoEngine
 
                     video_engine = VideoEngine(Path(directory).parent, backend, cache=cache)
-                cached = engine.path == job["image"] and engine.features is not None
+                cached = (
+                    not isinstance(job["image"], np.ndarray)
+                    and engine.path == job["image"]
+                    and engine.features is not None
+                )
                 if not cached:
                     engine.prepare(job["image"])
                 result = dict(

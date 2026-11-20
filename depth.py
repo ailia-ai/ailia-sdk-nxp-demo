@@ -21,7 +21,7 @@ class DepthEngine:
         os.environ["AILIA_NEUTRON_DYNAMIC_MATMUL"] = "1"
 
     def run(self, path, compare=False):
-        image = cv2.imread(str(path))
+        image = path if isinstance(path, np.ndarray) else cv2.imread(str(path))
         if image is None:
             raise ValueError(f"Cannot read image: {path}")
         feed = {"image": preprocess(image)}
