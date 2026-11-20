@@ -45,7 +45,8 @@ Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` weight files t
 Git LFS is not required. Calibration records for the four calibrated models are
 under [`calibration/`](calibration/). Benchmark tables are maintained here;
 generated timing logs are not tracked. Tables identify the measured runtime
-revision; only the Depth Anything table has been refreshed for `c97d853c4`.
+revision; Depth Anything was measured with `c97d853c4`, and Grounding DINO
+with the subsequent local integer fusion/packing update.
 
 To save the pip-provided binary, run this before replacing it:
 
@@ -302,9 +303,14 @@ The bundled example uses `Horse. Clouds. Grasses. Sky. Hill.`.
 Bounding boxes, labels, and confidence scores appear on the image. **Compare all 4** measures the same image and prompt on each backend.
 
 The Swin-T model uses a 400×599 letterboxed image and up to 256 text tokens.
-Its 347 fixed-weight MatMuls use tensor-wise UINT8 activations and channel-wise INT8 weights through standard ONNX `MatMulInteger` nodes. Other operations remain FP32.
+Its 347 fixed-weight MatMuls use COCO-calibrated tensor-wise UINT8 activations and channel-wise INT8 weights.
+All 109 dynamic MatMuls explicitly quantize both operands with standard ONNX
+`DynamicQuantizeLinear`, followed by `MatMulInteger`, FP32 Cast and scale multiplication.
+The graph contains 456 `MatMulInteger` nodes and no floating-point `MatMul` nodes. Other operations remain FP32.
 The graph is rearranged to use the SDK's existing DeformableAttention fusion.
-Dynamic Attention placement is selected automatically by the runtime.
+Quantization is defined by the ONNX model, not applied implicitly by the runtime.
+The current dynamic products use fused NEON integer MatMul/Cast/scaling to
+avoid NPU dispatch and padding overhead; fixed-weight products retain the NPU path.
 ORT NPU outputs may vary between inferences.
 
 ### Benchmarks
@@ -315,19 +321,35 @@ To measure all four backends without opening the GUI:
 PYTHONPATH=./python python3 scripts/benchmark_grounding.py --output /tmp/grounding-results.json
 ```
 
-Measured on i.MX95 on 2026-11-20 with revision `grounding-coco-val2017-v1`,
-the bundled ailia SDK 1.7 (`ac22f5086`), and NXP ORT 1.24.3.
+Measured on i.MX95 on 2026-11-20 with revision `grounding-coco-val2017-dql-v2`,
+the bundled ailia SDK 1.7 (`c97d853c4` plus the local integer fusion/packing update),
+and NXP ORT 1.24.3. The runtime binary and source-file hashes are in `models/grounding_manifest.json`.
 Six CPU threads, profiling disabled, one excluded dummy inference at Open,
 then the median of three runs. Input: `images/grounding_dino/demo.jpg`, prompt:
 `Horse. Clouds. Grasses. Sky. Hill.`. Loading and pre/post-processing are excluded.
 
 | Runtime | CPU (ms) | NPU (ms) |
 |---|---:|---:|
-| ailia SDK 1.7 | 8,386.0 | 4,068.0 |
-| NXP ONNX Runtime 1.24.3 | 7,553.2 | 7,549.9 |
+| ailia SDK 1.7 | 8,926.2 | 4,053.6 |
+| NXP ONNX Runtime 1.24.3 | 7,654.0 | 7,626.0 |
 
 All four runs produced detections on the horse image. This is a functional check, not a detection-accuracy benchmark.
 Model hashes and calibration provenance are recorded in `models/grounding_manifest.json`.
+
+Explicit dynamic quantization preserves seven horse detections in this image.
+The mean best-matching horse-box IoU against the previous model on ailia NPU
+is 0.986 (not ground-truth accuracy). ailia CPU and NPU return identical
+horse boxes. Scores and thresholded detections can change after quantization.
+ailia NPU takes 4,053.6 ms versus 4,070.2 ms for the previous model measured
+with the same runtime. Explicit quantization retains the previous inference speed.
+The runtime optimization preserves every detection box and score from the
+unoptimized explicit-quantization model in this check.
+
+The bundled runtime (`a66843f5b`) subsequently separates CPU execution, output conversion
+and NPU dispatch policy. A same-condition before/after check measured
+4,114.7 / 4,077.4 ms for Grounding DINO and 2,733.9 / 2,692.3 ms for Depth
+Anything on ailia NPU. Detection boxes/scores and the depth output were unchanged.
+The four-backend table above records the pre-refactoring run.
 
 ### Model Conversion
 
@@ -352,6 +374,14 @@ Image preprocessing and tokenization are shared with the demo. The input model i
 The output is `models/groundingdino_swint_ogc_400x599_int8.onnx` with external weight shards.
 `manifest.json`, `ranges.json`, and `completion.json` record the calibration inputs, ranges, and artifact hashes.
 Rerun the same command to resume an interrupted calibration. Copy the ONNX file and all weight shards together after completion.
+
+To regenerate the model using the bundled, completed COCO calibration ranges:
+
+```sh
+python3 scripts/grounding_convert.py --source groundingdino_swint_ogc.onnx \
+  --ranges calibration/grounding_dino/ranges.json \
+  --output models/groundingdino_swint_ogc_400x599_int8.onnx
+```
 
 ## Depth Anything V2 Metric Depth Small
 

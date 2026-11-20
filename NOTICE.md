@@ -27,8 +27,9 @@ The Grounding DINO Swin-T model derives from the public ailia-models export:
 https://github.com/ailia-ai/ailia-models/tree/master/object_detection/groundingdino
 Original project: https://github.com/IDEA-Research/GroundingDINO
 See `licenses/GROUNDING_DINO_LICENSE` (Apache License 2.0).
-The conversion uses COCO val2017 Min/Max calibration, integer fixed-weight
-MatMuls, and a standard-ONNX rearrangement of multi-scale deformable attention.
+The conversion uses COCO val2017 Min/Max calibration for fixed-weight MatMuls,
+explicit dynamic quantization for variable-input MatMuls, and a standard-ONNX
+rearrangement of multi-scale deformable attention.
 This is a demo conversion, not an official upstream model release.
 
 `models/grounding_tokenizer/vocab.txt` is the BERT-base-uncased vocabulary

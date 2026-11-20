@@ -109,6 +109,50 @@ def quantize(model, ranges):
     del model.graph.node[:]
     model.graph.node.extend(nodes)
     rewrite(model)  # Also removes unused original weights and dead shape nodes.
+    return quantize_dynamic(model)
+
+
+def quantize_dynamic(model):
+    """Make all 109 remaining floating MatMuls explicitly tensor-wise UINT8."""
+    selected = [n for n in model.graph.node if n.op_type == "MatMul" and n.domain == ""]
+    if len(selected) != 109:
+        raise ValueError(f"Expected 109 dynamic MatMuls, found {len(selected)}")
+    if next((op.version for op in model.opset_import if op.domain == ""), 0) < 11:
+        raise ValueError("DynamicQuantizeLinear requires opset 11 or later")
+    used = {s for n in model.graph.node for s in (*n.input, *n.output)}
+    prefix = "gdino_dynamic_int8_"
+    while any(s.startswith(prefix) for s in used):
+        prefix += "_"
+    nodes = []
+    for index, node in enumerate(model.graph.node):
+        if node.op_type != "MatMul" or node.domain != "":
+            nodes.append(node)
+            continue
+        tag = f"{prefix}{index}_"
+        for operand, source in zip(("a", "b"), node.input):
+            nodes.append(
+                h.make_node(
+                    "DynamicQuantizeLinear",
+                    [source],
+                    [tag + operand, tag + operand + "s", tag + operand + "z"],
+                    name=tag + operand + "_quantize",
+                )
+            )
+        nodes.extend(
+            [
+                h.make_node(
+                    "MatMulInteger",
+                    [tag + "a", tag + "b", tag + "az", tag + "bz"],
+                    [tag + "i"],
+                    name=tag + "matmul",
+                ),
+                h.make_node("Cast", [tag + "i"], [tag + "f"], to=T.FLOAT, name=tag + "cast"),
+                h.make_node("Mul", [tag + "as", tag + "bs"], [tag + "s"], name=tag + "scale"),
+                h.make_node("Mul", [tag + "f", tag + "s"], list(node.output), name=tag + "output"),
+            ]
+        )
+    del model.graph.node[:]
+    model.graph.node.extend(nodes)
     return model
 
 
@@ -140,3 +184,21 @@ def save_sharded(model, path, limit=96 * 1024 * 1024):
     onnx.save_model(model, path)
     onnx.checker.check_model(str(path))
     return [path, *shards]
+
+
+def main():
+    """Convert the upstream model with completed COCO calibration ranges."""
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, required=True)
+    parser.add_argument("--ranges", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    model = quantize(promote_fp32(onnx.load(args.source)), json.loads(args.ranges.read_text()))
+    save_sharded(model, args.output)
+
+
+if __name__ == "__main__":
+    main()

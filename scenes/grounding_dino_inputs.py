@@ -8,7 +8,7 @@ import numpy as np
 
 HEIGHT, WIDTH = 400, 599
 MODEL = "groundingdino_swint_ogc_400x599_int8.onnx"
-REVISION = "grounding-coco-val2017-v1"
+REVISION = "grounding-coco-val2017-dql-v2"
 DEFAULT_PROMPT = "Horse. Clouds. Grasses. Sky. Hill."
 
 

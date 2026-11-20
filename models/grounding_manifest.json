@@ -1,6 +1,16 @@
 {
-  "revision": "grounding-coco-val2017-v1",
-  "runtime_source_revision": "566f2f71b",
+  "revision": "grounding-coco-val2017-dql-v2",
+  "runtime_source_revision": "a66843f5baff601c56753ca01f56cf5e1d6731d4",
+  "runtime_source_update": "Shared integer execution, ordered epilogue and shape-based dispatch",
+  "runtime_sha256": "66b3ea33a4150744b7fcd45ee26c2867900198ce0a38616043b59eed15f7ecc6",
+  "runtime_source_files": {
+    "library/npu/neutron/NeutronMatMulInteger.h": "9155b991b969828c0134166c818a31a52ee7ac4ef97600eb99abe44f0028c5c7",
+    "library/npu/neutron/NeutronIntegerMatMulPolicy.h": "7f89c5ca7b4dbdc67402ae870e36087306ad24b0cdcc9348ec9e7c8ff683e0ac",
+    "library/npu/neutron/NeutronSegmentBuilder.cpp": "b55505f7bb0aa427e375ee14fb631361a9b26ed2b052f88a915de6846b9a8ad6",
+    "library/npu/neutron/NeutronScaledInteger.h": "91391fc6fb78a23acc26a62063b897df84a1461365d2e38530bed26324eea374",
+    "library/core/layers/basics/IntegerMatMulExecution.h": "eb3adf052a41762fe61bfa1684f2b82ad37b083842748417e881572f66628d6d",
+    "library/core/layers/basics/IntegerMatMulKernel.h": "3729595f65135c558b1f8cfaedecad2ce6f6786a7b6d2fc57f3f771c4291121a"
+  },
   "source_url": "https://storage.googleapis.com/ailia-models/groundingdino/groundingdino_swint_ogc.onnx",
   "source_sha256": "69fc8059ed580a4f7bef9753e1c0dff3ab00e1004d86d9587202f6605bb9b02d",
   "converter": "scripts/calibrate_grounding.py",
@@ -28,8 +38,12 @@
   },
   "models": {
     "groundingdino_swint_ogc_400x599_int8.onnx": {
-      "sha256": "7b812e1136a1803a6644d147457557df750d62ad572e5926d1e00f28300d04fe",
-      "converted_matmuls": 347,
+      "sha256": "cb68abcebd604a33d0573671ec863e5ad62feb4d24b4c80e23601ec41cf1bea3",
+      "converted_matmuls": 456,
+      "fixed_matmuls": 347,
+      "dynamic_matmuls": 109,
+      "dynamic_quantizers": 218,
+      "dynamic_activation": "UINT8 tensor-wise DynamicQuantizeLinear on both operands",
       "msda_branches": 48,
       "other_operations": "FP32",
       "external_data": {

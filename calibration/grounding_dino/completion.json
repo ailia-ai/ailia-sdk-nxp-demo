@@ -6,9 +6,13 @@
     "groundingdino_swint_ogc_400x599_int8.data00": "111bd319bb077e90b5eebe233cc7b48b335e61aef759bfacf9c02665293af5c7",
     "groundingdino_swint_ogc_400x599_int8.data01": "7c486e0456e8330bb0bb6bc421a835dc1f5084c89bdc55ba1b8b3680ff1da474",
     "groundingdino_swint_ogc_400x599_int8.data02": "81d5a5541e576fc0e37d9f30651fa619f8435ad785f626d6fbcc7769b8734a9c",
-    "groundingdino_swint_ogc_400x599_int8.onnx": "7b812e1136a1803a6644d147457557df750d62ad572e5926d1e00f28300d04fe"
+    "groundingdino_swint_ogc_400x599_int8.onnx": "cb68abcebd604a33d0573671ec863e5ad62feb4d24b4c80e23601ec41cf1bea3"
   },
   "fixed_matmuls": 347,
+  "dynamic_matmuls": 109,
+  "dynamic_quantizers": 218,
+  "dynamic_activation": "UINT8 tensor-wise DynamicQuantizeLinear on both operands",
+  "reconversion": "2026-11-20: reused unchanged COCO val2017 5000-image ranges and fixed weights; added explicit dynamic quantization without rerunning calibration",
   "manifest_sha256": "1309494f899a7aa35941dda4b53d83852cac3a3e4b98c8f5d2e918e07985a822",
   "method": "global MinMax",
   "msda_branches": 48,
