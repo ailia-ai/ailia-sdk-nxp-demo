@@ -45,6 +45,16 @@ The demo conversion fixes the input to 518 pixels and uses COCO val2017
 calibration for fixed-weight INT8 MatMuls. Dynamic MatMuls are quantized by
 the ailia NPU runtime. This is a modified demo model, not an upstream release.
 
+## YOLOX
+
+The YOLOX-S model derives from the ailia-models ONNX export:
+https://storage.googleapis.com/ailia-models/yolox/yolox_s.opt.onnx
+Original project: https://github.com/Megvii-BaseDetection/YOLOX
+See `licenses/YOLOX_LICENSE` (Apache License 2.0).
+The converted model uses a 320-pixel input, COCO val2017 MinMax calibration,
+UINT8 feature maps, per-channel INT8 convolution weights and activation lookup
+tables. This is a modified demo model, not an official Megvii or NXP release.
+
 ## Demo images
 
 The ailia logo (`images/ailia.jpg`) is from https://ailia.ai/models/img/more_ax.jpg.

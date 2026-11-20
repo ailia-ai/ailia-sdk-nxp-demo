@@ -21,7 +21,7 @@ def load_history(path, limit=200):
                     and len(record.get("values", [])) == 5
                     and all(isinstance(v, str) for v in record["values"])
                     and isinstance(record.get("time"), str)
-                    and record.get("model", "sam") in ("sam", "grounding", "depth")
+                    and record.get("model", "sam") in ("sam", "grounding", "depth", "yolox")
                     and (record.get("caption") is None or isinstance(record["caption"], str))
                 ):
                     records.append(record)
@@ -38,6 +38,7 @@ def load_history(path, limit=200):
 def append_history(path, backend, values, image, model="sam", caption=None):
     from depth_inputs import REVISION as DEPTH_REVISION
     from grounding_inputs import REVISION
+    from yolox import REVISION as YOLOX_REVISION
 
     record = dict(
         time=datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -45,7 +46,11 @@ def append_history(path, backend, values, image, model="sam", caption=None):
         values=values,
         image=str(image),
         memory_mode=11,
-        model_revision={"grounding": REVISION, "depth": DEPTH_REVISION}.get(model, MODEL_REVISION),
+        model_revision={
+            "grounding": REVISION,
+            "depth": DEPTH_REVISION,
+            "yolox": YOLOX_REVISION,
+        }.get(model, MODEL_REVISION),
         model=model,
         caption=caption,
     )

@@ -1,0 +1,26 @@
+{
+  "backend": "ort_cpu",
+  "version": "1.24.3",
+  "model": "yolox_s_320_fp32.onnx",
+  "model_sha256": "7c1408c2cd500f74d7add0dbe134d8594c9b42fb292a464362ac0d458f3b2152",
+  "image_sha256": "941715e721c8864324a1425b445ea4dde0498b995c45ddce0141a58971c6ff99",
+  "times_ms": [
+    295.5339100008132,
+    292.58498700801283,
+    293.62361499806866,
+    293.0503630050225,
+    293.10957199777476,
+    292.7839460026007,
+    293.9479070046218,
+    293.1114890088793,
+    292.562069997075,
+    293.842573009897
+  ],
+  "median_ms": 293.110530503327,
+  "open_warmup_ms": 578.4039190039039,
+  "warmup_runs": 1,
+  "cpu_threads": 6,
+  "profiling": false,
+  "conv_device_output": true,
+  "scope": "inference only; excludes preprocessing, NMS, loading and rendering"
+}

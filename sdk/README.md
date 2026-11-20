@@ -3,7 +3,9 @@
 `linux/arm64-v8a/libailia.so`: ailia SDK 1.7 (NXP NPU対応版), Linux ARM64.
 Includes NEON INT8 MatMul packing and 4×4/4×8 tiles, plus the batched FP32
 2×2 MatMul path used by SAM 2 RoPE.
-Runtime source revision: `566f2f71b` (standard ONNX integer-operator backend).
+Also includes spatial ConvInteger, compressed fixed weights, fused UINT8
+epilogues/lookup tables, and native integer feature-map operations.
+Runtime source revision: `380dd1135` (standard ONNX integer-operator backend).
 The bundled integer models require this runtime; replace models and library
 together. Dedicated static-QDQ MatMul/Conv NPU pattern recognition was removed.
 This is not the public pip SDK binary. See `../NOTICE.md` and the SDK terms

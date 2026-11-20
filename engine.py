@@ -214,6 +214,7 @@ def worker(directory, requests, responses):
     cache = None
     grounding = None
     depth_engine = None
+    yolox_engine = None
 
     def select_backend(backend):
         nonlocal engine, video_engine, cache
@@ -237,6 +238,29 @@ def worker(directory, requests, responses):
         if job is None:
             return
         try:
+            if job.get("model") == "yolox":
+                from yolox import YoloEngine
+
+                for backend in backend_order(job, job["action"] == "benchmark"):
+                    responses.put(
+                        dict(kind="progress", text="Loading / running YOLOX-S / " + backend)
+                    )
+                    if yolox_engine is None or yolox_engine.backend != backend:
+                        yolox_engine = None
+                        gc.collect()
+                        yolox_engine = YoloEngine(directory, backend)
+                    result = yolox_engine.run(job["image"], compare=job["action"] == "benchmark")
+                    responses.put(
+                        dict(
+                            kind="result",
+                            model="yolox",
+                            backend=backend,
+                            action=job["action"],
+                            **result,
+                        )
+                    )
+                responses.put(dict(kind="done", text="Ready — press Detect."))
+                continue
             if job.get("model") == "depth":
                 from depth import DepthEngine
 
@@ -356,6 +380,7 @@ def worker(directory, requests, responses):
             video_engine = None
             cache = None
             grounding = None
+            yolox_engine = None
             gc.collect()
             responses.put(
                 dict(kind="error", action=job["action"], text=f"{type(exc).__name__}: {exc}")

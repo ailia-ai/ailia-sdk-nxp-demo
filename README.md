@@ -1,9 +1,10 @@
 # ailia Vision / i.MX95 Demo
 
 An interactive HDMI demo comparing ailia and NXP ONNX Runtime on CPU and NPU.
-Select **SAM 2.1 Tiny**, **Grounding DINO**, or **Depth Anything V2** in the upper-left corner.
+Select **SAM 2.1 Tiny**, **Grounding DINO**, **Depth Anything V2**, or **YOLOX-S 320** in the upper-left corner.
 SAM segments clicked objects and tracks them across five Bedroom frames; Grounding DINO detects objects described by an English prompt.
 Depth Anything V2 estimates indoor metric depth.
+YOLOX-S detects the 80 COCO object categories without a text prompt.
 
 ## Requirements
 
@@ -62,6 +63,7 @@ sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
 sh launch.sh --model grounding --caption "person. truck. car."
 sh launch.sh --model depth            # Indoor depth, Bedroom image
+sh launch.sh --model yolox            # YOLOX-S 320 object detection
 ```
 
 - **Open image**: select an image
@@ -86,6 +88,77 @@ To add a launcher to the Weston panel, append the following to `weston.ini`:
 icon=/path/to/ailia-sdk-nxp-demo/launcher.png
 path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
 ```
+
+## YOLOX-S 320
+
+The bundled `models/yolox_s_320_int8.onnx` uses all 5,000 COCO val2017 images
+for MinMax calibration. Convolution weights are per-channel INT8; feature maps
+are UINT8. Swish uses lookup tables; final detection formatting remains FP32.
+ailia NPU enables device requantization (`AILIA_NEUTRON_CONV_DEVICE_OUTPUT=1`).
+This uses different rounding from the CPU path, so outputs are not bit-identical.
+
+### Benchmark
+
+Same INT8 model, batch 1, six CPU threads, one excluded dummy inference at Open,
+then ten runs without profiling. Times exclude preprocessing, NMS and rendering.
+
+| Runtime | Median inference | FPS |
+| --- | ---: | ---: |
+| ailia CPU | 19,075.1 ms | 0.05 |
+| ailia NPU | 115.0 ms | 8.70 |
+| NXP ORT 1.24.3 CPU | 803.1 ms | 1.25 |
+| NXP ORT 1.24.3 Neutron EP | 797.8 ms | 1.25 |
+
+These CPU figures measure the same ConvInteger graph, not an optimized FP32
+model. ailia's 2D ConvInteger CPU fallback is slow. A separate ORT profile
+assigned all 83 ConvInteger nodes to CPU; only QuantizeLinear/DequantizeLinear
+nodes were assigned to Neutron EP. The ORT Neutron row is not NPU convolution.
+
+FP32 CPU reference, same input and measurement protocol: **ailia 267.8 ms**,
+**NXP ORT 293.1 ms**. ailia NPU INT8 is 2.33× faster than ailia CPU FP32.
+The bundled runtime is `380dd1135`; raw timings and protocol are in
+[`benchmarks/yolox_s_320/`](benchmarks/yolox_s_320/).
+
+### Accuracy
+
+COCO val2017, all 5,000 images, score threshold 0.001, class-agnostic NMS 0.65,
+evaluated with the COCO bbox evaluator:
+
+| Model / execution | AP | AP50 | AP75 |
+| --- | ---: | ---: | ---: |
+| FP32 / host ORT CPU 1.23.2 | 30.42 | 45.79 | 32.05 |
+| INT8 / ailia NPU | 29.00 | 44.77 | 30.59 |
+
+AP decreases by 1.42 points. This is the calibration dataset, not an independent
+test set. Device requantization changes rounding; the model is not lossless.
+The demo uses a higher display threshold of 0.4 and NMS 0.45.
+
+### Model conversion
+
+Run on the host PC with the COCO val2017 images and annotations extracted:
+
+```sh
+python3 -m pip install -r scripts/requirements-calibration.txt
+curl -L https://storage.googleapis.com/ailia-models/yolox/yolox_s.opt.onnx -o yolox_s.opt.onnx
+python3 scripts/calibrate_yolox.py \
+  --source yolox_s.opt.onnx \
+  --coco-images /path/to/val2017 \
+  --coco-annotations /path/to/annotations/instances_val2017.json \
+  --output models/yolox_s_320_int8.onnx
+```
+
+The converter requires all 5,000 images and writes a calibration report beside
+the model. To measure one backend on the device:
+
+```sh
+PYTHONPATH=./python python3 scripts/benchmark_yolox.py \
+  --models models --image images/truck.jpg --backend ailia_npu \
+  --output benchmarks/yolox_ailia_npu.json
+```
+
+For accuracy evaluation, use `scripts/evaluate_yolox.py --annotations ...
+--images ... --detections detections.json`. Score saved detections on the host
+with the same script's `--score-only --annotations ... --detections detections.json`.
 
 ## SAM 2.1 Tiny
 

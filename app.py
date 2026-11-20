@@ -18,6 +18,7 @@ from grounding_inputs import REVISION as GROUNDING_REVISION
 from history import append_history, load_history
 from runtime_worker import RuntimeWorker
 from settings import MODEL_REVISION
+from yolox import REVISION as YOLOX_REVISION
 
 
 def reset_tracking_view(view):
@@ -34,7 +35,7 @@ def main():
     parser.add_argument("--image", type=Path)
     parser.add_argument("--windowed", action="store_true")
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
-    parser.add_argument("--model", choices=("sam", "grounding", "depth"), default="sam")
+    parser.add_argument("--model", choices=("sam", "grounding", "depth", "yolox"), default="sam")
     parser.add_argument("--caption", default=DEFAULT_PROMPT, help="Grounding DINO detection prompt")
     parser.add_argument(
         "--bedroom", action="store_true", help="Open the five-frame memory tracking demo"
@@ -114,6 +115,7 @@ def main():
             self.model_selector.append("sam", "SAM 2.1 Tiny")
             self.model_selector.append("grounding", "Grounding DINO")
             self.model_selector.append("depth", "Depth Anything V2")
+            self.model_selector.append("yolox", "YOLOX-S 320")
             self.model_selector.set_active_id(self.model)
             self.model_selector.connect("changed", self.switch_model)
             heading.pack_start(self.model_selector, False, False, 0)
@@ -162,6 +164,10 @@ def main():
             self.prompt_box.pack_start(detect, False, False, 0)
             self.controls.extend([self.prompt_entry, detect])
             side.pack_start(self.prompt_box, False, False, 0)
+            self.yolox_button = Gtk.Button(label="Detect")
+            self.yolox_button.connect("clicked", lambda *_: self.submit("detect"))
+            side.pack_start(self.yolox_button, False, False, 0)
+            self.controls.append(self.yolox_button)
             self.depth_controls = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
             self.depth_button = Gtk.Button(label="Estimate depth")
             self.depth_button.connect("clicked", lambda *_: self.submit("estimate"))
@@ -313,9 +319,11 @@ def main():
                     backend=backend,
                     values=values,
                     image=image,
-                    model_revision={"grounding": GROUNDING_REVISION, "depth": DEPTH_REVISION}.get(
-                        self.model, MODEL_REVISION
-                    ),
+                    model_revision={
+                        "grounding": GROUNDING_REVISION,
+                        "depth": DEPTH_REVISION,
+                        "yolox": YOLOX_REVISION,
+                    }.get(self.model, MODEL_REVISION),
                     model=self.model,
                 )
             self.show_measurement(record)
@@ -361,7 +369,7 @@ def main():
                     rgb.shape[0],
                     maximum=float(self.depth_range.get_active_id()),
                 )
-            if self.model == "grounding":
+            if self.model in ("grounding", "yolox"):
                 height, width = rgb.shape[:2]
                 for item in self.detections:
                     x0, y0, x1, y1 = (
@@ -463,13 +471,16 @@ def main():
             grounding = self.model == "grounding"
             sam = self.model == "sam"
             self.title_label.set_text(
-                "Depth Anything V2 Metric Small / 518 × 518 / i.MX95"
+                "YOLOX-S / 320 × 320 / i.MX95"
+                if self.model == "yolox"
+                else "Depth Anything V2 Metric Small / 518 × 518 / i.MX95"
                 if self.model == "depth"
                 else "Grounding DINO / 400 × 599 / i.MX95"
                 if grounding
                 else "SAM 2.1 Tiny / 512 × 512 / i.MX95"
             )
             self.prompt_box.set_visible(grounding)
+            self.yolox_button.set_visible(self.model == "yolox")
             self.depth_controls.set_visible(self.model == "depth")
             for control in self.sam_controls:
                 control.set_visible(sam)
@@ -479,7 +490,9 @@ def main():
                 for cells in self.cells.values():
                     cells[column].set_visible(sam)
             self.info.set_text(
-                "Indoor metric depth (Hypersim).\nDark: near / Bright: far.\nDisplay range changes colors only.\nClick to inspect estimated depth.\nailia NPU: fixed + dynamic MatMul.\nORT NPU: fixed MatMul only.\nCompare all: median of 3 runs.\n6 threads · no profile"
+                "YOLOX-S 320 / COCO 80 classes.\nCOCO val2017 calibration: 5,000 images.\nUINT8 features / INT8 Conv weights.\nCompare all: median of 3 runs.\n6 threads · no profile"
+                if self.model == "yolox"
+                else "Indoor metric depth (Hypersim).\nDark: near / Bright: far.\nDisplay range changes colors only.\nClick to inspect estimated depth.\nailia NPU: fixed + dynamic MatMul.\nORT NPU: fixed MatMul only.\nCompare all: median of 3 runs.\n6 threads · no profile"
                 if self.model == "depth"
                 else "Enter English category names separated by periods.\nDetect: one warm inference.\nCompare all: median of 3 runs.\nNPU includes CPU fallback.\nORT NPU outputs may vary."
                 if grounding
@@ -662,7 +675,7 @@ def main():
                     if kind == "error" and self.model == "depth":
                         self.depth = None
                         self.update_pixbuf()
-                    if kind == "error" and self.model == "grounding":
+                    if kind == "error" and self.model in ("grounding", "yolox"):
                         self.detections = []
                         self.update_pixbuf()
                     if kind == "done" and self.pending_jobs:
