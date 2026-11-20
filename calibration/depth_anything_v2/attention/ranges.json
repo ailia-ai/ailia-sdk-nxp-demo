@@ -1,0 +1,197 @@
+{
+  "fingerprint": "a53c00d6494ba32e1d601c5d11769fa6c587c3e421b1bb7d82442574f0037c54",
+  "ranges": {
+    "/blocks.0/attn/Gather_5_output_0": [
+      -11.88381290435791,
+      12.399726867675781
+    ],
+    "/blocks.0/attn/Mul_output_0": [
+      -1.0717840194702148,
+      0.8298994302749634
+    ],
+    "/blocks.0/attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/blocks.0/attn/Transpose_1_output_0": [
+      -20.663379669189453,
+      20.757139205932617
+    ],
+    "/blocks.1/attn/Gather_5_output_0": [
+      -6.599575519561768,
+      6.158901214599609
+    ],
+    "/blocks.1/attn/Mul_output_0": [
+      -1.4150962829589844,
+      1.5130481719970703
+    ],
+    "/blocks.1/attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/blocks.1/attn/Transpose_1_output_0": [
+      -13.380455017089844,
+      13.811266899108887
+    ],
+    "/blocks.10/attn/Gather_5_output_0": [
+      -4.108015537261963,
+      4.364199638366699
+    ],
+    "/blocks.10/attn/Mul_output_0": [
+      -1.2520506381988525,
+      1.2606441974639893
+    ],
+    "/blocks.10/attn/Softmax_output_0": [
+      0.0,
+      0.9822455644607544
+    ],
+    "/blocks.10/attn/Transpose_1_output_0": [
+      -8.462485313415527,
+      7.865156173706055
+    ],
+    "/blocks.11/attn/Gather_5_output_0": [
+      -7.943987846374512,
+      6.029453277587891
+    ],
+    "/blocks.11/attn/Mul_output_0": [
+      -1.2783585786819458,
+      1.0684641599655151
+    ],
+    "/blocks.11/attn/Softmax_output_0": [
+      0.0,
+      0.9967941641807556
+    ],
+    "/blocks.11/attn/Transpose_1_output_0": [
+      -19.884103775024414,
+      16.000999450683594
+    ],
+    "/blocks.2/attn/Gather_5_output_0": [
+      -5.140537261962891,
+      4.4998064041137695
+    ],
+    "/blocks.2/attn/Mul_output_0": [
+      -1.491302728652954,
+      1.518161416053772
+    ],
+    "/blocks.2/attn/Softmax_output_0": [
+      0.0,
+      0.9999641180038452
+    ],
+    "/blocks.2/attn/Transpose_1_output_0": [
+      -12.627931594848633,
+      13.073259353637695
+    ],
+    "/blocks.3/attn/Gather_5_output_0": [
+      -4.041032791137695,
+      4.342737674713135
+    ],
+    "/blocks.3/attn/Mul_output_0": [
+      -1.8662947416305542,
+      1.6621129512786865
+    ],
+    "/blocks.3/attn/Softmax_output_0": [
+      0.0,
+      0.9999042749404907
+    ],
+    "/blocks.3/attn/Transpose_1_output_0": [
+      -37.88349914550781,
+      36.22419738769531
+    ],
+    "/blocks.4/attn/Gather_5_output_0": [
+      -5.150651454925537,
+      4.440623760223389
+    ],
+    "/blocks.4/attn/Mul_output_0": [
+      -1.0595080852508545,
+      1.025451421737671
+    ],
+    "/blocks.4/attn/Softmax_output_0": [
+      0.0,
+      0.997771680355072
+    ],
+    "/blocks.4/attn/Transpose_1_output_0": [
+      -8.349170684814453,
+      8.80209732055664
+    ],
+    "/blocks.5/attn/Gather_5_output_0": [
+      -4.718286514282227,
+      4.781677722930908
+    ],
+    "/blocks.5/attn/Mul_output_0": [
+      -1.1607556343078613,
+      1.1102125644683838
+    ],
+    "/blocks.5/attn/Softmax_output_0": [
+      0.0,
+      0.964364767074585
+    ],
+    "/blocks.5/attn/Transpose_1_output_0": [
+      -8.32943058013916,
+      7.3852410316467285
+    ],
+    "/blocks.6/attn/Gather_5_output_0": [
+      -4.254089832305908,
+      4.247967720031738
+    ],
+    "/blocks.6/attn/Mul_output_0": [
+      -1.0060309171676636,
+      1.096081256866455
+    ],
+    "/blocks.6/attn/Softmax_output_0": [
+      0.0,
+      0.9224280714988708
+    ],
+    "/blocks.6/attn/Transpose_1_output_0": [
+      -8.259538650512695,
+      7.970852851867676
+    ],
+    "/blocks.7/attn/Gather_5_output_0": [
+      -4.051474094390869,
+      4.531376838684082
+    ],
+    "/blocks.7/attn/Mul_output_0": [
+      -1.1216861009597778,
+      1.0571011304855347
+    ],
+    "/blocks.7/attn/Softmax_output_0": [
+      0.0,
+      0.9642668962478638
+    ],
+    "/blocks.7/attn/Transpose_1_output_0": [
+      -7.6126179695129395,
+      8.206212997436523
+    ],
+    "/blocks.8/attn/Gather_5_output_0": [
+      -4.465325355529785,
+      4.466899871826172
+    ],
+    "/blocks.8/attn/Mul_output_0": [
+      -1.2676482200622559,
+      1.0683789253234863
+    ],
+    "/blocks.8/attn/Softmax_output_0": [
+      0.0,
+      0.9621171355247498
+    ],
+    "/blocks.8/attn/Transpose_1_output_0": [
+      -8.464971542358398,
+      8.116941452026367
+    ],
+    "/blocks.9/attn/Gather_5_output_0": [
+      -5.19636344909668,
+      4.446260452270508
+    ],
+    "/blocks.9/attn/Mul_output_0": [
+      -1.0852820873260498,
+      1.2387393712997437
+    ],
+    "/blocks.9/attn/Softmax_output_0": [
+      0.0,
+      0.939950168132782
+    ],
+    "/blocks.9/attn/Transpose_1_output_0": [
+      -10.291574478149414,
+      9.470884323120117
+    ]
+  }
+}

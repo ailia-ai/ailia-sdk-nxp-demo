@@ -1,0 +1,853 @@
+{
+  "fingerprint": "9c0d8a89ad76bcf42aa56e0db7e5f94c5c96b0edf4b15770b78f216e3ac8322d",
+  "ranges": {
+    "/backbone/backbone.0/layers.0/blocks.0/attn/Gather_5_output_0": [
+      -4.884199619293213,
+      4.962313175201416
+    ],
+    "/backbone/backbone.0/layers.0/blocks.0/attn/Mul_output_0": [
+      -1.172567367553711,
+      1.2084026336669922
+    ],
+    "/backbone/backbone.0/layers.0/blocks.0/attn/Transpose_1_output_0": [
+      -6.278138637542725,
+      6.734210968017578
+    ],
+    "/backbone/backbone.0/layers.0/blocks.0/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9995279312133789
+    ],
+    "/backbone/backbone.0/layers.0/blocks.1/attn/Gather_5_output_0": [
+      -4.270949840545654,
+      4.3332839012146
+    ],
+    "/backbone/backbone.0/layers.0/blocks.1/attn/Mul_output_0": [
+      -1.0405446290969849,
+      1.1755362749099731
+    ],
+    "/backbone/backbone.0/layers.0/blocks.1/attn/Transpose_1_output_0": [
+      -5.390153884887695,
+      7.917816638946533
+    ],
+    "/backbone/backbone.0/layers.0/blocks.1/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999929666519165
+    ],
+    "/backbone/backbone.0/layers.1/blocks.0/attn/Gather_5_output_0": [
+      -3.2677266597747803,
+      3.549471139907837
+    ],
+    "/backbone/backbone.0/layers.1/blocks.0/attn/Mul_output_0": [
+      -0.9567897319793701,
+      0.9304665923118591
+    ],
+    "/backbone/backbone.0/layers.1/blocks.0/attn/Transpose_1_output_0": [
+      -5.705279350280762,
+      6.808420181274414
+    ],
+    "/backbone/backbone.0/layers.1/blocks.0/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999892711639404
+    ],
+    "/backbone/backbone.0/layers.1/blocks.1/attn/Gather_5_output_0": [
+      -4.811609268188477,
+      4.976716995239258
+    ],
+    "/backbone/backbone.0/layers.1/blocks.1/attn/Mul_output_0": [
+      -1.3010402917861938,
+      1.370444893836975
+    ],
+    "/backbone/backbone.0/layers.1/blocks.1/attn/Transpose_1_output_0": [
+      -7.916201591491699,
+      7.865037441253662
+    ],
+    "/backbone/backbone.0/layers.1/blocks.1/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999959468841553
+    ],
+    "/backbone/backbone.0/layers.2/blocks.0/attn/Gather_5_output_0": [
+      -3.1723124980926514,
+      3.4150776863098145
+    ],
+    "/backbone/backbone.0/layers.2/blocks.0/attn/Mul_output_0": [
+      -1.32825767993927,
+      1.3866302967071533
+    ],
+    "/backbone/backbone.0/layers.2/blocks.0/attn/Transpose_1_output_0": [
+      -6.05679178237915,
+      5.961026668548584
+    ],
+    "/backbone/backbone.0/layers.2/blocks.0/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9997667670249939
+    ],
+    "/backbone/backbone.0/layers.2/blocks.1/attn/Gather_5_output_0": [
+      -4.061408042907715,
+      3.9592976570129395
+    ],
+    "/backbone/backbone.0/layers.2/blocks.1/attn/Mul_output_0": [
+      -1.4888279438018799,
+      1.680485725402832
+    ],
+    "/backbone/backbone.0/layers.2/blocks.1/attn/Transpose_1_output_0": [
+      -7.048563480377197,
+      7.554282188415527
+    ],
+    "/backbone/backbone.0/layers.2/blocks.1/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999115467071533
+    ],
+    "/backbone/backbone.0/layers.2/blocks.2/attn/Gather_5_output_0": [
+      -6.0185322761535645,
+      5.116170406341553
+    ],
+    "/backbone/backbone.0/layers.2/blocks.2/attn/Mul_output_0": [
+      -1.3706876039505005,
+      1.2859282493591309
+    ],
+    "/backbone/backbone.0/layers.2/blocks.2/attn/Transpose_1_output_0": [
+      -7.630524158477783,
+      7.540451526641846
+    ],
+    "/backbone/backbone.0/layers.2/blocks.2/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999712705612183
+    ],
+    "/backbone/backbone.0/layers.2/blocks.3/attn/Gather_5_output_0": [
+      -5.736127853393555,
+      5.352839946746826
+    ],
+    "/backbone/backbone.0/layers.2/blocks.3/attn/Mul_output_0": [
+      -1.431137204170227,
+      1.4109162092208862
+    ],
+    "/backbone/backbone.0/layers.2/blocks.3/attn/Transpose_1_output_0": [
+      -7.827281951904297,
+      9.552337646484375
+    ],
+    "/backbone/backbone.0/layers.2/blocks.3/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999954700469971
+    ],
+    "/backbone/backbone.0/layers.2/blocks.4/attn/Gather_5_output_0": [
+      -6.726048946380615,
+      6.3083882331848145
+    ],
+    "/backbone/backbone.0/layers.2/blocks.4/attn/Mul_output_0": [
+      -1.5471975803375244,
+      1.359757900238037
+    ],
+    "/backbone/backbone.0/layers.2/blocks.4/attn/Transpose_1_output_0": [
+      -8.295280456542969,
+      7.881044387817383
+    ],
+    "/backbone/backbone.0/layers.2/blocks.4/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999728202819824
+    ],
+    "/backbone/backbone.0/layers.2/blocks.5/attn/Gather_5_output_0": [
+      -8.297661781311035,
+      8.537066459655762
+    ],
+    "/backbone/backbone.0/layers.2/blocks.5/attn/Mul_output_0": [
+      -1.5338793992996216,
+      1.494309425354004
+    ],
+    "/backbone/backbone.0/layers.2/blocks.5/attn/Transpose_1_output_0": [
+      -8.485885620117188,
+      8.006128311157227
+    ],
+    "/backbone/backbone.0/layers.2/blocks.5/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999972581863403
+    ],
+    "/backbone/backbone.0/layers.3/blocks.0/attn/Gather_5_output_0": [
+      -6.234383583068848,
+      5.319212913513184
+    ],
+    "/backbone/backbone.0/layers.3/blocks.0/attn/Mul_output_0": [
+      -1.4551811218261719,
+      1.343914270401001
+    ],
+    "/backbone/backbone.0/layers.3/blocks.0/attn/Transpose_1_output_0": [
+      -7.596050262451172,
+      8.155051231384277
+    ],
+    "/backbone/backbone.0/layers.3/blocks.0/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9998773336410522
+    ],
+    "/backbone/backbone.0/layers.3/blocks.1/attn/Gather_5_output_0": [
+      -6.527299880981445,
+      6.74677848815918
+    ],
+    "/backbone/backbone.0/layers.3/blocks.1/attn/Mul_output_0": [
+      -1.3029531240463257,
+      1.3956892490386963
+    ],
+    "/backbone/backbone.0/layers.3/blocks.1/attn/Transpose_1_output_0": [
+      -8.043277740478516,
+      8.142248153686523
+    ],
+    "/backbone/backbone.0/layers.3/blocks.1/attn/softmax/Softmax_output_0": [
+      0.0,
+      0.9999356269836426
+    ],
+    "/bert/encoder/layer.0/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.0/attention/self/Transpose_1_output_0": [
+      -4.219319820404053,
+      5.15376615524292
+    ],
+    "/bert/encoder/layer.0/attention/self/Transpose_2_output_0": [
+      -4.711348056793213,
+      4.511730194091797
+    ],
+    "/bert/encoder/layer.0/attention/self/Transpose_output_0": [
+      -4.245184898376465,
+      3.9799399375915527
+    ],
+    "/bert/encoder/layer.1/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.1/attention/self/Transpose_1_output_0": [
+      -4.452868461608887,
+      4.356953144073486
+    ],
+    "/bert/encoder/layer.1/attention/self/Transpose_2_output_0": [
+      -4.159643650054932,
+      4.19852352142334
+    ],
+    "/bert/encoder/layer.1/attention/self/Transpose_output_0": [
+      -2.6858906745910645,
+      2.773252248764038
+    ],
+    "/bert/encoder/layer.10/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.10/attention/self/Transpose_1_output_0": [
+      -4.237709999084473,
+      4.28551721572876
+    ],
+    "/bert/encoder/layer.10/attention/self/Transpose_2_output_0": [
+      -4.799343585968018,
+      4.4367780685424805
+    ],
+    "/bert/encoder/layer.10/attention/self/Transpose_output_0": [
+      -4.479954242706299,
+      3.552884817123413
+    ],
+    "/bert/encoder/layer.11/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.11/attention/self/Transpose_1_output_0": [
+      -4.613264083862305,
+      4.466237545013428
+    ],
+    "/bert/encoder/layer.11/attention/self/Transpose_2_output_0": [
+      -4.712675094604492,
+      4.339169502258301
+    ],
+    "/bert/encoder/layer.11/attention/self/Transpose_output_0": [
+      -4.590060710906982,
+      3.450167417526245
+    ],
+    "/bert/encoder/layer.2/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.2/attention/self/Transpose_1_output_0": [
+      -3.643489360809326,
+      4.722880840301514
+    ],
+    "/bert/encoder/layer.2/attention/self/Transpose_2_output_0": [
+      -3.93882155418396,
+      4.278179168701172
+    ],
+    "/bert/encoder/layer.2/attention/self/Transpose_output_0": [
+      -3.322535276412964,
+      3.810023307800293
+    ],
+    "/bert/encoder/layer.3/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.3/attention/self/Transpose_1_output_0": [
+      -4.523887634277344,
+      4.607218265533447
+    ],
+    "/bert/encoder/layer.3/attention/self/Transpose_2_output_0": [
+      -4.226883888244629,
+      4.488277435302734
+    ],
+    "/bert/encoder/layer.3/attention/self/Transpose_output_0": [
+      -3.38869571685791,
+      3.227020263671875
+    ],
+    "/bert/encoder/layer.4/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.4/attention/self/Transpose_1_output_0": [
+      -4.126462936401367,
+      3.9144954681396484
+    ],
+    "/bert/encoder/layer.4/attention/self/Transpose_2_output_0": [
+      -3.9674789905548096,
+      3.761998414993286
+    ],
+    "/bert/encoder/layer.4/attention/self/Transpose_output_0": [
+      -3.341026544570923,
+      3.054136037826538
+    ],
+    "/bert/encoder/layer.5/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.5/attention/self/Transpose_1_output_0": [
+      -3.9432129859924316,
+      4.447394371032715
+    ],
+    "/bert/encoder/layer.5/attention/self/Transpose_2_output_0": [
+      -4.556732177734375,
+      4.694834232330322
+    ],
+    "/bert/encoder/layer.5/attention/self/Transpose_output_0": [
+      -3.2097179889678955,
+      3.343052625656128
+    ],
+    "/bert/encoder/layer.6/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.6/attention/self/Transpose_1_output_0": [
+      -5.074490070343018,
+      4.288713455200195
+    ],
+    "/bert/encoder/layer.6/attention/self/Transpose_2_output_0": [
+      -5.189516544342041,
+      4.231736660003662
+    ],
+    "/bert/encoder/layer.6/attention/self/Transpose_output_0": [
+      -3.785001039505005,
+      3.6674892902374268
+    ],
+    "/bert/encoder/layer.7/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.7/attention/self/Transpose_1_output_0": [
+      -4.580704689025879,
+      4.6833295822143555
+    ],
+    "/bert/encoder/layer.7/attention/self/Transpose_2_output_0": [
+      -4.376347064971924,
+      4.600255966186523
+    ],
+    "/bert/encoder/layer.7/attention/self/Transpose_output_0": [
+      -3.8646063804626465,
+      3.757126808166504
+    ],
+    "/bert/encoder/layer.8/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.8/attention/self/Transpose_1_output_0": [
+      -4.510180950164795,
+      4.064326286315918
+    ],
+    "/bert/encoder/layer.8/attention/self/Transpose_2_output_0": [
+      -4.928866863250732,
+      4.694784641265869
+    ],
+    "/bert/encoder/layer.8/attention/self/Transpose_output_0": [
+      -3.7524893283843994,
+      3.7564187049865723
+    ],
+    "/bert/encoder/layer.9/attention/self/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/bert/encoder/layer.9/attention/self/Transpose_1_output_0": [
+      -5.110784530639648,
+      4.890615463256836
+    ],
+    "/bert/encoder/layer.9/attention/self/Transpose_2_output_0": [
+      -4.724542140960693,
+      4.952363014221191
+    ],
+    "/bert/encoder/layer.9/attention/self/Transpose_output_0": [
+      -3.705623149871826,
+      4.102993965148926
+    ],
+    "/transformer/decoder/Transpose_1_output_0": [
+      -2.720707654953003,
+      3.90435791015625
+    ],
+    "/transformer/decoder/Transpose_2_output_0": [
+      -3.2015552520751953,
+      3.9484057426452637
+    ],
+    "/transformer/decoder/Transpose_3_output_0": [
+      -3.126009225845337,
+      3.982680320739746
+    ],
+    "/transformer/decoder/Transpose_4_output_0": [
+      -3.383856773376465,
+      3.9856040477752686
+    ],
+    "/transformer/decoder/Transpose_5_output_0": [
+      -3.9911580085754395,
+      3.492682933807373
+    ],
+    "/transformer/decoder/Transpose_output_0": [
+      -2.8479132652282715,
+      3.5673751831054688
+    ],
+    "/transformer/decoder/layers.0/ca_text/Div_1_output_0": [
+      -3.603332757949829,
+      3.8086366653442383
+    ],
+    "/transformer/decoder/layers.0/ca_text/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.0/ca_text/Transpose_2_output_0": [
+      -4.850638389587402,
+      5.132495880126953
+    ],
+    "/transformer/decoder/layers.0/ca_text/Transpose_3_output_0": [
+      -5.298192501068115,
+      5.224562644958496
+    ],
+    "/transformer/decoder/layers.0/self_attn/Div_1_output_0": [
+      -2.9372076988220215,
+      3.366553544998169
+    ],
+    "/transformer/decoder/layers.0/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.0/self_attn/Transpose_1_output_0": [
+      -3.3909621238708496,
+      3.874018669128418
+    ],
+    "/transformer/decoder/layers.0/self_attn/Transpose_2_output_0": [
+      -25.009811401367188,
+      23.407136917114258
+    ],
+    "/transformer/decoder/layers.1/ca_text/Div_1_output_0": [
+      -4.61690092086792,
+      4.515104293823242
+    ],
+    "/transformer/decoder/layers.1/ca_text/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.1/ca_text/Transpose_2_output_0": [
+      -2.6005918979644775,
+      2.0476701259613037
+    ],
+    "/transformer/decoder/layers.1/ca_text/Transpose_3_output_0": [
+      -6.526703834533691,
+      7.279934883117676
+    ],
+    "/transformer/decoder/layers.1/self_attn/Div_1_output_0": [
+      -3.2757763862609863,
+      3.2370643615722656
+    ],
+    "/transformer/decoder/layers.1/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.1/self_attn/Transpose_1_output_0": [
+      -7.366110324859619,
+      6.904216289520264
+    ],
+    "/transformer/decoder/layers.1/self_attn/Transpose_2_output_0": [
+      -32.75932693481445,
+      27.328813552856445
+    ],
+    "/transformer/decoder/layers.2/ca_text/Div_1_output_0": [
+      -2.9955718517303467,
+      2.948674201965332
+    ],
+    "/transformer/decoder/layers.2/ca_text/Softmax_output_0": [
+      0.0,
+      0.9999856948852539
+    ],
+    "/transformer/decoder/layers.2/ca_text/Transpose_2_output_0": [
+      -2.3887100219726562,
+      1.9904484748840332
+    ],
+    "/transformer/decoder/layers.2/ca_text/Transpose_3_output_0": [
+      -6.767839431762695,
+      6.786116600036621
+    ],
+    "/transformer/decoder/layers.2/self_attn/Div_1_output_0": [
+      -3.647966146469116,
+      3.4191958904266357
+    ],
+    "/transformer/decoder/layers.2/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.2/self_attn/Transpose_1_output_0": [
+      -5.872751712799072,
+      8.375901222229004
+    ],
+    "/transformer/decoder/layers.2/self_attn/Transpose_2_output_0": [
+      -33.29916763305664,
+      30.877132415771484
+    ],
+    "/transformer/decoder/layers.3/ca_text/Div_1_output_0": [
+      -3.0765347480773926,
+      3.7232186794281006
+    ],
+    "/transformer/decoder/layers.3/ca_text/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.3/ca_text/Transpose_2_output_0": [
+      -2.1962575912475586,
+      2.3500020503997803
+    ],
+    "/transformer/decoder/layers.3/ca_text/Transpose_3_output_0": [
+      -6.84018611907959,
+      5.927561283111572
+    ],
+    "/transformer/decoder/layers.3/self_attn/Div_1_output_0": [
+      -3.0564630031585693,
+      3.1497631072998047
+    ],
+    "/transformer/decoder/layers.3/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.3/self_attn/Transpose_1_output_0": [
+      -6.687004566192627,
+      7.730186939239502
+    ],
+    "/transformer/decoder/layers.3/self_attn/Transpose_2_output_0": [
+      -33.94858169555664,
+      31.417160034179688
+    ],
+    "/transformer/decoder/layers.4/ca_text/Div_1_output_0": [
+      -3.7417995929718018,
+      4.145312786102295
+    ],
+    "/transformer/decoder/layers.4/ca_text/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.4/ca_text/Transpose_2_output_0": [
+      -3.4834072589874268,
+      2.551801919937134
+    ],
+    "/transformer/decoder/layers.4/ca_text/Transpose_3_output_0": [
+      -7.344979763031006,
+      6.990612506866455
+    ],
+    "/transformer/decoder/layers.4/self_attn/Div_1_output_0": [
+      -2.8891310691833496,
+      3.0601963996887207
+    ],
+    "/transformer/decoder/layers.4/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.4/self_attn/Transpose_1_output_0": [
+      -5.304088115692139,
+      4.74747896194458
+    ],
+    "/transformer/decoder/layers.4/self_attn/Transpose_2_output_0": [
+      -32.72362518310547,
+      29.580533981323242
+    ],
+    "/transformer/decoder/layers.5/ca_text/Div_1_output_0": [
+      -4.039609909057617,
+      3.449678659439087
+    ],
+    "/transformer/decoder/layers.5/ca_text/Softmax_output_0": [
+      0.0,
+      0.9968383312225342
+    ],
+    "/transformer/decoder/layers.5/ca_text/Transpose_2_output_0": [
+      -4.9982523918151855,
+      3.6847612857818604
+    ],
+    "/transformer/decoder/layers.5/ca_text/Transpose_3_output_0": [
+      -11.981292724609375,
+      14.140628814697266
+    ],
+    "/transformer/decoder/layers.5/self_attn/Div_1_output_0": [
+      -1.5767736434936523,
+      1.5588321685791016
+    ],
+    "/transformer/decoder/layers.5/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/decoder/layers.5/self_attn/Transpose_1_output_0": [
+      -5.205454349517822,
+      5.13607931137085
+    ],
+    "/transformer/decoder/layers.5/self_attn/Transpose_2_output_0": [
+      -20.434926986694336,
+      17.1209774017334
+    ],
+    "/transformer/enc_out_class_embed/Transpose_output_0": [
+      -4.535577297210693,
+      1.9961185455322266
+    ],
+    "/transformer/enc_output_norm/LayerNormalization_output_0": [
+      -5.225149631500244,
+      4.590362548828125
+    ],
+    "/transformer/encoder/fusion_layers.0/attn/Reshape_4_output_0": [
+      -0.44069305062294006,
+      0.45758822560310364
+    ],
+    "/transformer/encoder/fusion_layers.0/attn/Reshape_6_output_0": [
+      -8.62318229675293,
+      8.871745109558105
+    ],
+    "/transformer/encoder/fusion_layers.0/attn/Reshape_7_output_0": [
+      -5.155383110046387,
+      5.113460540771484
+    ],
+    "/transformer/encoder/fusion_layers.0/attn/Softmax_1_output_0": [
+      0.0,
+      0.9999980926513672
+    ],
+    "/transformer/encoder/fusion_layers.0/attn/Softmax_output_0": [
+      0.0,
+      0.9985722303390503
+    ],
+    "/transformer/encoder/fusion_layers.0/attn/Transpose_4_output_0": [
+      -7.180421829223633,
+      5.746455192565918
+    ],
+    "/transformer/encoder/fusion_layers.1/attn/Reshape_4_output_0": [
+      -0.3690187335014343,
+      0.3572391867637634
+    ],
+    "/transformer/encoder/fusion_layers.1/attn/Reshape_6_output_0": [
+      -6.143165588378906,
+      6.2221903800964355
+    ],
+    "/transformer/encoder/fusion_layers.1/attn/Reshape_7_output_0": [
+      -5.082653522491455,
+      5.627110481262207
+    ],
+    "/transformer/encoder/fusion_layers.1/attn/Softmax_1_output_0": [
+      0.0,
+      0.9999910593032837
+    ],
+    "/transformer/encoder/fusion_layers.1/attn/Softmax_output_0": [
+      0.0,
+      0.9800808429718018
+    ],
+    "/transformer/encoder/fusion_layers.1/attn/Transpose_4_output_0": [
+      -6.849669456481934,
+      6.757705211639404
+    ],
+    "/transformer/encoder/fusion_layers.2/attn/Reshape_4_output_0": [
+      -0.5105682611465454,
+      0.47367212176322937
+    ],
+    "/transformer/encoder/fusion_layers.2/attn/Reshape_6_output_0": [
+      -8.383767127990723,
+      8.720643997192383
+    ],
+    "/transformer/encoder/fusion_layers.2/attn/Reshape_7_output_0": [
+      -5.114233016967773,
+      4.698278427124023
+    ],
+    "/transformer/encoder/fusion_layers.2/attn/Softmax_1_output_0": [
+      0.0,
+      0.9994356036186218
+    ],
+    "/transformer/encoder/fusion_layers.2/attn/Softmax_output_0": [
+      0.0,
+      0.9829927086830139
+    ],
+    "/transformer/encoder/fusion_layers.2/attn/Transpose_4_output_0": [
+      -6.933769226074219,
+      6.933647155761719
+    ],
+    "/transformer/encoder/fusion_layers.3/attn/Reshape_4_output_0": [
+      -0.5539483428001404,
+      0.5624845623970032
+    ],
+    "/transformer/encoder/fusion_layers.3/attn/Reshape_6_output_0": [
+      -9.930887222290039,
+      8.379791259765625
+    ],
+    "/transformer/encoder/fusion_layers.3/attn/Reshape_7_output_0": [
+      -4.668116092681885,
+      5.23444938659668
+    ],
+    "/transformer/encoder/fusion_layers.3/attn/Softmax_1_output_0": [
+      0.0,
+      0.9999852180480957
+    ],
+    "/transformer/encoder/fusion_layers.3/attn/Softmax_output_0": [
+      0.0,
+      0.9934273958206177
+    ],
+    "/transformer/encoder/fusion_layers.3/attn/Transpose_4_output_0": [
+      -6.292026996612549,
+      5.943985939025879
+    ],
+    "/transformer/encoder/fusion_layers.4/attn/Reshape_4_output_0": [
+      -0.44169291853904724,
+      0.3955138325691223
+    ],
+    "/transformer/encoder/fusion_layers.4/attn/Reshape_6_output_0": [
+      -9.762343406677246,
+      8.394607543945312
+    ],
+    "/transformer/encoder/fusion_layers.4/attn/Reshape_7_output_0": [
+      -4.943697452545166,
+      5.100688934326172
+    ],
+    "/transformer/encoder/fusion_layers.4/attn/Softmax_1_output_0": [
+      0.0,
+      0.9999034404754639
+    ],
+    "/transformer/encoder/fusion_layers.4/attn/Softmax_output_0": [
+      0.0,
+      0.9965594410896301
+    ],
+    "/transformer/encoder/fusion_layers.4/attn/Transpose_4_output_0": [
+      -8.25241756439209,
+      7.711559295654297
+    ],
+    "/transformer/encoder/fusion_layers.5/attn/Reshape_4_output_0": [
+      -0.48757344484329224,
+      0.522447943687439
+    ],
+    "/transformer/encoder/fusion_layers.5/attn/Reshape_6_output_0": [
+      -7.850122451782227,
+      8.11268138885498
+    ],
+    "/transformer/encoder/fusion_layers.5/attn/Reshape_7_output_0": [
+      -4.046227931976318,
+      3.9995899200439453
+    ],
+    "/transformer/encoder/fusion_layers.5/attn/Softmax_1_output_0": [
+      0.0,
+      0.9999592304229736
+    ],
+    "/transformer/encoder/fusion_layers.5/attn/Softmax_output_0": [
+      0.0,
+      0.9679325819015503
+    ],
+    "/transformer/encoder/fusion_layers.5/attn/Transpose_4_output_0": [
+      -7.833954334259033,
+      7.750279426574707
+    ],
+    "/transformer/encoder/text_layers.0/self_attn/Div_1_output_0": [
+      -1.1105775833129883,
+      0.9372740387916565
+    ],
+    "/transformer/encoder/text_layers.0/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/encoder/text_layers.0/self_attn/Transpose_1_output_0": [
+      -1.2000036239624023,
+      1.1980414390563965
+    ],
+    "/transformer/encoder/text_layers.0/self_attn/Transpose_2_output_0": [
+      -5.252406120300293,
+      5.179172515869141
+    ],
+    "/transformer/encoder/text_layers.1/self_attn/Div_1_output_0": [
+      -3.107630968093872,
+      3.0581319332122803
+    ],
+    "/transformer/encoder/text_layers.1/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/encoder/text_layers.1/self_attn/Transpose_1_output_0": [
+      -1.4492359161376953,
+      1.7038955688476562
+    ],
+    "/transformer/encoder/text_layers.1/self_attn/Transpose_2_output_0": [
+      -9.349575996398926,
+      9.764148712158203
+    ],
+    "/transformer/encoder/text_layers.2/self_attn/Div_1_output_0": [
+      -1.031441569328308,
+      1.1008329391479492
+    ],
+    "/transformer/encoder/text_layers.2/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/encoder/text_layers.2/self_attn/Transpose_1_output_0": [
+      -1.0200676918029785,
+      1.0261561870574951
+    ],
+    "/transformer/encoder/text_layers.2/self_attn/Transpose_2_output_0": [
+      -5.222088813781738,
+      6.356520652770996
+    ],
+    "/transformer/encoder/text_layers.3/self_attn/Div_1_output_0": [
+      -0.8447262644767761,
+      0.7114417552947998
+    ],
+    "/transformer/encoder/text_layers.3/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/encoder/text_layers.3/self_attn/Transpose_1_output_0": [
+      -1.3628886938095093,
+      1.2484591007232666
+    ],
+    "/transformer/encoder/text_layers.3/self_attn/Transpose_2_output_0": [
+      -5.872295379638672,
+      4.99654483795166
+    ],
+    "/transformer/encoder/text_layers.4/self_attn/Div_1_output_0": [
+      -1.0715330839157104,
+      0.8386161923408508
+    ],
+    "/transformer/encoder/text_layers.4/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/encoder/text_layers.4/self_attn/Transpose_1_output_0": [
+      -1.5446044206619263,
+      1.7101551294326782
+    ],
+    "/transformer/encoder/text_layers.4/self_attn/Transpose_2_output_0": [
+      -6.425899505615234,
+      6.6613078117370605
+    ],
+    "/transformer/encoder/text_layers.5/self_attn/Div_1_output_0": [
+      -0.8288869857788086,
+      0.8261622190475464
+    ],
+    "/transformer/encoder/text_layers.5/self_attn/Softmax_output_0": [
+      0.0,
+      1.0
+    ],
+    "/transformer/encoder/text_layers.5/self_attn/Transpose_1_output_0": [
+      -1.8863928318023682,
+      1.9164494276046753
+    ],
+    "/transformer/encoder/text_layers.5/self_attn/Transpose_2_output_0": [
+      -8.115555763244629,
+      8.418673515319824
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "captions_per_image": 1,
+  "images": 5000,
+  "manifest_sha256": "c0454a869b8b55861ee50b944fa1ef0a7c556a3bc5a3782d5e9ba127c6b2acd9",
+  "model_sha256": "9c33e8b050fd99c5e4142a3edf026df1b9a2488402a963b76c1c75234f4bc056",
+  "production": true,
+  "quantizers": 48,
+  "ranges_sha256": "baa60bdd5a194eaea5ad9503ebda597dc47a8895a8ff36ba05b983ec72920df1",
+  "source_sha256": "bb8b2cc8526a832bb3aa5acbbb8680d5c1a7933096b5a55040d93d759d8e2a23"
+}

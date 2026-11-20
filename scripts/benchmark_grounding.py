@@ -1,6 +1,7 @@
 """Measure all four Grounding DINO backends using the demo's runtime settings."""
 
 import argparse
+import hashlib
 import json
 import queue
 import sys
@@ -9,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from runtime_worker import RuntimeWorker
-from scenes.grounding_dino_inputs import DEFAULT_PROMPT
-from settings import BACKENDS
+from scenes.grounding_dino_inputs import DEFAULT_PROMPT, MODEL, REVISION
+from settings import BACKENDS, CPU_THREADS
 
 
 def main():
@@ -23,6 +24,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout", type=float, default=1800)
     args = parser.parse_args()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    model_hash = hashlib.sha256((args.models / MODEL).read_bytes()).hexdigest()
     results = {}
     runner = RuntimeWorker(args.models)
     try:
@@ -49,6 +52,8 @@ def main():
                 if event["kind"] == "error":
                     raise RuntimeError(event.get("text", str(event)))
                 if event["kind"] == "result":
+                    event.update(model_sha256=model_hash, revision=REVISION,
+                                 threads=CPU_THREADS, profiling=False, warmup_runs=1)
                     results[backend] = event
                     args.output.write_text(json.dumps(results, indent=2) + "\n")
                     print(

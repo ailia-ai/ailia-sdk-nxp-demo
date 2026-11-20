@@ -136,17 +136,19 @@ The published graph is unchanged, including its attention-map outputs.
 Same public INT4 model, batch 1, six CPU threads, one excluded dummy inference
 at Open, then ten runs without profiling. Network time excludes preprocessing,
 classification postprocessing and rendering. Measured on 2026-11-20 with the
-bundled ailia runtime `ac22f5086` and `images/vit/input.jpg`.
+bundled ailia runtime `35b291e04` and `images/vit/input.jpg`.
 
 | Runtime | Median inference | FPS |
 | --- | ---: | ---: |
-| ailia CPU | 780.6 ms | 1.28 |
-| ailia NPU | 329.4 ms | 3.04 |
-| NXP ORT 1.24.3 CPU | 677.3 ms | 1.48 |
-| NXP ORT 1.24.3 NPU (Neutron EP) | 674.8 ms | 1.48 |
+| ailia CPU | 776.8 ms | 1.29 |
+| ailia NPU | 328.7 ms | 3.04 |
+| NXP ORT 1.24.3 CPU | 674.6 ms | 1.48 |
+| NXP ORT 1.24.3 NPU (Neutron EP) | 385.4 ms | 2.59 |
 
-The ORT NPU selection logged a Neutron allocation failure and fell back to CPU
-for this graph in the current HDMI environment; it is not a pure NPU measurement.
+The demo fixes NXP ORT's CMA allocation to 512 MiB for this 960 MiB-CMA board.
+Without this board setting, the vendor's 2 GiB default fails and falls back to CPU.
+A separate profiling run confirmed all 72 MatMulNBits nodes execute on Neutron;
+the measurements above have profiling disabled. ailia does not use this setting.
 
 All four backends classified the example as **Labrador retriever** in all ten runs.
 
@@ -304,8 +306,10 @@ Bounding boxes, labels, and confidence scores appear on the image. **Compare all
 
 The Swin-T model uses a 400×599 letterboxed image and up to 256 text tokens.
 Its 347 fixed-weight MatMuls use COCO-calibrated tensor-wise UINT8 activations and channel-wise INT8 weights.
-All 109 dynamic MatMuls explicitly quantize both operands with standard ONNX
-`DynamicQuantizeLinear`, followed by `MatMulInteger`, FP32 Cast and scale multiplication.
+All 109 dynamic-input MatMuls explicitly quantize both operands with standard ONNX
+`QuantizeLinear`, followed by `MatMulInteger`, FP32 Cast and scale multiplication.
+Their fixed activation ranges use a second full 5,000-image COCO pass, with
+both the 80-category and default demo captions on every image.
 The graph contains 456 `MatMulInteger` nodes and no floating-point `MatMul` nodes. Other operations remain FP32.
 The graph is rearranged to use the SDK's existing DeformableAttention fusion.
 Quantization is defined by the ONNX model, not applied implicitly by the runtime.
@@ -321,35 +325,24 @@ To measure all four backends without opening the GUI:
 PYTHONPATH=./python python3 scripts/benchmark_grounding.py --output /tmp/grounding-results.json
 ```
 
-Measured on i.MX95 on 2026-11-20 with revision `grounding-coco-val2017-dql-v2`,
-the bundled ailia SDK 1.7 (`c97d853c4` plus the local integer fusion/packing update),
-and NXP ORT 1.24.3. The runtime binary and source-file hashes are in `models/grounding_manifest.json`.
+Measured on i.MX95 on 2026-11-20 with the fully calibrated
+`grounding-coco-val2017-ql-v3` model, ailia SDK 1.7 (`35b291e04`) and
+NXP ORT 1.24.3 (512 MiB CMA allocation).
 Six CPU threads, profiling disabled, one excluded dummy inference at Open,
 then the median of three runs. Input: `images/grounding_dino/demo.jpg`, prompt:
 `Horse. Clouds. Grasses. Sky. Hill.`. Loading and pre/post-processing are excluded.
 
 | Runtime | CPU (ms) | NPU (ms) |
 |---|---:|---:|
-| ailia SDK 1.7 | 8,926.2 | 4,053.6 |
-| NXP ONNX Runtime 1.24.3 | 7,654.0 | 7,626.0 |
+| ailia SDK 1.7 | 9,307.0 | 3,901.9 |
+| NXP ONNX Runtime 1.24.3 | 7,529.0 | 6,978.2 |
 
-All four runs produced detections on the horse image. This is a functional check, not a detection-accuracy benchmark.
-Model hashes and calibration provenance are recorded in `models/grounding_manifest.json`.
-
-Explicit dynamic quantization preserves seven horse detections in this image.
-The mean best-matching horse-box IoU against the previous model on ailia NPU
-is 0.986 (not ground-truth accuracy). ailia CPU and NPU return identical
-horse boxes. Scores and thresholded detections can change after quantization.
-ailia NPU takes 4,053.6 ms versus 4,070.2 ms for the previous model measured
-with the same runtime. Explicit quantization retains the previous inference speed.
-The runtime optimization preserves every detection box and score from the
-unoptimized explicit-quantization model in this check.
-
-The bundled runtime (`a66843f5b`) subsequently separates CPU execution, output conversion
-and NPU dispatch policy. A same-condition before/after check measured
-4,114.7 / 4,077.4 ms for Grounding DINO and 2,733.9 / 2,692.3 ms for Depth
-Anything on ailia NPU. Detection boxes/scores and the depth output were unchanged.
-The four-backend table above records the pre-refactoring run.
+All four conditions produced 15 detections, including seven horses.
+ailia CPU and NPU returned identical boxes and scores. Compared with the previous
+dynamic-quantization model on ailia NPU, all seven horses were retained;
+mean best-matching horse-box IoU was 0.987 (minimum 0.978).
+This is a demo-image output comparison, not a ground-truth mAP evaluation.
+Model hashes and calibration provenance are in `models/grounding_manifest.json`.
 
 ### Model Conversion
 
@@ -373,13 +366,15 @@ Global Min/Max calibration processes all 5,000 images with the 80 COCO category 
 Image preprocessing and tokenization are shared with the demo. The input model is promoted to FP32 before collecting activation ranges.
 The output is `models/groundingdino_swint_ogc_400x599_int8.onnx` with external weight shards.
 `manifest.json`, `ranges.json`, and `completion.json` record the calibration inputs, ranges, and artifact hashes.
-Rerun the same command to resume an interrupted calibration. Copy the ONNX file and all weight shards together after completion.
+Rerun the same command to resume an interrupted calibration. Next run the
+fixed-attention calibration below before replacing the bundled model.
 
 To regenerate the model using the bundled, completed COCO calibration ranges:
 
 ```sh
 python3 scripts/grounding_convert.py --source groundingdino_swint_ogc.onnx \
   --ranges calibration/grounding_dino/ranges.json \
+  --attention-ranges calibration/grounding_dino/attention/ranges.json \
   --output models/groundingdino_swint_ogc_400x599_int8.onnx
 ```
 
@@ -401,9 +396,10 @@ Input is RGB, square-resized to 518 × 518 with ImageNet normalization.
 COCO val2017 global Min/Max calibration quantizes the 48 fixed-weight MatMuls
 to static tensor-wise UINT8 activations and channel-wise INT8 weights, expressed
 as standard ONNX QuantizeLinear / MatMulInteger / Cast / Mul nodes.
-The 24 dynamic Attention MatMuls explicitly quantize **both** operands with
-DynamicQuantizeLinear (tensor-wise UINT8), compute MatMulInteger with both
+The 24 dynamic-input Attention MatMuls explicitly quantize **both** operands with
+fixed QuantizeLinear (tensor-wise UINT8), compute MatMulInteger with both
 zero points, then Cast to FLOAT and multiply by the two scales.
+Attention activation ranges use a second full 5,000-image COCO calibration pass.
 ailia NPU executes these integer MatMuls using tiled, uncompressed weights.
 Ordinary FP32 MatMul is not silently quantized by the runtime.
 Softmax and convolutions remain floating point. The graph is not fully INT8.
@@ -412,25 +408,24 @@ this demo does not validate absolute distance accuracy.
 
 ### Benchmarks
 
-COCO-calibrated model, Bedroom frame `00000.jpg`, 518 × 518, six threads.
-Measured on 2026-11-20 with ailia runtime `c97d853c4` and NXP ORT 1.24.3.
+Full COCO fixed-attention model `depth-coco-val2017-ql-v3`, Bedroom frame
+`00000.jpg`, 518 × 518, six threads. Measured on 2026-11-20 with ailia runtime
+`35b291e04` and NXP ORT 1.24.3 (512 MiB CMA allocation).
 One excluded Open-time dummy inference, then the median of three runs;
 profiling, loading, preprocessing and drawing are excluded.
 
 | Runtime | Inference (ms) |
 |---|---:|
-| ailia CPU | 3381.8 |
-| ailia NPU | **2693.5** |
-| NXP ORT CPU | 3150.0 |
-| NXP ORT NPU (Neutron EP) | 3093.7 |
+| ailia CPU | 3310.5 |
+| ailia NPU | **2217.1** |
+| NXP ORT CPU | 3031.3 |
+| NXP ORT NPU (Neutron EP) | 2820.7 |
 
-ORT's NPU selection logged a Neutron allocation failure and used CPU fallback.
-On this image, ailia CPU and NPU outputs are identical. Against ORT CPU on the
-same explicit-quantization model, mean absolute output difference is 2.93 cm
-(51.71 cm maximum). Against the previous ailia NPU model, it is 33.83 cm
-(135.63 cm maximum): tensor-wise ONNX quantization is not numerically equivalent
-to the removed implicit quantizer. These are output comparisons, not ground-truth
-depth accuracy measurements. Previous ailia NPU latency was 2626.1 ms on this image.
+On this image, ailia CPU and NPU outputs are identical. Relative to the previous
+dynamic-quantization model on ailia NPU, the mean absolute difference is 17.92 cm
+(40.93 cm maximum). Relative to ORT CPU on the same fixed model, it is 4.58 cm
+(33.66 cm maximum). These are output comparisons, not ground-truth depth accuracy.
+The five Bedroom frames retain similar depth-map structure in the host CPU check.
 
 ### Model Conversion
 
@@ -448,9 +443,7 @@ python3 scripts/calibrate_depth.py \
   --output /path/to/depth-calibrated
 ```
 
-After `completion.json` confirms 5,000 images, copy
-`depth_anything_v2_metric_hypersim_vits_518_int8.onnx` into `models/`.
-Restart the demo after replacing the model.
+After `completion.json` confirms 5,000 images, run the fixed-attention pass below.
 Rerun the same command to resume. Image hashes, ranges and completion checks
 are saved in the output folder; no COCO images are bundled with the demo.
 
@@ -460,8 +453,37 @@ To regenerate the model using the already completed COCO calibration ranges:
 python3 scripts/depth_convert.py \
   --source /path/to/depth_anything_v2_metric_hypersim_vits.onnx \
   --ranges calibration/depth_anything_v2/ranges.json \
+  --attention-ranges calibration/depth_anything_v2/attention/ranges.json \
   --output models/depth_anything_v2_metric_hypersim_vits_518_int8.onnx
 ```
+
+## Fixed Attention Calibration
+
+To replace explicit DynamicQuantizeLinear attention with fixed QuantizeLinear,
+run the additional full-dataset pass on the integer models produced above:
+
+```sh
+python3 scripts/calibrate_attention.py --model depth \
+  --source /path/to/depth-calibrated/depth_anything_v2_metric_hypersim_vits_518_int8.onnx \
+  --coco-images /path/to/coco/val2017 \
+  --coco-annotations /path/to/coco/annotations/instances_val2017.json \
+  --output /path/to/depth-fixed-attention
+python3 scripts/calibrate_attention.py --model grounding \
+  --source /path/to/grounding-calibrated/models/groundingdino_swint_ogc_400x599_int8.onnx \
+  --vocab models/grounding_tokenizer/vocab.txt \
+  --coco-images /path/to/coco/val2017 \
+  --coco-annotations /path/to/coco/annotations/instances_val2017.json \
+  --output /path/to/grounding-fixed-attention
+```
+
+Each pass requires all 5,000 images and resumes with the same command.
+Grounding DINO evaluates every image with both the COCO 80-category caption
+and the default demo caption. Fixed-weight quantization is preserved.
+Only a completed pass writes the output model and `completion.json`.
+Validate the output, copy the ONNX and its external weight shards into `models/`,
+and restart the demo. Fixed activation ranges may clip inputs outside the
+calibration distribution. Completed records are bundled in each model's
+`calibration/.../attention/` directory.
 
 ## Demo Images and Licenses
 

@@ -1,5 +1,5 @@
 {
-  "revision": "depth-coco-val2017-dql-v2",
+  "revision": "depth-coco-val2017-ql-v3",
   "source_url": "https://storage.googleapis.com/ailia-models/depth_anything_v2/depth_anything_v2_metric_hypersim_vits.onnx",
   "source_sha256": "8c7c2932e8be8720db8aae66a2b83a80db35b7d1a7ac990bf43bc69042d0eba0",
   "converter": "scripts/calibrate_depth.py",
@@ -25,18 +25,33 @@
     "dynamic_matmul_npu": true,
     "dynamic_attention_npu": true,
     "dynamic_matmuls": 24,
-    "dynamic_execution": "standard ONNX DynamicQuantizeLinear for both operands, MatMulInteger, Cast, Mul; ailia NPU uses uncompressed row tiles",
+    "dynamic_execution": "standard ONNX fixed QuantizeLinear on both dynamic operands, MatMulInteger, Cast, Mul; ailia NPU uses uncompressed row tiles",
     "implicit_float_quantization": false,
-    "source_revision": "c97d853c4",
-    "sdk_sha256": "f452732b874116e1a8c0f6712d769bd3f0720cd2df71e54ae7c78cf53063c800"
+    "source_revision": "35b291e04ead56bbdacb3c5493c5dd596b0cea3a",
+    "sdk_sha256": "51d7ce6ad54b4da1fcd54399be2b706e8dcd3c5834fa0ee8126de3d2970c8f9a"
   },
   "models": {
     "depth_anything_v2_metric_hypersim_vits_518_int8.onnx": {
-      "sha256": "bb8b2cc8526a832bb3aa5acbbb8680d5c1a7933096b5a55040d93d759d8e2a23",
+      "sha256": "9c33e8b050fd99c5e4142a3edf026df1b9a2488402a963b76c1c75234f4bc056",
       "converted_matmuls": 72,
       "fixed_matmuls": 48,
       "dynamic_matmuls": 24,
-      "other_operations": "FP32 graph; all MatMul quantization explicit in ONNX"
+      "other_operations": "FP32 graph; all MatMul quantization explicit in ONNX",
+      "dynamic_quantizers": 0,
+      "static_attention_quantizers": 48
     }
-  }
+  },
+  "attention_calibration": {
+    "production": true,
+    "dataset": "COCO val2017",
+    "images": 5000,
+    "method": "global MinMax on both dynamic MatMul operands in the existing integer graph",
+    "captions_per_image": 1,
+    "activation": "static UINT8 tensor-wise QuantizeLinear",
+    "source_sha256": "bb8b2cc8526a832bb3aa5acbbb8680d5c1a7933096b5a55040d93d759d8e2a23",
+    "manifest_sha256": "c0454a869b8b55861ee50b944fa1ef0a7c556a3bc5a3782d5e9ba127c6b2acd9",
+    "ranges_sha256": "baa60bdd5a194eaea5ad9503ebda597dc47a8895a8ff36ba05b983ec72920df1",
+    "records": "../calibration/depth_anything_v2/attention"
+  },
+  "attention_converter": "scripts/calibrate_attention.py"
 }

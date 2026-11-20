@@ -194,9 +194,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--ranges", type=Path, required=True)
+    parser.add_argument("--attention-ranges", type=Path,
+                        help="Completed fixed-attention calibration ranges")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     model = quantize(promote_fp32(onnx.load(args.source)), json.loads(args.ranges.read_text()))
+    if args.attention_ranges:
+        from calibrate_attention import freeze_quantizers
+        model = freeze_quantizers(model, json.loads(args.attention_ranges.read_text())["ranges"])
     save_sharded(model, args.output)
 
 

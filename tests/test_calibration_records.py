@@ -46,6 +46,33 @@ class CalibrationRecordsTests(unittest.TestCase):
         self.assertEqual(len(set(data["images"])), 5000)
         self.assertEqual(data["model_sha256"], model["models"]["yolox_s_320_int8.onnx"]["sha256"])
 
+    def test_full_attention_records(self):
+        import onnx
+
+        for filename, count, quantizers in (("depth_manifest.json", 24, 48),
+                                             ("grounding_manifest.json", 109, 218)):
+            with self.subTest(model=filename):
+                model = read(ROOT / "models" / filename)
+                calibration = model["attention_calibration"]
+                records = ROOT / "models" / calibration["records"]
+                manifest = read(records / "manifest.json")
+                completion = read(records / "completion.json")
+                ids = [image["id"] for image in manifest["images"]]
+                self.assertEqual(len(ids), 5000)
+                self.assertEqual(len(set(ids)), 5000)
+                self.assertEqual(completion["images"], 5000)
+                self.assertTrue(completion["production"])
+                self.assertEqual(completion["quantizers"], quantizers)
+                for name in ("manifest", "ranges"):
+                    sha = digest(records / (name + ".json"))
+                    self.assertEqual(sha, completion[name + "_sha256"])
+                    self.assertEqual(sha, calibration[name + "_sha256"])
+                for name, record in model["models"].items():
+                    self.assertEqual(digest(ROOT / "models" / name), completion["model_sha256"])
+                    graph = onnx.load(ROOT / "models" / name, load_external_data=False)
+                    self.assertNotIn("DynamicQuantizeLinear", [n.op_type for n in graph.graph.node])
+                    self.assertEqual(record["dynamic_matmuls"], count)
+
 
 if __name__ == "__main__":
     unittest.main()

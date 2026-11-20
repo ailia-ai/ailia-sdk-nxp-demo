@@ -32,6 +32,13 @@ class Session:
         if not Path(path).is_file():
             raise FileNotFoundError(f"Model not found: {path}. See README.md for setup.")
         if backend.startswith("ort"):
+            if npu:
+                # NXP ORT defaults to a 2 GiB CMA allocation, but FRDM i.MX95
+                # reserves only 960 MiB. The vendor allocator exposes this
+                # board configuration only through an environment variable.
+                # Fix the capacity for every model; this is not an ailia
+                # optimization switch or a user-selectable execution policy.
+                os.environ["NEUTRON_CMA_512SLOTS"] = "1"
             import onnxruntime as ort
 
             providers = ["CPUExecutionProvider"]

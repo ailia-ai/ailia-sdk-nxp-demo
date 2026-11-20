@@ -1,15 +1,16 @@
 {
-  "revision": "grounding-coco-val2017-dql-v2",
-  "runtime_source_revision": "a66843f5baff601c56753ca01f56cf5e1d6731d4",
-  "runtime_source_update": "Shared integer execution, ordered epilogue and shape-based dispatch",
-  "runtime_sha256": "66b3ea33a4150744b7fcd45ee26c2867900198ce0a38616043b59eed15f7ecc6",
+  "revision": "grounding-coco-val2017-ql-v3",
+  "runtime_source_revision": "35b291e04ead56bbdacb3c5493c5dd596b0cea3a",
+  "runtime_source_update": "Shared fixed/dynamic coefficient execution, ordered FLOAT/FP16/UINT8 epilogue and shape-based dispatch",
+  "runtime_sha256": "51d7ce6ad54b4da1fcd54399be2b706e8dcd3c5834fa0ee8126de3d2970c8f9a",
   "runtime_source_files": {
     "library/npu/neutron/NeutronMatMulInteger.h": "9155b991b969828c0134166c818a31a52ee7ac4ef97600eb99abe44f0028c5c7",
     "library/npu/neutron/NeutronIntegerMatMulPolicy.h": "7f89c5ca7b4dbdc67402ae870e36087306ad24b0cdcc9348ec9e7c8ff683e0ac",
     "library/npu/neutron/NeutronSegmentBuilder.cpp": "b55505f7bb0aa427e375ee14fb631361a9b26ed2b052f88a915de6846b9a8ad6",
     "library/npu/neutron/NeutronScaledInteger.h": "91391fc6fb78a23acc26a62063b897df84a1461365d2e38530bed26324eea374",
-    "library/core/layers/basics/IntegerMatMulExecution.h": "eb3adf052a41762fe61bfa1684f2b82ad37b083842748417e881572f66628d6d",
-    "library/core/layers/basics/IntegerMatMulKernel.h": "3729595f65135c558b1f8cfaedecad2ce6f6786a7b6d2fc57f3f771c4291121a"
+    "library/core/layers/basics/IntegerMatMulExecution.h": "805fa954d35ba933d39ba9edb11b4f9688661bbfe86d91e6d8c15fbc78e49607",
+    "library/core/layers/basics/IntegerMatMulKernel.h": "3729595f65135c558b1f8cfaedecad2ce6f6786a7b6d2fc57f3f771c4291121a",
+    "library/npu/neutron/NeutronQuantizedDynamicMatMul.h": "30e437dc683edd01fe9cbf3f8b7410b8d92866791d148cbf2d4aefa67ece6830"
   },
   "source_url": "https://storage.googleapis.com/ailia-models/groundingdino/groundingdino_swint_ogc.onnx",
   "source_sha256": "69fc8059ed580a4f7bef9753e1c0dff3ab00e1004d86d9587202f6605bb9b02d",
@@ -38,23 +39,37 @@
   },
   "models": {
     "groundingdino_swint_ogc_400x599_int8.onnx": {
-      "sha256": "cb68abcebd604a33d0573671ec863e5ad62feb4d24b4c80e23601ec41cf1bea3",
+      "sha256": "8a97ed99265b89acc3821a46bcddb5220bfc7b7017b30aa2d5447ab0bf03f7b7",
       "converted_matmuls": 456,
       "fixed_matmuls": 347,
       "dynamic_matmuls": 109,
-      "dynamic_quantizers": 218,
-      "dynamic_activation": "UINT8 tensor-wise DynamicQuantizeLinear on both operands",
+      "dynamic_quantizers": 0,
+      "dynamic_activation": "COCO val2017 static UINT8 tensor-wise QuantizeLinear on both operands",
       "msda_branches": 48,
       "other_operations": "FP32",
       "external_data": {
         "groundingdino_swint_ogc_400x599_int8.data00": "111bd319bb077e90b5eebe233cc7b48b335e61aef759bfacf9c02665293af5c7",
         "groundingdino_swint_ogc_400x599_int8.data01": "7c486e0456e8330bb0bb6bc421a835dc1f5084c89bdc55ba1b8b3680ff1da474",
         "groundingdino_swint_ogc_400x599_int8.data02": "81d5a5541e576fc0e37d9f30651fa619f8435ad785f626d6fbcc7769b8734a9c"
-      }
+      },
+      "static_attention_quantizers": 218
     }
   },
   "tokenizer": {
     "file": "grounding_tokenizer/vocab.txt",
     "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
-  }
+  },
+  "attention_calibration": {
+    "production": true,
+    "dataset": "COCO val2017",
+    "images": 5000,
+    "method": "global MinMax on both dynamic MatMul operands in the existing integer graph",
+    "captions_per_image": 2,
+    "activation": "static UINT8 tensor-wise QuantizeLinear",
+    "source_sha256": "cb68abcebd604a33d0573671ec863e5ad62feb4d24b4c80e23601ec41cf1bea3",
+    "manifest_sha256": "8e9af11d2468547be773dc0e88295c97f685781c3753e5c43afe5657e36a1f2a",
+    "ranges_sha256": "72db64291e2537d4acfcff6a1ba9f38c62feb8c9b39a3a92da3d4acf9c4c8449",
+    "records": "../calibration/grounding_dino/attention"
+  },
+  "attention_converter": "scripts/calibrate_attention.py"
 }

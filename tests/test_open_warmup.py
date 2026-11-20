@@ -1,5 +1,6 @@
 """All four backends share exactly one Open-time dummy inference."""
 
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -37,10 +38,13 @@ class OpenWarmupTests(unittest.TestCase):
                     get_environment=lambda i: SimpleNamespace(name="Neutron"),
                 )
                 with (
+                    patch.dict(os.environ, {"NEUTRON_CMA_512SLOTS": "4"}),
                     patch.dict(sys.modules, {"onnxruntime": ort, "ailia": ailia}),
                     patch("warmup.inputs_for_model", return_value=feed) as inputs,
                 ):
                     Session(path, backend, backend.endswith("_npu"))
+                    self.assertEqual(os.environ["NEUTRON_CMA_512SLOTS"],
+                                     "1" if backend == "ort_npu" else "4")
                 inputs.assert_called_once_with(ENCODER)
                 net.run.assert_called_once()
                 expected_args = (None, feed) if backend.startswith("ort") else (feed,)
