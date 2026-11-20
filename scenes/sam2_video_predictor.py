@@ -248,7 +248,9 @@ class SAM2VideoPredictor:
         """Load pretrained weights from npz file."""
         import os
 
-        npz_path = os.path.join(os.path.dirname(__file__), "models", "sam2.1_tiny_weights.npz")
+        npz_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "models", "sam2.1_tiny_weights.npz"
+        )
         prefix = f"v{version}_{model_type}".replace("+", "plus")
         data = np.load(npz_path)
         maskmem = data[f"{prefix}_maskmem_tpos_enc"].astype(np.float32)

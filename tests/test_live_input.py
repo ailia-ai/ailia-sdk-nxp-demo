@@ -10,9 +10,9 @@ from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 
-from engine import Engine
 from live_input import LiveInput, find_camera
-from yolox import YoloEngine
+from scenes.sam2 import Engine
+from scenes.yolox import YoloEngine
 
 
 class LiveInputTests(unittest.TestCase):
@@ -98,7 +98,7 @@ class LiveInputTests(unittest.TestCase):
     def test_yolox_frames_reuse_session(self):
         session = Mock(version="test")
         session.run.return_value = [np.zeros((1, 2100, 85), np.float32)]
-        with patch("engine.Session", return_value=session) as factory:
+        with patch("runtime.Session", return_value=session) as factory:
             engine = YoloEngine("models", "ailia_npu")
             for level in (0, 255):
                 engine.run(np.full((48, 64, 3), level, np.uint8))

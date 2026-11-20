@@ -9,7 +9,7 @@ import numpy as np
 HEIGHT, WIDTH = 400, 599
 MODEL = "groundingdino_swint_ogc_400x599_int8.onnx"
 REVISION = "grounding-coco-val2017-v1"
-DEFAULT_PROMPT = "person. truck. car. bicycle. dog."
+DEFAULT_PROMPT = "Horse. Clouds. Grasses. Sky. Hill."
 
 
 class Tokenizer:

@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
-from engine import Session
+from runtime import Session
 from settings import ENCODER
 
 

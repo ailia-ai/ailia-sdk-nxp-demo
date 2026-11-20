@@ -6,8 +6,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from depth_inputs import MODEL, SIZE, preprocess
-from engine import Session
+from runtime import Session
+from scenes.depth_anything_v2_inputs import MODEL, SIZE, preprocess
 
 
 class DepthEngine:

@@ -7,10 +7,10 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
-from grounding import GroundingEngine
-from grounding_inputs import HEIGHT, WIDTH, Tokenizer, detections, preprocess
 from history import append_history, load_history
 from runtime_worker import RuntimeWorker
+from scenes.grounding_dino import GroundingEngine
+from scenes.grounding_dino_inputs import HEIGHT, WIDTH, Tokenizer, detections, preprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -56,7 +56,7 @@ class GroundingTests(unittest.TestCase):
         session.run.return_value = [np.zeros((1, 0, 256)), np.zeros((1, 0, 4))]
         with (
             patch.dict("os.environ", {}, clear=False),
-            patch("grounding.Session", return_value=session) as factory,
+            patch("scenes.grounding_dino.Session", return_value=session) as factory,
         ):
             engine = GroundingEngine(ROOT / "models", "ailia_npu")
             engine.run(ROOT / "images/truck.jpg", "truck.")

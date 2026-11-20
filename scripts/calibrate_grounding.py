@@ -18,7 +18,7 @@ from onnx import helper as h
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from grounding_convert import promote_fp32, quantize, save_sharded, targets
 
-from grounding_inputs import MODEL, REVISION, Tokenizer, preprocess
+from scenes.grounding_dino_inputs import MODEL, REVISION, Tokenizer, preprocess
 
 PROTOCOL = "grounding-coco-val2017-all80-minmax-v1"
 
@@ -126,7 +126,7 @@ def main(args):
                 Path(__file__),
                 Path(__file__).with_name("grounding_convert.py"),
                 Path(__file__).with_name("grounding_msda.py"),
-                Path(__file__).parents[1] / "grounding_inputs.py",
+                Path(__file__).parents[1] / "scenes/grounding_dino_inputs.py",
             ]
         },
         versions=dict(

@@ -8,10 +8,10 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
-from depth import DepthEngine
-from depth_inputs import REVISION, colorize, preprocess
-from engine import bind_worker_lifetime
 from history import append_history, load_history
+from runtime import bind_worker_lifetime
+from scenes.depth_anything_v2 import DepthEngine
+from scenes.depth_anything_v2_inputs import REVISION, colorize, preprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,24 +21,24 @@ class DepthTests(unittest.TestCase):
         libc = Mock()
         libc.prctl.return_value = 0
         with (
-            patch("engine.sys.platform", "linux"),
-            patch("engine.os.getppid", side_effect=[123, 123]),
-            patch("engine.ctypes.CDLL", return_value=libc),
+            patch("runtime.sys.platform", "linux"),
+            patch("runtime.os.getppid", side_effect=[123, 123]),
+            patch("runtime.ctypes.CDLL", return_value=libc),
         ):
             self.assertTrue(bind_worker_lifetime())
             self.assertEqual(libc.prctl.call_args.args[0], 1)
 
     def test_orphaned_worker_does_not_open_runtime(self):
-        with patch("engine.sys.platform", "linux"), patch("engine.os.getppid", return_value=1):
+        with patch("runtime.sys.platform", "linux"), patch("runtime.os.getppid", return_value=1):
             self.assertFalse(bind_worker_lifetime())
 
     def test_worker_checks_parent_exit_race(self):
         libc = Mock()
         libc.prctl.return_value = 0
         with (
-            patch("engine.sys.platform", "linux"),
-            patch("engine.os.getppid", side_effect=[123, 1]),
-            patch("engine.ctypes.CDLL", return_value=libc),
+            patch("runtime.sys.platform", "linux"),
+            patch("runtime.os.getppid", side_effect=[123, 1]),
+            patch("runtime.ctypes.CDLL", return_value=libc),
         ):
             self.assertFalse(bind_worker_lifetime())
 
@@ -65,7 +65,7 @@ class DepthTests(unittest.TestCase):
     def test_resident_session_without_environment_changes(self):
         session = Mock(version="test")
         session.run.return_value = [np.ones((1, 518, 518), np.float32)]
-        with patch.dict(os.environ), patch("depth.Session", return_value=session) as factory:
+        with patch.dict(os.environ), patch("scenes.depth_anything_v2.Session", return_value=session) as factory:
             before = dict(os.environ)
             engine = DepthEngine(ROOT / "models", "ailia_npu")
             self.assertEqual(dict(os.environ), before)
@@ -82,7 +82,7 @@ class DepthTests(unittest.TestCase):
     def test_nonfinite_output_rejected(self):
         session = Mock(version="test")
         session.run.return_value = [np.full((1, 518, 518), np.nan, np.float32)]
-        with patch.dict(os.environ), patch("depth.Session", return_value=session):
+        with patch.dict(os.environ), patch("scenes.depth_anything_v2.Session", return_value=session):
             engine = DepthEngine(ROOT / "models", "ailia_npu")
             with self.assertRaisesRegex(ValueError, "Non-finite"):
                 engine.run(ROOT / "images/bedroom/00000.jpg")

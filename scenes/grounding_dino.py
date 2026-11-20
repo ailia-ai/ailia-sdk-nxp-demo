@@ -7,8 +7,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from engine import Session
-from grounding_inputs import HEIGHT, MODEL, WIDTH, Tokenizer, detections, preprocess
+from runtime import Session
+from scenes.grounding_dino_inputs import HEIGHT, MODEL, WIDTH, Tokenizer, detections, preprocess
 
 
 class GroundingEngine:

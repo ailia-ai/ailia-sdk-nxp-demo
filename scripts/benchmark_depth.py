@@ -11,8 +11,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from depth_inputs import MODEL, REVISION
 from runtime_worker import RuntimeWorker
+from scenes.depth_anything_v2_inputs import MODEL, REVISION
 from settings import BACKENDS, CPU_THREADS
 
 

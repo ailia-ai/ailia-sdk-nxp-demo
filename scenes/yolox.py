@@ -67,7 +67,8 @@ def decode(output, threshold=0.4, nms=0.45):
 
 class YoloEngine:
     def __init__(self, directory, backend, model=MODEL):
-        from engine import Session
+        from runtime import Session
+
         self.backend = backend
         start = time.perf_counter()
         self.session = Session(

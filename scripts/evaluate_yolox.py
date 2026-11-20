@@ -8,7 +8,7 @@ from pathlib import Path
 import cv2
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from yolox import MODEL, YoloEngine, decode, preprocess
+from scenes.yolox import MODEL, YoloEngine, decode, preprocess
 
 
 def main():

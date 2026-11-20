@@ -1,6 +1,6 @@
 import unittest
 
-from engine import fit_rect, image_point
+from runtime import fit_rect, image_point
 
 
 class Coordinates(unittest.TestCase):

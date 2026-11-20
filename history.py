@@ -36,9 +36,9 @@ def load_history(path, limit=200):
 
 
 def append_history(path, backend, values, image, model="sam", caption=None):
-    from depth_inputs import REVISION as DEPTH_REVISION
-    from grounding_inputs import REVISION
-    from yolox import REVISION as YOLOX_REVISION
+    from scenes.depth_anything_v2_inputs import REVISION as DEPTH_REVISION
+    from scenes.grounding_dino_inputs import REVISION
+    from scenes.yolox import REVISION as YOLOX_REVISION
 
     record = dict(
         time=datetime.now().astimezone().isoformat(timespec="seconds"),

@@ -30,7 +30,7 @@ from prepare_sam2 import SOURCES, prepare
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from sam2_video_predictor import SAM2VideoPredictor  # noqa: E402
+from scenes.sam2_video_predictor import SAM2VideoPredictor  # noqa: E402
 from settings import preprocess_image  # noqa: E402
 
 PROTOCOL = "coco-val2017-sam21-tiny-512-minmax-v1"
@@ -109,7 +109,7 @@ def dataset_manifest(images, annotations, source, smoke_images=0):
                 "scripts/calibrate_sam2.py",
                 "scripts/prepare_sam2.py",
                 "scripts/convert_qdq_matmul.py",
-                "sam2_video_predictor.py",
+                "scenes/sam2_video_predictor.py",
                 "settings.py",
             )
         },

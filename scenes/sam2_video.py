@@ -8,9 +8,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from engine import ENCODER, Session
-from sam2_video_predictor import SAM2VideoPredictor
-from settings import BACKENDS, MEMORY_ATTENTION, preprocess_image
+from runtime import Session
+from scenes.sam2_video_predictor import SAM2VideoPredictor
+from settings import BACKENDS, ENCODER, MEMORY_ATTENTION, preprocess_image
 
 
 class TimedSession:
@@ -138,7 +138,7 @@ def main():
     parser.add_argument("--capture", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    base = Path(__file__).parent
+    base = Path(__file__).resolve().parents[1]
     args.output.mkdir(parents=True, exist_ok=True)
     engine = VideoEngine(base, args.backend, args.memory_model, args.capture)
     records = []

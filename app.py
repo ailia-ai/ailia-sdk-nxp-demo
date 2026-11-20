@@ -10,16 +10,17 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from depth_inputs import REVISION as DEPTH_REVISION
-from depth_inputs import colorize
-from engine import BACKENDS, fit_rect, image_point
-from grounding_inputs import DEFAULT_PROMPT
-from grounding_inputs import REVISION as GROUNDING_REVISION
 from history import append_history, load_history
 from live_input import LiveInput, find_camera
+from runtime import BACKENDS, fit_rect, image_point
 from runtime_worker import RuntimeWorker
+from scenes import default_image
+from scenes.depth_anything_v2_inputs import REVISION as DEPTH_REVISION
+from scenes.depth_anything_v2_inputs import colorize
+from scenes.grounding_dino_inputs import DEFAULT_PROMPT
+from scenes.grounding_dino_inputs import REVISION as GROUNDING_REVISION
+from scenes.yolox import REVISION as YOLOX_REVISION
 from settings import MODEL_REVISION
-from yolox import REVISION as YOLOX_REVISION
 
 
 def reset_tracking_view(view):
@@ -61,11 +62,7 @@ def main():
     if args.model != "sam":
         args.bedroom = args.autoplay_bedroom = False
     if args.image is None:
-        args.image = (
-            Path(__file__).parent
-            / "images"
-            / ("bedroom/00000.jpg" if args.model == "depth" else "truck.jpg")
-        )
+        args.image = default_image(args.model)
     import gi
 
     gi.require_version("Gtk", "3.0")
@@ -453,6 +450,13 @@ def main():
                 self.attribution.set_text(
                     "Demo image: Segment Anything official repository (truck.jpg) — github.com/facebookresearch/segment-anything"
                 )
+            elif Path(self.image_path).resolve() in (
+                default_image("grounding"),
+                default_image("yolox"),
+            ):
+                self.attribution.set_text(
+                    "Demo image: ailia-models test image — github.com/ailia-ai/ailia-models"
+                )
             else:
                 self.attribution.set_text("Image: user-selected file")
             self.note.set_text(
@@ -624,8 +628,7 @@ def main():
             self.video_mode, self.video_frame = False, 0
             self.points, self.mask, self.detections = [], None, []
             self.depth = None
-            if self.model == "depth":
-                self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
+            self.image_path = str(default_image(self.model))
             self.recorded_backends.clear()
             for cells in self.cells.values():
                 for cell in cells[1:]:

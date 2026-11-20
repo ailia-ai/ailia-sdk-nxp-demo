@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import numpy as np
 
-from video import TimedSession, VideoEngine
+from scenes.sam2_video import TimedSession, VideoEngine
 
 
 class ModelLayoutTests(unittest.TestCase):
     def test_all_tracking_models_use_shared_directory(self):
         root = Path(__file__).resolve().parents[1]
-        with patch("video.TimedSession") as session:
+        with patch("scenes.sam2_video.TimedSession") as session:
             engine = VideoEngine(root, "ort_cpu")
         self.assertEqual(len(engine.nets), 7)
         self.assertEqual(session.call_count, 7)

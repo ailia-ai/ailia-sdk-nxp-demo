@@ -17,7 +17,7 @@ from onnx import helper as h
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from depth_convert import prepare, quantize, targets
 
-from depth_inputs import MODEL, REVISION, preprocess
+from scenes.depth_anything_v2_inputs import MODEL, REVISION, preprocess
 
 
 def digest(path):
@@ -65,7 +65,7 @@ def main():
             for p in [
                 Path(__file__),
                 Path(__file__).with_name("depth_convert.py"),
-                Path(__file__).parents[1] / "depth_inputs.py",
+                Path(__file__).parents[1] / "scenes/depth_anything_v2_inputs.py",
             ]
         },
         images=[

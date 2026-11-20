@@ -2,9 +2,9 @@
 
 import hashlib
 import io
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from scripts.download_models import download

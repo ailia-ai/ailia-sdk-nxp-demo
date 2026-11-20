@@ -10,7 +10,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from engine import BACKENDS, Engine
+from runtime import BACKENDS
+from scenes.sam2 import Engine
 from settings import MODEL_REVISION
 
 

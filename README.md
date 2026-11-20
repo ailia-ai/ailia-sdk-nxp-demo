@@ -36,7 +36,7 @@ Stop running applications before replacing the library.
 
 The bundled runtime selects NPU execution from operator types, shapes and
 available memory. No NPU tuning environment variables or per-model switches
-are required. Older benchmark tables below identify their measured runtime.
+are required. Benchmark tables below identify their measured runtime.
 
 Converted models are bundled under `models/`. Unmodified SAM auxiliary files are downloaded from ailia-models, verified by SHA-256, and cached locally.
 The launcher downloads missing auxiliary files; subsequent launches can run offline.
@@ -68,7 +68,7 @@ sh launch.sh --bedroom               # Five-frame tracking
 sh launch.sh --windowed              # Windowed mode
 sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
-sh launch.sh --model grounding --caption "person. truck. car."
+sh launch.sh --model grounding --caption "Horse. Clouds. Grasses. Sky. Hill."
 sh launch.sh --model depth            # Indoor depth, Bedroom image
 sh launch.sh --model yolox            # YOLOX-S 320 object detection
 sh launch.sh --camera 1               # Use camera index 1 when enabling USB input
@@ -122,25 +122,17 @@ This uses different rounding from the CPU path, so outputs are not bit-identical
 
 Same INT8 model, batch 1, six CPU threads, one excluded dummy inference at Open,
 then ten runs without profiling. Times exclude preprocessing, NMS and rendering.
+Measured on 2026-11-20 with ailia runtime `ac22f5086`, using `images/yolox/input.jpg`.
 
 | Runtime | Median inference | FPS |
 | --- | ---: | ---: |
-| ailia CPU | 436.2 ms | 2.29 |
-| ailia NPU | 114.8 ms | 8.71 |
-| NXP ORT 1.24.3 CPU | 793.7 ms | 1.26 |
-| NXP ORT 1.24.3 Neutron EP | 796.6 ms | 1.26 |
+| ailia CPU | 435.4 ms | 2.30 |
+| ailia NPU | 114.9 ms | 8.70 |
+| NXP ORT 1.24.3 CPU | 794.0 ms | 1.26 |
+| NXP ORT 1.24.3 NPU (Neutron EP) | 794.3 ms | 1.26 |
 
 These CPU figures measure the same ConvInteger graph, not an optimized FP32
 model. ailia uses tiled NEON INT8 kernels with cached fixed weights on CPU.
-A separate ORT profile
-assigned all 83 ConvInteger nodes to CPU; only QuantizeLinear/DequantizeLinear
-nodes were assigned to Neutron EP. The ORT Neutron row is not NPU convolution.
-
-Earlier FP32 CPU reference, same input and measurement protocol: **ailia 267.8 ms**,
-**NXP ORT 293.1 ms**. ailia NPU INT8 is 2.33× faster than ailia CPU FP32.
-These benchmark results use runtime `764f675f2`; all four INT8 rows were measured with
-profiling disabled. CPU outputs are bit-identical to the pre-optimization
-runtime on the test image.
 
 ### Accuracy
 
@@ -176,7 +168,7 @@ the requested location. To measure one backend on the device:
 
 ```sh
 PYTHONPATH=./python python3 scripts/benchmark_yolox.py \
-  --models models --image images/truck.jpg --backend ailia_npu \
+  --models models --image images/yolox/input.jpg --backend ailia_npu \
   --output /tmp/yolox_ailia_npu.json
 ```
 
@@ -198,25 +190,29 @@ Memory Attention uses integer MatMul with FP32 RoPE. Auxiliary models remain FP3
 
 ### Benchmarks
 
-Measured on 2026-11-18 on i.MX95 with model revision `coco-val2017-v1`.
+Measured on 2026-11-20 on i.MX95 with model revision `coco-val2017-v1`.
 NXP ORT 1.24.3 / ailia SDK 1.7 (NXP NPU-enabled version), six CPU threads, profiling disabled.
-The ailia runtime is `566f2f71b`, with NEON-optimized CPU integer MatMul.
+The ailia runtime is `ac22f5086`, with NEON-optimized CPU integer MatMul.
 All backends run one inference with identical dummy inputs when opening each model. They then warm up on the complete five-frame Bedroom sequence using the same two points. Results are medians of the next three runs; warm-up is excluded.
 
-| Component | Calls / video | ORT CPU | ORT NPU* | ailia CPU | ailia NPU |
+```sh
+PYTHONPATH=./python python3 scripts/benchmark_sam2.py --backend ailia_npu --output /tmp/sam-results.json
+```
+
+| Component | Calls / video | ORT CPU | ORT NPU | ailia CPU | ailia NPU |
 |---|---:|---:|---:|---:|---:|
-| Image Encoder (ms / call) | 5 | 2,273.1 | 2,194.3 | 2,471.5 | 891.0 |
-| Mask Decoder (ms / call) | 5 | 169.6 | 164.8 | 126.8 | 126.9 |
-| Memory Attention (ms / call) | 4 | 1,487.2 | 1,484.2 | 1,116.5 | 517.3 |
-| Memory Encoder (ms / call) | 5 | 294.3 | 299.9 | 236.1 | 236.4 |
-| Full five-frame sequence (s) | — | 20.14 | 19.75 | 19.12 | 8.75 |
+| Image Encoder (ms / call) | 5 | 2,279.8 | 2,273.9 | 2,474.7 | 877.8 |
+| Mask Decoder (ms / call) | 5 | 173.1 | 171.5 | 125.8 | 126.9 |
+| Memory Attention (ms / call) | 4 | 1,503.1 | 1,502.2 | 1,078.2 | 517.6 |
+| Memory Encoder (ms / call) | 5 | 306.5 | 292.0 | 237.4 | 240.7 |
+| Full five-frame sequence (s) | — | 20.23 | 20.14 | 18.87 | 8.67 |
 
 Per-model values are medians of each run's average time per call. Full-sequence timing includes image loading and pre/post-processing, but excludes model loading, rendering, and saving results.
-All four backends use the same models. NPU backends run Image Encoder and Memory Attention with mixed CPU/NPU execution; other models run on the CPU.
+All four backends use the same models. NPU mode selects the NPU backend for Image Encoder and Memory Attention; other models use the CPU backend.
 
-* **ORT NPU timings are for speed reference only: its outputs are incorrect, with masks containing only 0–3 pixels in subsequent frames of the final measured run.**
+Earlier Neutron EP runs produced incorrect tracking masks. These timing measurements are not an accuracy qualification.
 
-Mean mask IoU against the FP32 reference on Bedroom is 96.07% for host ORT CPU and 95.71% for ailia NPU on the device.
+Earlier mean mask IoU measurements against the FP32 reference on Bedroom were 96.07% for host ORT CPU and 95.71% for ailia NPU on the device.
 These are comparisons with reference outputs, not ground-truth accuracy scores.
 
 In the app, still-image comparisons show medians of three runs; video timings show individual frame measurements.
@@ -254,7 +250,8 @@ Run the same command to resume an interrupted conversion. Generated models are n
 
 ### Controls and Model
 
-Enter English category names separated by periods, such as `person. truck. car.`, then press **Detect**.
+Enter English category names separated by periods, then press **Detect**.
+The bundled example uses `Horse. Clouds. Grasses. Sky. Hill.`.
 Bounding boxes, labels, and confidence scores appear on the image. **Compare all 4** measures the same image and prompt on each backend.
 
 The Swin-T model uses a 400×599 letterboxed image and up to 256 text tokens.
@@ -271,18 +268,18 @@ To measure all four backends without opening the GUI:
 PYTHONPATH=./python python3 scripts/benchmark_grounding.py --output /tmp/grounding-results.json
 ```
 
-Measured on i.MX95 on 2026-11-19 with revision `grounding-coco-val2017-v1`,
-the unchanged bundled ailia SDK 1.7 (`566f2f71b`), and NXP ORT 1.24.3.
+Measured on i.MX95 on 2026-11-20 with revision `grounding-coco-val2017-v1`,
+the bundled ailia SDK 1.7 (`ac22f5086`), and NXP ORT 1.24.3.
 Six CPU threads, profiling disabled, one excluded dummy inference at Open,
-then the median of three runs. Input: `images/truck.jpg`, prompt:
-`person. truck. car. bicycle. dog.`. Loading and pre/post-processing are excluded.
+then the median of three runs. Input: `images/grounding_dino/demo.jpg`, prompt:
+`Horse. Clouds. Grasses. Sky. Hill.`. Loading and pre/post-processing are excluded.
 
-| Runtime | CPU (ms) | NPU + CPU fallback (ms) |
+| Runtime | CPU (ms) | NPU (ms) |
 |---|---:|---:|
-| ailia SDK 1.7 | 7,788.1 | 3,924.9 |
-| NXP ONNX Runtime 1.24.3 | 7,545.9 | 7,011.9 |
+| ailia SDK 1.7 | 8,386.0 | 4,068.0 |
+| NXP ONNX Runtime 1.24.3 | 7,553.2 | 7,549.9 |
 
-All four runs detected the truck. This is a functional check, not a detection-accuracy benchmark.
+All four runs produced detections on the horse image. This is a functional check, not a detection-accuracy benchmark.
 Model hashes and calibration provenance are recorded in `models/grounding_manifest.json`.
 
 ### Model Conversion
@@ -336,18 +333,19 @@ this demo does not validate absolute distance accuracy.
 ### Benchmarks
 
 COCO-calibrated model, Bedroom frame `00000.jpg`, 518 × 518, six threads.
+Measured on 2026-11-20 with ailia runtime `ac22f5086` and NXP ORT 1.24.3.
 One excluded Open-time dummy inference, then the median of three runs;
 profiling, loading, preprocessing and drawing are excluded.
 
 | Runtime | Inference (ms) |
 |---|---:|
-| ailia CPU | 3665.5 |
-| ailia NPU (fixed + dynamic MatMul) | **2646.4** |
-| NXP ORT CPU | 3319.6 |
-| NXP ORT Neutron EP (fixed MatMul) | 3110.8 |
+| ailia CPU | 3614.5 |
+| ailia NPU | **2629.3** |
+| NXP ORT CPU | 3316.4 |
+| NXP ORT NPU (Neutron EP) | 3315.9 |
 
-ailia SDK 1.7 NXP NPU build; NXP ORT 1.24.3. On this image, the ailia NPU
-output differs from FP32 ORT CPU by 6.06 cm on average (31.82 cm maximum).
+An earlier output comparison on this image found that ailia NPU differed from
+FP32 ORT CPU by 6.06 cm on average (31.82 cm maximum).
 This is an output comparison, not a ground-truth depth accuracy measurement.
 
 ### Model Conversion
@@ -374,7 +372,17 @@ are saved in the output folder; no COCO images are bundled with the demo.
 
 ## Demo Images and Licenses
 
-Demo images come from the official Segment Anything repositories:
+Grounding DINO uses `images/grounding_dino/demo.jpg` and YOLOX uses
+`images/yolox/input.jpg`, copied from their respective ailia-models examples.
+Selecting a model loads its example image; **Open Image** selects a custom input.
+SAM 2 and Depth Anything use images from the official Segment Anything repositories:
 [truck.jpg](https://github.com/facebookresearch/segment-anything/blob/main/notebooks/images/truck.jpg) and
 [Bedroom](https://github.com/facebookresearch/sam2/tree/main/notebooks/videos/bedroom).
 See [NOTICE.md](NOTICE.md) for attribution and licenses.
+
+## Source Layout
+
+`app.py` is the shared GUI; `runtime.py` manages inference sessions and worker requests.
+Model-specific code lives in `scenes/`: `sam2.py`, `sam2_video.py`,
+`grounding_dino.py`, `depth_anything_v2.py`, and `yolox.py`.
+`scripts/` contains model conversion and benchmark commands; `images/` contains demo inputs.

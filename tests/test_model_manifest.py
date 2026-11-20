@@ -5,10 +5,10 @@ import json
 import unittest
 from pathlib import Path
 
-from depth_inputs import MODEL as DEPTH_MODEL
-from depth_inputs import REVISION as DEPTH_REVISION
-from grounding_inputs import MODEL as GROUNDING_MODEL
-from grounding_inputs import REVISION as GROUNDING_REVISION
+from scenes.depth_anything_v2_inputs import MODEL as DEPTH_MODEL
+from scenes.depth_anything_v2_inputs import REVISION as DEPTH_REVISION
+from scenes.grounding_dino_inputs import MODEL as GROUNDING_MODEL
+from scenes.grounding_dino_inputs import REVISION as GROUNDING_REVISION
 from settings import ENCODER, MEMORY_ATTENTION, MODEL_REVISION
 from warmup import inputs_for_model
 

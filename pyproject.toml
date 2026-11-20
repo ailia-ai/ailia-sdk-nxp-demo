@@ -7,4 +7,4 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 # Keep upstream tracking control flow intact; adaptation is documented in NOTICE.
-"sam2_video_predictor.py" = ["F841"]
+"scenes/sam2_video_predictor.py" = ["F841"]

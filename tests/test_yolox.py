@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 
 from history import append_history, load_history
-from yolox import LABELS, REVISION, YoloEngine, decode, preprocess
+from scenes.yolox import LABELS, REVISION, YoloEngine, decode, preprocess
 
 
 class YoloTests(unittest.TestCase):
@@ -18,7 +18,7 @@ class YoloTests(unittest.TestCase):
         session = Mock(version="test")
         session.run.return_value = [np.zeros((1, 2100, 85), np.float32)]
         root = Path(__file__).resolve().parents[1]
-        with patch.dict("os.environ", {}), patch("engine.Session", return_value=session) as factory:
+        with patch.dict("os.environ", {}), patch("runtime.Session", return_value=session) as factory:
             engine = YoloEngine(root / "models", "ailia_npu")
             engine.run(root / "images/truck.jpg")
             engine.run(root / "images/truck.jpg", compare=True)

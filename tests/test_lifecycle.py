@@ -9,10 +9,11 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
-from engine import Engine, Session, SessionCache, worker
 from history import append_history, load_history
+from runtime import Session, SessionCache, worker
+from scenes.sam2 import Engine
+from scenes.sam2_video import VideoEngine
 from settings import ENCODER, MODEL_REVISION
-from video import VideoEngine
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,7 +32,7 @@ class LifecycleTests(unittest.TestCase):
                     )
                 )
                 requests.put(None)
-                with patch("video.VideoEngine") as factory:
+                with patch("scenes.sam2_video.VideoEngine") as factory:
                     factory.return_value.track.return_value = []
                     worker(ROOT / "models", requests, responses)
                 events = []
@@ -61,7 +62,7 @@ class LifecycleTests(unittest.TestCase):
                 dict(action="segment", backend=backend, image="images/truck.jpg", points=[[0.5, 0.5, 1]])
             )
         requests.put(None)
-        with patch("engine.Engine", side_effect=create) as factory:
+        with patch("scenes.sam2.Engine", side_effect=create) as factory:
             worker(ROOT / "models", requests, responses)
         self.assertEqual(factory.call_count, 2)
         for instance in made:
@@ -82,7 +83,7 @@ class LifecycleTests(unittest.TestCase):
 
     def test_image_video_share_sessions(self):
         cache = SessionCache("ort_cpu")
-        with patch("engine.Session") as factory:
+        with patch("runtime.Session") as factory:
             image = Engine(ROOT / "models", "ort_cpu", cache=cache)
             video = VideoEngine(ROOT, "ort_cpu", cache=cache)
             self.assertEqual(factory.call_count, 7)

@@ -8,8 +8,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from grounding_inputs import DEFAULT_PROMPT
 from runtime_worker import RuntimeWorker
+from scenes.grounding_dino_inputs import DEFAULT_PROMPT
 from settings import BACKENDS
 
 
@@ -17,7 +17,7 @@ def main():
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--models", type=Path, default=root / "models")
-    parser.add_argument("--image", type=Path, default=root / "images/truck.jpg")
+    parser.add_argument("--image", type=Path, default=root / "images/grounding_dino/demo.jpg")
     parser.add_argument("--caption", default=DEFAULT_PROMPT)
     parser.add_argument("--backend", choices=BACKENDS, action="append")
     parser.add_argument("--output", type=Path, required=True)
