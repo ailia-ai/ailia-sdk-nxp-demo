@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 MODEL = "depth_anything_v2_metric_hypersim_vits_518_int8.onnx"
-REVISION = "depth-coco-val2017-v1"
+REVISION = "depth-coco-val2017-dql-v2"
 SIZE = 518
 
 

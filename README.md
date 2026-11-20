@@ -44,7 +44,8 @@ The launcher downloads missing public models; subsequent launches can run offlin
 Keep Grounding DINO's `.onnx` file and all accompanying `.dataNN` weight files together.
 Git LFS is not required. Calibration records for the four calibrated models are
 under [`calibration/`](calibration/). Benchmark tables are maintained here;
-generated timing logs are not tracked.
+generated timing logs are not tracked. Tables identify the measured runtime
+revision; only the Depth Anything table has been refreshed for `c97d853c4`.
 
 To save the pip-provided binary, run this before replacing it:
 
@@ -370,29 +371,36 @@ Input is RGB, square-resized to 518 × 518 with ImageNet normalization.
 COCO val2017 global Min/Max calibration quantizes the 48 fixed-weight MatMuls
 to static tensor-wise UINT8 activations and channel-wise INT8 weights, expressed
 as standard ONNX QuantizeLinear / MatMulInteger / Cast / Mul nodes.
-ailia NPU also executes the 24 dynamic Attention MatMuls using tiled,
-uncompressed INT8; Softmax and convolutions remain CPU operations.
-NXP ORT offloads the fixed-weight MatMuls; dynamic attention remains on CPU.
-The graph is not fully INT8. Runtime quantization can change depth estimates;
+The 24 dynamic Attention MatMuls explicitly quantize **both** operands with
+DynamicQuantizeLinear (tensor-wise UINT8), compute MatMulInteger with both
+zero points, then Cast to FLOAT and multiply by the two scales.
+ailia NPU executes these integer MatMuls using tiled, uncompressed weights.
+Ordinary FP32 MatMul is not silently quantized by the runtime.
+Softmax and convolutions remain floating point. The graph is not fully INT8.
+The explicit model quantization can change depth estimates;
 this demo does not validate absolute distance accuracy.
 
 ### Benchmarks
 
 COCO-calibrated model, Bedroom frame `00000.jpg`, 518 × 518, six threads.
-Measured on 2026-11-20 with ailia runtime `ac22f5086` and NXP ORT 1.24.3.
+Measured on 2026-11-20 with ailia runtime `c97d853c4` and NXP ORT 1.24.3.
 One excluded Open-time dummy inference, then the median of three runs;
 profiling, loading, preprocessing and drawing are excluded.
 
 | Runtime | Inference (ms) |
 |---|---:|
-| ailia CPU | 3614.5 |
-| ailia NPU | **2629.3** |
-| NXP ORT CPU | 3316.4 |
-| NXP ORT NPU (Neutron EP) | 3315.9 |
+| ailia CPU | 3381.8 |
+| ailia NPU | **2693.5** |
+| NXP ORT CPU | 3150.0 |
+| NXP ORT NPU (Neutron EP) | 3093.7 |
 
-An earlier output comparison on this image found that ailia NPU differed from
-FP32 ORT CPU by 6.06 cm on average (31.82 cm maximum).
-This is an output comparison, not a ground-truth depth accuracy measurement.
+ORT's NPU selection logged a Neutron allocation failure and used CPU fallback.
+On this image, ailia CPU and NPU outputs are identical. Against ORT CPU on the
+same explicit-quantization model, mean absolute output difference is 2.93 cm
+(51.71 cm maximum). Against the previous ailia NPU model, it is 33.83 cm
+(135.63 cm maximum): tensor-wise ONNX quantization is not numerically equivalent
+to the removed implicit quantizer. These are output comparisons, not ground-truth
+depth accuracy measurements. Previous ailia NPU latency was 2626.1 ms on this image.
 
 ### Model Conversion
 
@@ -415,6 +423,15 @@ After `completion.json` confirms 5,000 images, copy
 Restart the demo after replacing the model.
 Rerun the same command to resume. Image hashes, ranges and completion checks
 are saved in the output folder; no COCO images are bundled with the demo.
+
+To regenerate the model using the already completed COCO calibration ranges:
+
+```sh
+python3 scripts/depth_convert.py \
+  --source /path/to/depth_anything_v2_metric_hypersim_vits.onnx \
+  --ranges calibration/depth_anything_v2/ranges.json \
+  --output models/depth_anything_v2_metric_hypersim_vits_518_int8.onnx
+```
 
 ## Demo Images and Licenses
 

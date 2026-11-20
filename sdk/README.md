@@ -7,10 +7,12 @@ Also includes spatial ConvInteger, compressed fixed weights, fused UINT8
 epilogues/lookup tables, and native integer feature-map operations.
 CPU 2D ConvInteger uses bounded spatial tiles, shared NEON SDOT kernels and
 cached fixed weights, with exact INT32 accumulation and zero-point correction.
-Runtime source revision: `ac22f5086`, with the automatic NXP execution policy
+Runtime source revision: `c97d853c4`, with the automatic NXP execution policy
 (standard ONNX integer-operator backend). NPU placement, weight staging and
 device requantization no longer read tuning environment variables. The former
 CPU LayerNorm tuning overrides are also removed.
+Floating MatMul and fused floating Attention are not implicitly quantized.
+Dynamic integer execution requires explicit ONNX quantization operators.
 The bundled integer models require this runtime; replace models and library
 together. Dedicated static-QDQ MatMul/Conv NPU pattern recognition was removed.
 This is not the public pip SDK binary. See `../NOTICE.md` and the SDK terms

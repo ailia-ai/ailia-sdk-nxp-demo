@@ -1,16 +1,21 @@
 {
   "activation": "static UINT8 tensor-wise",
   "calibrated_images": 5000,
-  "dynamic_attention": "24 floating MatMuls; ailia runtime dynamic INT8 NPU enabled",
+  "dynamic_attention": "24 explicit DynamicQuantizeLinear pairs + MatMulInteger + Cast + scale",
+  "conversion": {
+    "method": "Re-exported from original ONNX using unchanged completed COCO calibration ranges",
+    "converter": "scripts/depth_convert.py",
+    "converter_sha256": "80f8a0f31f2ac537b132d6b96a947f2d6eb0b97f2bad3fa3c39428e020a0dcfd"
+  },
   "files": {
-    "depth_anything_v2_metric_hypersim_vits_518_int8.onnx": "e5941a48339b26445710a143062f5b78bbb7452e3ee2961f67f702fafe512a62"
+    "depth_anything_v2_metric_hypersim_vits_518_int8.onnx": "bb8b2cc8526a832bb3aa5acbbb8680d5c1a7933096b5a55040d93d759d8e2a23"
   },
   "fixed_matmuls": 48,
   "manifest_sha256": "ceb55e3483645cf4628d1dd6da88b9f65ea4c75f337eca03d7935ebded790590",
   "method": "global MinMax",
   "production": true,
   "ranges_sha256": "b13704501ecefceacc95643bad655ee7b36ad7bff6d8139e6093962499ccdad1",
-  "revision": "depth-coco-val2017-v1",
+  "revision": "depth-coco-val2017-dql-v2",
   "source_sha256": "8c7c2932e8be8720db8aae66a2b83a80db35b7d1a7ac990bf43bc69042d0eba0",
   "weight": "INT8 channel-wise"
 }

@@ -1,4 +1,4 @@
-"""Standard ONNX static UINT8/channel-wise INT8 fixed MatMul conversion."""
+"""Explicit ONNX quantization: calibrated fixed weights and dynamic attention."""
 
 import numpy as np
 import onnx
@@ -67,5 +67,75 @@ def quantize(model, ranges):
     initializers = [t for t in model.graph.initializer if t.name in used]
     del model.graph.initializer[:]
     model.graph.initializer.extend(initializers)
+    return quantize_dynamic_matmuls(model)
+
+
+def quantize_dynamic_matmuls(model):
+    """Quantize both floating attention operands tensor-wise at inference time.
+
+    No runtime-specific operators or implicit runtime quantization are needed.
+    Preserve each original output name so attention scaling and Softmax remain
+    unchanged. The existing 48 calibrated fixed-weight operators are untouched.
+    """
+    weights = {value.name for value in model.graph.initializer}
+    selected = [node for node in model.graph.node if node.domain == "" and node.op_type == "MatMul"]
+    if len(selected) != 24 or any(any(name in weights for name in node.input) for node in selected):
+        raise ValueError("Expected exactly 24 dynamic MatMuls after fixed-weight conversion")
+    if next((op.version for op in model.opset_import if op.domain == ""), 0) < 11:
+        raise ValueError("DynamicQuantizeLinear requires ONNX opset 11 or later")
+    used = {name for node in model.graph.node for name in (*node.input, *node.output)}
+    prefix = "depth_dynamic_int8_"
+    while any(name.startswith(prefix) for name in used):
+        prefix += "_"
+    nodes = []
+    for index, node in enumerate(model.graph.node):
+        if node.domain != "" or node.op_type != "MatMul":
+            nodes.append(node)
+            continue
+        tag = f"{prefix}{index}_"
+        for operand, source in zip(("a", "b"), node.input):
+            nodes.append(
+                h.make_node(
+                    "DynamicQuantizeLinear",
+                    [source],
+                    [tag + operand, tag + operand + "s", tag + operand + "z"],
+                    name=tag + operand + "_quantize",
+                )
+            )
+        nodes.extend(
+            [
+                h.make_node(
+                    "MatMulInteger",
+                    [tag + "a", tag + "b", tag + "az", tag + "bz"],
+                    [tag + "i"],
+                    name=tag + "matmul",
+                ),
+                h.make_node("Cast", [tag + "i"], [tag + "f"], to=T.FLOAT, name=tag + "cast"),
+                h.make_node("Mul", [tag + "as", tag + "bs"], [tag + "s"], name=tag + "scale"),
+                h.make_node("Mul", [tag + "f", tag + "s"], list(node.output), name=tag + "output"),
+            ]
+        )
+    del model.graph.node[:]
+    model.graph.node.extend(nodes)
     onnx.checker.check_model(model)
     return model
+
+
+def main():
+    """Reuse completed calibration ranges without revisiting the dataset."""
+    import argparse
+    import json
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, required=True)
+    parser.add_argument("--ranges", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    model = quantize(prepare(onnx.load(args.source)), json.loads(args.ranges.read_text()))
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    onnx.save(model, args.output)
+
+
+if __name__ == "__main__":
+    main()

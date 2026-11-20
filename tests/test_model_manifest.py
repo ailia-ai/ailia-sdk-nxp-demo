@@ -21,6 +21,7 @@ class ModelManifestTests(unittest.TestCase):
         self.assertTrue(manifest["calibration"]["production"])
         self.assertEqual(manifest["calibration"]["images"], 5000)
         self.assertTrue(manifest["runtime"]["dynamic_matmul_npu"])
+        self.assertFalse(manifest["runtime"]["implicit_float_quantization"])
         path = root / DEPTH_MODEL
         self.assertLess(path.stat().st_size, 100 * 1024 * 1024)
         self.assertEqual(

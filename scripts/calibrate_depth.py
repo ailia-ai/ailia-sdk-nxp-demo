@@ -153,7 +153,7 @@ def main():
             fixed_matmuls=48,
             activation="static UINT8 tensor-wise",
             weight="INT8 channel-wise",
-            dynamic_attention="24 floating MatMuls; ailia runtime dynamic INT8 NPU enabled",
+            dynamic_attention="24 explicit DynamicQuantizeLinear pairs + MatMulInteger + Cast + scale",
             source_sha256=digest(args.source),
             manifest_sha256=digest(mp),
             ranges_sha256=digest(args.output / "ranges.json"),

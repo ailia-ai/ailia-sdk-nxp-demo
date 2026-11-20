@@ -1,5 +1,5 @@
 {
-  "revision": "depth-coco-val2017-v1",
+  "revision": "depth-coco-val2017-dql-v2",
   "source_url": "https://storage.googleapis.com/ailia-models/depth_anything_v2/depth_anything_v2_metric_hypersim_vits.onnx",
   "source_sha256": "8c7c2932e8be8720db8aae66a2b83a80db35b7d1a7ac990bf43bc69042d0eba0",
   "converter": "scripts/calibrate_depth.py",
@@ -25,14 +25,18 @@
     "dynamic_matmul_npu": true,
     "dynamic_attention_npu": true,
     "dynamic_matmuls": 24,
-    "dynamic_execution": "ailia only; uncompressed INT8, row-tiled",
-    "sdk_sha256": "c5326e8045ac14bf9c4fed7c7718712fd2474a9b554fb3f07ba309e39d9de18b"
+    "dynamic_execution": "standard ONNX DynamicQuantizeLinear for both operands, MatMulInteger, Cast, Mul; ailia NPU uses uncompressed row tiles",
+    "implicit_float_quantization": false,
+    "source_revision": "c97d853c4",
+    "sdk_sha256": "f452732b874116e1a8c0f6712d769bd3f0720cd2df71e54ae7c78cf53063c800"
   },
   "models": {
     "depth_anything_v2_metric_hypersim_vits_518_int8.onnx": {
-      "sha256": "e5941a48339b26445710a143062f5b78bbb7452e3ee2961f67f702fafe512a62",
-      "converted_matmuls": 48,
-      "other_operations": "FP32 graph; dynamic MatMuls quantized by ailia NPU runtime"
+      "sha256": "bb8b2cc8526a832bb3aa5acbbb8680d5c1a7933096b5a55040d93d759d8e2a23",
+      "converted_matmuls": 72,
+      "fixed_matmuls": 48,
+      "dynamic_matmuls": 24,
+      "other_operations": "FP32 graph; all MatMul quantization explicit in ONNX"
     }
   }
 }

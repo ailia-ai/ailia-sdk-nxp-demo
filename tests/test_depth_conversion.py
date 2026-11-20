@@ -27,8 +27,9 @@ class DepthConversionTests(unittest.TestCase):
             weights.append(nh.from_array(np.array([[1, -0.5], [0.25, 0.75]], np.float32), f"w{i}"))
             nodes.append(h.make_node("MatMul", ["x", f"w{i}"], [name]))
             outputs.append(h.make_tensor_value_info(name, T.FLOAT, [1, 3, 2]))
-        nodes.append(h.make_node("MatMul", ["x", "dynamic_weight"], ["dynamic_y"]))
-        outputs.append(h.make_tensor_value_info("dynamic_y", T.FLOAT, [1, 3, 2]))
+        for i in range(24):
+            nodes.append(h.make_node("MatMul", ["x", "dynamic_weight"], [f"dynamic_y{i}"]))
+            outputs.append(h.make_tensor_value_info(f"dynamic_y{i}", T.FLOAT, [1, 3, 2]))
         model = h.make_model(
             h.make_graph(
                 nodes,
@@ -49,9 +50,10 @@ class DepthConversionTests(unittest.TestCase):
         model = quantize(self.model(), {"x": [-1, 1]})
         onnx.checker.check_model(model)
         operators = [n.op_type for n in model.graph.node]
-        self.assertEqual(operators.count("MatMulInteger"), 48)
+        self.assertEqual(operators.count("MatMulInteger"), 72)
         self.assertEqual(operators.count("QuantizeLinear"), 48)
-        self.assertEqual(operators.count("MatMul"), 1)
+        self.assertEqual(operators.count("MatMul"), 0)
+        self.assertEqual(operators.count("DynamicQuantizeLinear"), 48)
         self.assertNotIn("DequantizeLinear", operators)
         self.assertTrue(all(n.domain == "" for n in model.graph.node))
         x = np.array([[[-0.8, -0.3], [0.2, 0.7], [0.5, -0.1]]], np.float32)
@@ -66,9 +68,10 @@ class DepthConversionTests(unittest.TestCase):
             model.SerializeToString(), providers=["CPUExecutionProvider"]
         )
         values = session.run(None, {"x": x, "dynamic_weight": weight})
-        for value in values[:-1]:
+        for value in values[:48]:
             np.testing.assert_allclose(value, expected, rtol=1e-6, atol=1e-7)
-        np.testing.assert_allclose(values[-1], x @ weight, rtol=1e-6)
+        for value in values[48:]:
+            np.testing.assert_allclose(value, x @ weight, rtol=0, atol=0.01)
 
     def test_invalid_calibration_rejected(self):
         with self.assertRaisesRegex(ValueError, "Invalid calibration"):

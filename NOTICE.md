@@ -42,8 +42,9 @@ https://github.com/ailia-ai/ailia-models/tree/master/depth_estimation/depth_anyt
 Original model: https://huggingface.co/depth-anything/Depth-Anything-V2-Metric-Hypersim-Small
 See `licenses/DEPTH_ANYTHING_LICENSE` (Apache License 2.0).
 The demo conversion fixes the input to 518 pixels and uses COCO val2017
-calibration for fixed-weight INT8 MatMuls. Dynamic MatMuls are quantized by
-the ailia NPU runtime. This is a modified demo model, not an upstream release.
+calibration for fixed-weight INT8 MatMuls. Dynamic MatMuls use explicit ONNX
+DynamicQuantizeLinear and MatMulInteger nodes. This is a modified demo model,
+not an upstream release.
 
 ## YOLOX
 
