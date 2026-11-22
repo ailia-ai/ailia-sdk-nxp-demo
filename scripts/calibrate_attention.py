@@ -1,7 +1,8 @@
-"""Calibrate explicit attention quantizers on all 5000 COCO val2017 images.
+"""Calibrate attention or Depth Conv on all 5000 COCO val2017 images.
 
 Input is the existing COCO-calibrated integer model with DynamicQuantizeLinear
-attention. Fixed-weight quantization is preserved. Checkpoints are resumable.
+attention, or the fixed-attention Depth model for the additional Conv pass.
+Existing MatMul quantization is preserved. Checkpoints are resumable.
 """
 
 import argparse
@@ -21,6 +22,7 @@ from onnx import TensorProto, helper, numpy_helper
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scenes import depth_anything_v2_inputs as depth
 from scenes import grounding_dino_inputs as grounding
+from depth_convert import convolution_targets, quantize_convolutions
 
 
 def digest(path):
@@ -65,7 +67,7 @@ def freeze_quantizers(model, ranges):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", choices=("depth", "grounding"), required=True)
+    parser.add_argument("--model", choices=("depth", "grounding", "depth-conv"), required=True)
     for name in ("source", "coco-images", "coco-annotations", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--vocab", type=Path)
@@ -87,10 +89,11 @@ def main():
         categories = sorted(annotation["categories"], key=lambda c: c["id"])
         captions = [". ".join(c["name"] for c in categories) + ".", grounding.DEFAULT_PROMPT]
     model = onnx.load(args.source, load_external_data=False)
-    quantizers = [n for n in model.graph.node if n.op_type == "DynamicQuantizeLinear"]
-    expected = 48 if args.model == "depth" else 218
+    quantizers = (convolution_targets(model)[1] if args.model == "depth-conv" else
+                  [n for n in model.graph.node if n.op_type == "DynamicQuantizeLinear"])
+    expected = 28 if args.model == "depth-conv" else (48 if args.model == "depth" else 218)
     if len(quantizers) != expected:
-        raise ValueError(f"Expected {expected} dynamic quantizers, got {len(quantizers)}")
+        raise ValueError(f"Expected {expected} calibration targets, got {len(quantizers)}")
     sources = list(dict.fromkeys(n.input[0] for n in quantizers))
     external = {}
     for tensor in model.graph.initializer:
@@ -105,10 +108,12 @@ def main():
                     if not target.exists() or digest(target) != external[name]:
                         shutil.copyfile(args.source.parent / name, target)
     manifest = dict(
-        protocol="attention-coco-val2017-minmax-v1", model=args.model,
+        protocol="conv-coco-val2017-minmax-v1" if args.model == "depth-conv" else "attention-coco-val2017-minmax-v1", model=args.model,
         source_sha256=digest(args.source), external_data=external,
         annotations_sha256=digest(args.coco_annotations),
         code_sha256=digest(Path(__file__)),
+        converter_sha256=digest(Path(__file__).with_name("depth_convert.py")),
+        preprocessing_sha256=digest(Path(depth.__file__ if args.model != "grounding" else grounding.__file__)),
         versions=dict(onnx=onnx.__version__, ort=ort.__version__, numpy=np.__version__, cv2=cv2.__version__),
         workers=args.workers, threads=args.threads, captions=captions,
         vocab_sha256=digest(args.vocab) if args.vocab else None,
@@ -188,14 +193,23 @@ def main():
         raise ValueError("Incomplete calibration coverage")
     save(args.output / "ranges.json", dict(fingerprint=fingerprint, ranges=ranges))
     output = args.output / args.source.name
-    onnx.save(freeze_quantizers(model, ranges), output)
+    convert = quantize_convolutions if args.model == "depth-conv" else freeze_quantizers
+    onnx.save(convert(model, ranges), output)
     onnx.checker.check_model(str(output))
-    save(args.output / "completion.json", dict(
+    completion = dict(
         production=True, images=len(coverage), captions_per_image=len(captions),
         source_sha256=manifest["source_sha256"], model_sha256=digest(output),
         manifest_sha256=digest(path), ranges_sha256=digest(args.output / "ranges.json"),
         quantizers=expected,
-    ))
+    )
+    if args.model == "depth-conv":
+        completion.update(
+            converted_convolutions=28, retained_fp32_convolutions=3,
+            activation="static UINT8 tensor-wise",
+            weight="symmetric channel-wise 8-bit, UINT8 offset encoding with zero point 128",
+            conversion_sha256=digest(Path(__file__).with_name("depth_convert.py")),
+        )
+    save(args.output / "completion.json", completion)
     print("Completed", output, flush=True)
 
 

@@ -1,0 +1,16 @@
+{
+  "activation": "static UINT8 tensor-wise",
+  "calibration_export_sha256": "715f9f22db5420c71c90865c95fba9648e2386507ec3f42b17bc5ca31d46acac",
+  "captions_per_image": 1,
+  "conversion_sha256": "36f8b485b9be4fec540ba45e9b6e151fb5e5371a36304899f16007f065796420",
+  "converted_convolutions": 28,
+  "images": 5000,
+  "manifest_sha256": "64a71cfa633962a2c959e1886558416d3d195d79d65046a9e803d02506c24a30",
+  "model_sha256": "dcd2427718dbe68d7b48bef0f6343d058106f98427071030beb1bafb30a90544",
+  "production": true,
+  "quantizers": 28,
+  "ranges_sha256": "feb97db5ea0b5dd3d63dcbe1c457975c6b689d906cbe30d324dcf2e88d2036a9",
+  "retained_fp32_convolutions": 3,
+  "source_sha256": "9c33e8b050fd99c5e4142a3edf026df1b9a2488402a963b76c1c75234f4bc056",
+  "weight": "symmetric channel-wise 8-bit, UINT8 offset encoding with zero point 128"
+}

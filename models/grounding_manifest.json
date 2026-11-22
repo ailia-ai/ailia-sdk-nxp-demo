@@ -1,17 +1,21 @@
 {
   "revision": "grounding-coco-val2017-ql-v3",
-  "runtime_source_revision": "65b87e8b254f6e8c699914f18eb3f9e39fb3a6e3",
-  "runtime_source_update": "Cached constant CPU MatMulInteger weights and shared direct NEON RHS packing, retaining exact integer outputs",
-  "runtime_sha256": "27ebfd8b0e0d9d69ab4f523dcb438b5d9b02155dcece8c8a776f9d4079ef7adf",
+  "runtime_source_revision": "c8e3d217e95a591fb5a47fb2337d756fa5d82be1",
+  "runtime_source_update": "Cached CPU integer weights, persistent compressed fixed NPU weights, and exact Softmax/QuantizeLinear fusion",
+  "runtime_sha256": "71ca0c6def343d3cc27e614ef4a044f64146769b028448602695c140f9ef1382",
   "runtime_source_files": {
     "library/npu/neutron/NeutronMatMulInteger.h": "9155b991b969828c0134166c818a31a52ee7ac4ef97600eb99abe44f0028c5c7",
     "library/npu/neutron/NeutronIntegerMatMulPolicy.h": "7f89c5ca7b4dbdc67402ae870e36087306ad24b0cdcc9348ec9e7c8ff683e0ac",
     "library/npu/neutron/NeutronSegmentBuilder.cpp": "b55505f7bb0aa427e375ee14fb631361a9b26ed2b052f88a915de6846b9a8ad6",
-    "library/npu/neutron/NeutronScaledInteger.h": "91391fc6fb78a23acc26a62063b897df84a1461365d2e38530bed26324eea374",
+    "library/npu/neutron/NeutronScaledInteger.h": "810d25dd45f8b4a7279986c5b0725ec84aaaa48f5b388153b5cac1969d6ffa21",
     "library/core/layers/basics/DynamicIntegerLayers.h": "85d9795ec56909b9e046f6fbaaa6f1ade42cecb386c6d897e35c8f16d5ccbab3",
     "library/core/layers/basics/IntegerMatMulExecution.h": "761803e71064ed1bb8210b708d5e691336d3520faddba974f272be0884f23ce7",
     "library/core/layers/basics/IntegerMatMulKernel.h": "df7f0228725420dcfc7890854ed9b8a9f478913f1093ed1faa92a5b65540c85b",
-    "library/npu/neutron/NeutronQuantizedDynamicMatMul.h": "30e437dc683edd01fe9cbf3f8b7410b8d92866791d148cbf2d4aefa67ece6830"
+    "library/npu/neutron/NeutronQuantizedDynamicMatMul.h": "30e437dc683edd01fe9cbf3f8b7410b8d92866791d148cbf2d4aefa67ece6830",
+    "library/npu/neutron/NeutronComposite.h": "4872dc32f60a24a8c508c7d193ca626fe2781cfa5643d44225d624bf4165d8c4",
+    "library/npu/neutron/NeutronInt8Gemm.cpp": "4e67e8dca665d008b57265c8c765fc0367d3daae3c462d04d53b85c1369f373b",
+    "library/npu/neutron/NeutronInt8Gemm.h": "d29b5e8d9eadb14503cc62308829b7b0e9aeb413bf5f26a8e52dfd8a668e7d38",
+    "library/npu/neutron/NeutronQdqSoftmax.h": "eb95e7ea5c6259f5e25dcf9be3d51320665c52bf3170dc3403cc7ce7dd99a88e"
   },
   "source_url": "https://storage.googleapis.com/ailia-models/groundingdino/groundingdino_swint_ogc.onnx",
   "source_sha256": "69fc8059ed580a4f7bef9753e1c0dff3ab00e1004d86d9587202f6605bb9b02d",
@@ -72,5 +76,6 @@
     "ranges_sha256": "72db64291e2537d4acfcff6a1ba9f38c62feb8c9b39a3a92da3d4acf9c4c8449",
     "records": "../calibration/grounding_dino/attention"
   },
-  "attention_converter": "scripts/calibrate_attention.py"
+  "attention_converter": "scripts/calibrate_attention.py",
+  "runtime_source_state": "committed at runtime_source_revision; source-file hashes recorded in runtime_source_files"
 }

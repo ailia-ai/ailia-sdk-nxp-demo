@@ -14,6 +14,94 @@ def prepare(model):
     return model
 
 
+def convolution_targets(model):
+    """Keep the narrow high-resolution output head in FLOAT; quantize 28 Conv."""
+    weights = {v.name: nh.to_array(v) for v in model.graph.initializer}
+    selected = []
+    for node in model.graph.node:
+        if node.op_type != "Conv" or node.domain:
+            continue
+        if node.name.startswith("/depth_head/output_conv"):
+            continue
+        weight = weights.get(node.input[1])
+        if (weight is None or weight.ndim != 4 or not np.isfinite(weight).all()
+                or any(a.i != 1 for a in node.attribute if a.name == "group")):
+            raise ValueError(f"Unsupported Depth convolution: {node.name}")
+        selected.append(node)
+    if len(selected) != 28:
+        raise ValueError(f"Expected 28 Depth convolution targets, got {len(selected)}")
+    return weights, selected
+
+
+def quantize_convolutions(model, ranges):
+    """Apply calibrated UINT8 activations and channel-wise 8-bit ConvInteger.
+
+    Store signed weights with a +128 UINT8 offset for ORT ConvInteger support.
+    The explicit zero point preserves exactly the same centered integer values.
+    """
+    weights, selected = convolution_targets(model)
+    outputs = {n.output[0] for n in selected}
+    nodes, constants = [], list(model.graph.initializer)
+    used_names = {s for n in model.graph.node for s in (*n.input, *n.output)}
+    prefix = "depth_conv_int8_"
+    while any(s.startswith(prefix) for s in used_names):
+        prefix += "_"
+
+    def constant(name, value):
+        constants.append(nh.from_array(np.asarray(value), name))
+        return name
+
+    for i, node in enumerate(model.graph.node):
+        if node.output[0] not in outputs:
+            nodes.append(node)
+            continue
+        tag = f"{prefix}{i}_"
+        lo, hi = ranges[node.input[0]]
+        if not np.isfinite([lo, hi]).all() or lo > hi:
+            raise ValueError(f"Invalid calibration range: {node.input[0]}")
+        lo, hi = min(lo, 0), max(hi, 0)
+        xs = np.float32(max((hi - lo) / 255, 1e-12))
+        xz = np.uint8(np.clip(np.rint(-lo / xs), 0, 255))
+        w = weights[node.input[1]]
+        ws = np.maximum(np.max(np.abs(w), axis=(1, 2, 3)) / 127, 1e-12).astype(np.float32)
+        qw = (
+            np.clip(np.rint(w / ws[:, None, None, None]), -127, 127) + 128
+        ).astype(np.uint8)
+        attrs = {a.name: h.get_attribute_value(a) for a in node.attribute}
+        scaled = tag + "scaled" if len(node.input) > 2 else node.output[0]
+        nodes.extend([
+            h.make_node(
+                "QuantizeLinear",
+                [node.input[0], constant(tag + "xs", xs), constant(tag + "xz", xz)],
+                [tag + "x"], name=tag + "quantize",
+            ),
+            h.make_node(
+                "ConvInteger",
+                [tag + "x", constant(tag + "w", qw), tag + "xz",
+                 constant(tag + "wz", np.uint8(128))],
+                [tag + "acc"], name=tag + "conv", **attrs,
+            ),
+            h.make_node("Cast", [tag + "acc"], [tag + "float"], to=T.FLOAT, name=tag + "cast"),
+            h.make_node(
+                "Mul", [tag + "float", constant(tag + "scale", (xs * ws).reshape(1, -1, 1, 1))],
+                [scaled], name=tag + "scale_output",
+            ),
+        ])
+        if len(node.input) > 2:
+            nodes.append(h.make_node(
+                "Add", [scaled, constant(tag + "bias", weights[node.input[2]].reshape(1, -1, 1, 1))],
+                list(node.output), name=tag + "bias_output",
+            ))
+    del model.graph.node[:]
+    model.graph.node.extend(nodes)
+    used = {s for n in nodes for s in n.input} | {v.name for v in model.graph.output}
+    del model.graph.initializer[:]
+    model.graph.initializer.extend(v for v in constants if v.name in used)
+    del model.graph.value_info[:]
+    onnx.checker.check_model(model)
+    return model
+
+
 def targets(model):
     weights = {t.name: nh.to_array(t) for t in model.graph.initializer}
     nodes = [n for n in model.graph.node if n.op_type == "MatMul" and n.input[1] in weights]
@@ -132,12 +220,18 @@ def main():
     parser.add_argument("--ranges", type=Path, required=True)
     parser.add_argument("--attention-ranges", type=Path,
                         help="Completed fixed-attention calibration ranges")
+    parser.add_argument("--conv-ranges", type=Path,
+                        help="Completed 28-convolution COCO calibration ranges")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     model = quantize(prepare(onnx.load(args.source)), json.loads(args.ranges.read_text()))
     if args.attention_ranges:
         from calibrate_attention import freeze_quantizers
         model = freeze_quantizers(model, json.loads(args.attention_ranges.read_text())["ranges"])
+    if args.conv_ranges:
+        if not args.attention_ranges:
+            parser.error("--conv-ranges requires --attention-ranges")
+        model = quantize_convolutions(model, json.loads(args.conv_ranges.read_text())["ranges"])
     args.output.parent.mkdir(parents=True, exist_ok=True)
     onnx.save(model, args.output)
 

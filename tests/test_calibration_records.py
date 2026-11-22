@@ -68,10 +68,39 @@ class CalibrationRecordsTests(unittest.TestCase):
                     self.assertEqual(sha, completion[name + "_sha256"])
                     self.assertEqual(sha, calibration[name + "_sha256"])
                 for name, record in model["models"].items():
-                    self.assertEqual(digest(ROOT / "models" / name), completion["model_sha256"])
+                    expected_hash = completion["model_sha256"]
+                    if "convolution_calibration" in model:
+                        conv = model["convolution_calibration"]
+                        conv_records = ROOT / "models" / conv["records"]
+                        conv_completion = read(conv_records / "completion.json")
+                        self.assertEqual(expected_hash, conv_completion["source_sha256"])
+                        expected_hash = conv_completion["model_sha256"]
+                    self.assertEqual(digest(ROOT / "models" / name), expected_hash)
                     graph = onnx.load(ROOT / "models" / name, load_external_data=False)
                     self.assertNotIn("DynamicQuantizeLinear", [n.op_type for n in graph.graph.node])
                     self.assertEqual(record["dynamic_matmuls"], count)
+
+    def test_depth_convolution_records(self):
+        import onnx
+
+        model = read(ROOT / "models/depth_manifest.json")
+        calibration = model["convolution_calibration"]
+        records = ROOT / "models" / calibration["records"]
+        manifest = read(records / "manifest.json")
+        completion = read(records / "completion.json")
+        self.assertEqual(len({v["id"] for v in manifest["images"]}), 5000)
+        self.assertEqual(completion["images"], 5000)
+        self.assertTrue(completion["production"])
+        self.assertEqual(completion["converted_convolutions"], 28)
+        self.assertEqual(completion["retained_fp32_convolutions"], 3)
+        for name in ("manifest", "ranges"):
+            self.assertEqual(digest(records / (name + ".json")), completion[name + "_sha256"])
+            self.assertEqual(completion[name + "_sha256"], calibration[name + "_sha256"])
+        for name in model["models"]:
+            graph = onnx.load(ROOT / "models" / name)
+            self.assertEqual(sum(n.op_type == "ConvInteger" for n in graph.graph.node), 28)
+            self.assertEqual(sum(n.op_type == "Conv" for n in graph.graph.node), 3)
+            self.assertEqual(digest(ROOT / "models" / name), completion["model_sha256"])
 
 
 if __name__ == "__main__":

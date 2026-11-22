@@ -403,33 +403,42 @@ The 24 dynamic-input Attention MatMuls explicitly quantize **both** operands wit
 fixed QuantizeLinear (tensor-wise UINT8), compute MatMulInteger with both
 zero points, then Cast to FLOAT and multiply by the two scales.
 Attention activation ranges use a second full 5,000-image COCO calibration pass.
-ailia NPU executes these integer MatMuls using tiled, uncompressed weights.
+ailia NPU keeps fixed weights compressed and uses uncompressed tiles for dynamic weights.
 Ordinary FP32 MatMul is not silently quantized by the runtime.
-Softmax and convolutions remain floating point. The graph is not fully INT8.
+An additional full 5,000-image COCO pass quantizes 28 convolutions using standard
+QuantizeLinear / ConvInteger / Cast / scale / bias nodes. Activations are
+tensor-wise UINT8; channel-wise 8-bit weights use UINT8 storage with zero point
+128 for ORT compatibility, preserving the centered integer weights exactly.
+The three narrow, high-resolution output-head convolutions remain FP32 because
+NPU execution was slower. Softmax and ConvTranspose also remain FP32;
+the graph is not fully INT8.
 The explicit model quantization can change depth estimates;
 this demo does not validate absolute distance accuracy.
 
 ### Benchmarks
 
-Full COCO fixed-attention model `depth-coco-val2017-ql-v3`, Bedroom frame
-`00000.jpg`, 518 × 518, six threads. Measured on 2026-11-20 with ailia runtime
-`65b87e8b2` and NXP ORT 1.24.3 (512 MiB CMA allocation).
+Full COCO Conv model `depth-coco-val2017-conv-v4`, Bedroom frame
+`00000.jpg`, 518 × 518, six threads. Measured on 2026-11-22 with the bundled
+ailia runtime `c8e3d217e` (SHA-256 prefix `71ca0c6def34`) and
+NXP ORT 1.24.3 (512 MiB CMA allocation).
 One excluded Open-time dummy inference, then the median of three runs;
 profiling, loading, preprocessing and drawing are excluded.
 
 | Runtime | Inference (ms) |
 |---|---:|
-| ailia CPU | 2746.6 |
-| ailia NPU | **2225.0** |
-| NXP ORT CPU | 3033.7 |
-| NXP ORT NPU (Neutron EP) | 2828.3 |
+| ailia CPU | 3090.2 |
+| ailia NPU | **2039.8** |
+| NXP ORT CPU | 2790.8 |
+| NXP ORT NPU (Neutron EP) | 2579.1 |
 
-On this image, ailia CPU and NPU outputs are identical and unchanged by the CPU
-packing update. Relative to the previous
-dynamic-quantization model on ailia NPU, the mean absolute difference is 17.92 cm
-(40.93 cm maximum). Relative to ORT CPU on the same fixed model, it is 4.58 cm
-(33.66 cm maximum). These are output comparisons, not ground-truth depth accuracy.
-The five Bedroom frames retain similar depth-map structure in the host CPU check.
+With the same runtime, the preceding MatMul-only model measured 2814.1 ms on
+ailia CPU and 2169.9 ms on ailia NPU. Conv quantization improves NPU latency by
+6.0%, but increases ailia CPU latency by 9.8%.
+Across the five Bedroom frames, the new ailia NPU output differs from the
+preceding NPU model by 4.90 cm mean absolute difference (59.79 cm maximum).
+The ailia CPU/NPU difference is 1.14 cm mean (23.84 cm maximum); against ORT CPU
+it is 4.55 cm mean (50.15 cm maximum). These are output comparisons, not
+ground-truth depth accuracy.
 
 ### Model Conversion
 
@@ -447,7 +456,17 @@ python3 scripts/calibrate_depth.py \
   --output /path/to/depth-calibrated
 ```
 
-After `completion.json` confirms 5,000 images, run the fixed-attention pass below.
+After `completion.json` confirms 5,000 images, run the fixed-attention pass below,
+then calibrate the 28 Conv layers:
+
+```sh
+python3 scripts/calibrate_attention.py --model depth-conv \
+  --source /path/to/depth-fixed-attention/depth_anything_v2_metric_hypersim_vits_518_int8.onnx \
+  --coco-images /path/to/coco/val2017 \
+  --coco-annotations /path/to/coco/annotations/instances_val2017.json \
+  --output /path/to/depth-conv-calibrated
+```
+
 Rerun the same command to resume. Image hashes, ranges and completion checks
 are saved in the output folder; no COCO images are bundled with the demo.
 
@@ -458,6 +477,7 @@ python3 scripts/depth_convert.py \
   --source /path/to/depth_anything_v2_metric_hypersim_vits.onnx \
   --ranges calibration/depth_anything_v2/ranges.json \
   --attention-ranges calibration/depth_anything_v2/attention/ranges.json \
+  --conv-ranges calibration/depth_anything_v2/convolution/ranges.json \
   --output models/depth_anything_v2_metric_hypersim_vits_518_int8.onnx
 ```
 

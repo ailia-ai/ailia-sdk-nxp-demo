@@ -1,5 +1,5 @@
 {
-  "revision": "depth-coco-val2017-ql-v3",
+  "revision": "depth-coco-val2017-conv-v4",
   "source_url": "https://storage.googleapis.com/ailia-models/depth_anything_v2/depth_anything_v2_metric_hypersim_vits.onnx",
   "source_sha256": "8c7c2932e8be8720db8aae66a2b83a80db35b7d1a7ac990bf43bc69042d0eba0",
   "converter": "scripts/calibrate_depth.py",
@@ -27,18 +27,29 @@
     "dynamic_matmuls": 24,
     "dynamic_execution": "standard ONNX fixed QuantizeLinear on both dynamic operands, MatMulInteger, Cast, Mul; ailia NPU uses uncompressed row tiles",
     "implicit_float_quantization": false,
-    "source_revision": "65b87e8b254f6e8c699914f18eb3f9e39fb3a6e3",
-    "sdk_sha256": "27ebfd8b0e0d9d69ab4f523dcb438b5d9b02155dcece8c8a776f9d4079ef7adf"
+    "source_revision": "c8e3d217e95a591fb5a47fb2337d756fa5d82be1",
+    "sdk_sha256": "71ca0c6def343d3cc27e614ef4a044f64146769b028448602695c140f9ef1382",
+    "source_state": "committed: persistent compressed fixed INT8 weights and fused Softmax/QuantizeLinear",
+    "source_files": {
+      "library/npu/neutron/NeutronComposite.h": "4872dc32f60a24a8c508c7d193ca626fe2781cfa5643d44225d624bf4165d8c4",
+      "library/npu/neutron/NeutronInt8Gemm.cpp": "4e67e8dca665d008b57265c8c765fc0367d3daae3c462d04d53b85c1369f373b",
+      "library/npu/neutron/NeutronInt8Gemm.h": "d29b5e8d9eadb14503cc62308829b7b0e9aeb413bf5f26a8e52dfd8a668e7d38",
+      "library/npu/neutron/NeutronQdqSoftmax.h": "eb95e7ea5c6259f5e25dcf9be3d51320665c52bf3170dc3403cc7ce7dd99a88e",
+      "library/npu/neutron/NeutronScaledInteger.h": "810d25dd45f8b4a7279986c5b0725ec84aaaa48f5b388153b5cac1969d6ffa21"
+    },
+    "convolution_npu": true
   },
   "models": {
     "depth_anything_v2_metric_hypersim_vits_518_int8.onnx": {
-      "sha256": "9c33e8b050fd99c5e4142a3edf026df1b9a2488402a963b76c1c75234f4bc056",
+      "sha256": "dcd2427718dbe68d7b48bef0f6343d058106f98427071030beb1bafb30a90544",
       "converted_matmuls": 72,
       "fixed_matmuls": 48,
       "dynamic_matmuls": 24,
-      "other_operations": "FP32 graph; all MatMul quantization explicit in ONNX",
+      "other_operations": "28 explicit QuantizeLinear/ConvInteger/Cast/scale/bias convolutions; three output-head convolutions, ConvTranspose, Softmax and remaining operations stay FP32",
       "dynamic_quantizers": 0,
-      "static_attention_quantizers": 48
+      "static_attention_quantizers": 48,
+      "converted_convolutions": 28,
+      "fp32_convolutions": 3
     }
   },
   "attention_calibration": {
@@ -53,5 +64,20 @@
     "ranges_sha256": "baa60bdd5a194eaea5ad9503ebda597dc47a8895a8ff36ba05b983ec72920df1",
     "records": "../calibration/depth_anything_v2/attention"
   },
-  "attention_converter": "scripts/calibrate_attention.py"
+  "attention_converter": "scripts/calibrate_attention.py",
+  "convolution_calibration": {
+    "production": true,
+    "dataset": "COCO val2017",
+    "images": 5000,
+    "method": "global MinMax on convolution inputs in the existing fixed-attention integer graph",
+    "activation": "static UINT8 tensor-wise",
+    "weight": "symmetric channel-wise 8-bit, UINT8 offset encoding with zero point 128",
+    "source_sha256": "9c33e8b050fd99c5e4142a3edf026df1b9a2488402a963b76c1c75234f4bc056",
+    "manifest_sha256": "64a71cfa633962a2c959e1886558416d3d195d79d65046a9e803d02506c24a30",
+    "ranges_sha256": "feb97db5ea0b5dd3d63dcbe1c457975c6b689d906cbe30d324dcf2e88d2036a9",
+    "records": "../calibration/depth_anything_v2/convolution",
+    "converted_convolutions": 28,
+    "retained_fp32_convolutions": 3
+  },
+  "convolution_converter": "scripts/calibrate_attention.py --model depth-conv"
 }

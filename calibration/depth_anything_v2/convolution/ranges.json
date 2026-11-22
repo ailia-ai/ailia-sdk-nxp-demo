@@ -1,0 +1,117 @@
+{
+  "fingerprint": "3dad4bfc3c5012037b7c6336a8558ebf899d53825ea196a1bac926c3c1a5d11e",
+  "ranges": {
+    "/depth_head/Reshape_1_output_0": [
+      -76.10210418701172,
+      89.31049346923828
+    ],
+    "/depth_head/Reshape_2_output_0": [
+      -73.63735961914062,
+      82.3674545288086
+    ],
+    "/depth_head/Reshape_3_output_0": [
+      -26.341989517211914,
+      23.66145133972168
+    ],
+    "/depth_head/Reshape_output_0": [
+      -65.47032165527344,
+      110.55996704101562
+    ],
+    "/depth_head/projects.2/Conv_output_0": [
+      -14.33426570892334,
+      13.701383590698242
+    ],
+    "/depth_head/projects.3/Conv_output_0": [
+      -11.354487419128418,
+      10.488565444946289
+    ],
+    "/depth_head/refinenet1/Resize_output_0": [
+      -52.16902542114258,
+      52.8044319152832
+    ],
+    "/depth_head/refinenet1/resConfUnit1/activation/Relu_output_0": [
+      0.0,
+      7.190924644470215
+    ],
+    "/depth_head/refinenet1/resConfUnit1/activation_1/Relu_output_0": [
+      0.0,
+      9.762552261352539
+    ],
+    "/depth_head/refinenet1/resConfUnit2/activation/Relu_output_0": [
+      0.0,
+      47.5859489440918
+    ],
+    "/depth_head/refinenet1/resConfUnit2/activation_1/Relu_output_0": [
+      0.0,
+      26.762672424316406
+    ],
+    "/depth_head/refinenet2/Resize_output_0": [
+      -60.17534637451172,
+      72.44903564453125
+    ],
+    "/depth_head/refinenet2/resConfUnit1/activation/Relu_output_0": [
+      0.0,
+      9.471809387207031
+    ],
+    "/depth_head/refinenet2/resConfUnit1/activation_1/Relu_output_0": [
+      0.0,
+      8.148191452026367
+    ],
+    "/depth_head/refinenet2/resConfUnit2/activation/Relu_output_0": [
+      0.0,
+      68.93341827392578
+    ],
+    "/depth_head/refinenet2/resConfUnit2/activation_1/Relu_output_0": [
+      0.0,
+      41.10647201538086
+    ],
+    "/depth_head/refinenet3/Resize_output_0": [
+      -157.66790771484375,
+      144.343994140625
+    ],
+    "/depth_head/refinenet3/resConfUnit1/activation/Relu_output_0": [
+      0.0,
+      18.000173568725586
+    ],
+    "/depth_head/refinenet3/resConfUnit1/activation_1/Relu_output_0": [
+      0.0,
+      14.381662368774414
+    ],
+    "/depth_head/refinenet3/resConfUnit2/activation/Relu_output_0": [
+      0.0,
+      141.08987426757812
+    ],
+    "/depth_head/refinenet3/resConfUnit2/activation_1/Relu_output_0": [
+      0.0,
+      78.18209075927734
+    ],
+    "/depth_head/refinenet4/Resize_output_0": [
+      -197.58392333984375,
+      163.727294921875
+    ],
+    "/depth_head/refinenet4/resConfUnit2/activation/Relu_output_0": [
+      0.0,
+      151.1379852294922
+    ],
+    "/depth_head/refinenet4/resConfUnit2/activation_1/Relu_output_0": [
+      0.0,
+      88.46380615234375
+    ],
+    "/depth_head/resize_layers.0/ConvTranspose_output_0": [
+      -4.11664342880249,
+      4.111593723297119
+    ],
+    "/depth_head/resize_layers.1/ConvTranspose_output_0": [
+      -6.282761573791504,
+      6.454090595245361
+    ],
+    "/depth_head/resize_layers.3/Conv_output_0": [
+      -64.3025894165039,
+      55.48176574707031
+    ],
+    "image": [
+      -2.1179039478302,
+      2.640000104904175
+    ]
+  }
+}
