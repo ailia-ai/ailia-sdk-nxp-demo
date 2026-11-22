@@ -134,15 +134,15 @@ The published graph is unchanged, including its attention-map outputs.
 
 Same public INT4 model, batch 1, six CPU threads, one excluded dummy inference
 at Open, then ten runs without profiling. Network time excludes preprocessing,
-classification postprocessing and rendering. Measured on 2026-11-20 with the
-ailia runtime `35b291e04` and `images/vit/input.jpg`.
+classification postprocessing and rendering. Measured on 2026-11-22 with the
+ailia runtime `c8e3d217e` and `images/vit/input.jpg`.
 
 | Runtime | Median inference | FPS |
 | --- | ---: | ---: |
-| ailia CPU | 776.8 ms | 1.29 |
-| ailia NPU | 328.7 ms | 3.04 |
-| NXP ORT 1.24.3 CPU | 674.6 ms | 1.48 |
-| NXP ORT 1.24.3 NPU (Neutron EP) | 385.4 ms | 2.59 |
+| ailia CPU | 780.7 ms | 1.28 |
+| ailia NPU | 328.8 ms | 3.04 |
+| NXP ORT 1.24.3 CPU | 670.2 ms | 1.49 |
+| NXP ORT 1.24.3 NPU (Neutron EP) | 385.9 ms | 2.59 |
 
 The demo fixes NXP ORT's CMA allocation to 512 MiB for this 960 MiB-CMA board.
 Without this board setting, the vendor's 2 GiB default fails and falls back to CPU.
@@ -171,14 +171,14 @@ This uses different rounding from the CPU path, so outputs are not bit-identical
 
 Same INT8 model, batch 1, six CPU threads, one excluded dummy inference at Open,
 then ten runs without profiling. Times exclude preprocessing, NMS and rendering.
-Measured on 2026-11-20 with ailia runtime `ac22f5086`, using `images/yolox/input.jpg`.
+Measured on 2026-11-22 with ailia runtime `c8e3d217e`, using `images/yolox/input.jpg`.
 
 | Runtime | Median inference | FPS |
 | --- | ---: | ---: |
-| ailia CPU | 435.4 ms | 2.30 |
-| ailia NPU | 114.9 ms | 8.70 |
-| NXP ORT 1.24.3 CPU | 794.0 ms | 1.26 |
-| NXP ORT 1.24.3 NPU (Neutron EP) | 794.3 ms | 1.26 |
+| ailia CPU | 436.9 ms | 2.29 |
+| ailia NPU | 114.8 ms | 8.71 |
+| NXP ORT 1.24.3 CPU | 793.9 ms | 1.26 |
+| NXP ORT 1.24.3 NPU (Neutron EP) | 795.7 ms | 1.26 |
 
 These CPU figures measure the same ConvInteger graph, not an optimized FP32
 model. ailia uses tiled NEON INT8 kernels with cached fixed weights on CPU.
@@ -239,9 +239,9 @@ Memory Attention uses integer MatMul with FP32 RoPE. Auxiliary models remain FP3
 
 ### Benchmarks
 
-Measured on 2026-11-20 on i.MX95 with model revision `coco-val2017-v1`.
+Measured on 2026-11-22 on i.MX95 with model revision `coco-val2017-v1`.
 NXP ORT 1.24.3 / ailia SDK 1.7 (NXP NPU-enabled version), six CPU threads, profiling disabled.
-The ailia runtime is `ac22f5086`, with NEON-optimized CPU integer MatMul.
+The ailia runtime is `c8e3d217e`, with NEON-optimized CPU integer MatMul.
 All backends run one inference with identical dummy inputs when opening each model. They then warm up on the complete five-frame Bedroom sequence using the same two points. Results are medians of the next three runs; warm-up is excluded.
 
 ```sh
@@ -250,16 +250,16 @@ PYTHONPATH=./python python3 scripts/benchmark_sam2.py --backend ailia_npu --outp
 
 | Component | Calls / video | ORT CPU | ORT NPU | ailia CPU | ailia NPU |
 |---|---:|---:|---:|---:|---:|
-| Image Encoder (ms / call) | 5 | 2,279.8 | 2,273.9 | 2,474.7 | 877.8 |
-| Mask Decoder (ms / call) | 5 | 173.1 | 171.5 | 125.8 | 126.9 |
-| Memory Attention (ms / call) | 4 | 1,503.1 | 1,502.2 | 1,078.2 | 517.6 |
-| Memory Encoder (ms / call) | 5 | 306.5 | 292.0 | 237.4 | 240.7 |
-| Full five-frame sequence (s) | — | 20.23 | 20.14 | 18.87 | 8.67 |
+| Image Encoder (ms / call) | 5 | 2,282.1 | 2,199.6 | 1,807.7 | 886.4 |
+| Mask Decoder (ms / call) | 5 | 172.3 | 178.7 | 126.5 | 126.3 |
+| Memory Attention (ms / call) | 4 | 1,502.5 | 1,497.7 | 882.2 | 516.5 |
+| Memory Encoder (ms / call) | 5 | 309.7 | 300.9 | 236.8 | 236.7 |
+| Full five-frame sequence (s) | — | 20.32 | 19.81 | 14.81 | 8.71 |
 
 Per-model values are medians of each run's average time per call. Full-sequence timing includes image loading and pre/post-processing, but excludes model loading, rendering, and saving results.
 All four backends use the same models. NPU mode selects the NPU backend for Image Encoder and Memory Attention; other models use the CPU backend.
 
-Earlier Neutron EP runs produced incorrect tracking masks. These timing measurements are not an accuracy qualification.
+Neutron EP still produced incorrect tracking masks in this measurement. These timing measurements are not an accuracy qualification.
 
 Earlier mean mask IoU measurements against the FP32 reference on Bedroom were 96.07% for host ORT CPU and 95.71% for ailia NPU on the device.
 These are comparisons with reference outputs, not ground-truth accuracy scores.
@@ -324,8 +324,8 @@ To measure all four backends without opening the GUI:
 PYTHONPATH=./python python3 scripts/benchmark_grounding.py --output /tmp/grounding-results.json
 ```
 
-Measured on i.MX95 on 2026-11-20 with the fully calibrated
-`grounding-coco-val2017-ql-v3` model, ailia SDK 1.7 (`65b87e8b2`) and
+Measured on i.MX95 on 2026-11-22 with the fully calibrated
+`grounding-coco-val2017-ql-v3` model, ailia SDK 1.7 (`c8e3d217e`) and
 NXP ORT 1.24.3 (512 MiB CMA allocation).
 Six CPU threads, profiling disabled, one excluded dummy inference at Open,
 then the median of three runs. Input: `images/grounding_dino/demo.jpg`, prompt:
@@ -333,16 +333,12 @@ then the median of three runs. Input: `images/grounding_dino/demo.jpg`, prompt:
 
 | Runtime | CPU (ms) | NPU (ms) |
 |---|---:|---:|
-| ailia SDK 1.7 | 5,898.4 | 3,864.2 |
-| NXP ONNX Runtime 1.24.3 | 7,530.5 | 6,978.2 |
+| ailia SDK 1.7 | 6,104.4 | 3,840.2 |
+| NXP ONNX Runtime 1.24.3 | 7,531.2 | 6,979.8 |
 
-The ORT NPU result is retained from the preceding measurement with the same model
-and settings. The CPU packing update preserves ailia's full output tensors exactly
-on this test image.
-
-All four conditions produced 15 detections, including seven horses.
-ailia CPU and NPU returned identical boxes and scores. Compared with the previous
-dynamic-quantization model on ailia NPU, all seven horses were retained;
+ailia CPU, ailia NPU and ORT CPU produced 15 detections; ORT NPU produced 14.
+In an earlier comparison with the previous dynamic-quantization model on ailia NPU,
+all seven horses were retained;
 mean best-matching horse-box IoU was 0.987 (minimum 0.978).
 This is a demo-image output comparison, not a ground-truth mAP evaluation.
 Model hashes and calibration provenance are in `models/grounding_manifest.json`.
@@ -426,15 +422,12 @@ profiling, loading, preprocessing and drawing are excluded.
 
 | Runtime | Inference (ms) |
 |---|---:|
-| ailia CPU | 3090.2 |
-| ailia NPU | **2039.8** |
-| NXP ORT CPU | 2790.8 |
-| NXP ORT NPU (Neutron EP) | 2579.1 |
+| ailia CPU | 3125.7 |
+| ailia NPU | **2045.1** |
+| NXP ORT CPU | 2796.2 |
+| NXP ORT NPU (Neutron EP) | 2575.9 |
 
-With the same runtime, the preceding MatMul-only model measured 2814.1 ms on
-ailia CPU and 2169.9 ms on ailia NPU. Conv quantization improves NPU latency by
-6.0%, but increases ailia CPU latency by 9.8%.
-Across the five Bedroom frames, the new ailia NPU output differs from the
+In the earlier five-frame Bedroom output comparison, the ailia NPU output differed from the
 preceding NPU model by 4.90 cm mean absolute difference (59.79 cm maximum).
 The ailia CPU/NPU difference is 1.14 cm mean (23.84 cm maximum); against ORT CPU
 it is 4.55 cm mean (50.15 cm maximum). These are output comparisons, not
