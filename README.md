@@ -1,5 +1,13 @@
 # ailia Vision / i.MX95 Demo
 
+| SAM 2.1 Tiny | Grounding DINO |
+| --- | --- |
+| ![SAM 2.1 Tiny segmentation](screenshot/sam2.png) | ![Grounding DINO detection](screenshot/grounding-dino.png) |
+| **Depth Anything V2** | **YOLOX-S 320** |
+| ![Depth Anything V2 metric depth](screenshot/depth-anything-v2.png) | ![YOLOX-S 320 detection](screenshot/yolox.png) |
+| **ViT-B/16 INT4** | |
+| ![ViT-B/16 INT4 classification](screenshot/vit.png) | |
+
 An interactive HDMI demo comparing ailia and NXP ONNX Runtime on CPU and NPU.
 Select **SAM 2.1 Tiny**, **Grounding DINO**, **Depth Anything V2**, **YOLOX-S 320**, or **ViT-B/16 INT4** in the upper-left corner.
 SAM segments clicked objects and tracks them across five Bedroom frames; Grounding DINO detects objects described by an English prompt.
