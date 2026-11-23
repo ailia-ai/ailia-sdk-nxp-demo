@@ -15,14 +15,10 @@ from history import append_history, load_history
 from live_input import LiveInput, find_camera
 from runtime import BACKENDS, fit_rect, image_point
 from runtime_worker import RuntimeWorker
-from scenes import default_image
-from scenes.depth_anything_v2_inputs import REVISION as DEPTH_REVISION
+from scenes import default_image, image_source, model_revision
 from scenes.depth_anything_v2_inputs import colorize
 from scenes.grounding_dino_inputs import DEFAULT_PROMPT
-from scenes.grounding_dino_inputs import REVISION as GROUNDING_REVISION
-from scenes.vit import REVISION as VIT_REVISION
-from scenes.yolox import REVISION as YOLOX_REVISION
-from settings import MODEL_REVISION
+from ui_style import category_color, layout_metrics, stylesheet
 
 
 def input_mode_for_model(model, mode):
@@ -119,24 +115,11 @@ def main():
             self.backend = args.backend
             self.runner = RuntimeWorker(args.models)
             self.pending_jobs = []
-            css = Gtk.CssProvider()
-            css.load_from_data(b"""
-                window { background: #101820; color: #ecf3f8; }
-                button, combobox { font-size: 14px; padding: 5px; }
-                button { background-image: none; background-color: #e8eef4; color: #14202b; }
-                button label, combobox cellview { color: #14202b; }
-                button:disabled { background-color: #8795a3; }
-                menu, menuitem, menuitem label, menuitem cellview,
-                popover, list, row { background-color: #e8eef4; color: #14202b; }
-                menuitem:hover, menuitem:hover label, menuitem:hover cellview,
-                row:selected { background-color: #c0d9ee; color: #14202b; }
-                label { font-size: 14px; }
-                .title { font-size: 23px; font-weight: bold; }
-                .input-mode:checked, .primary { background-color: #b9dce9; color: #10212e; }
-                .muted { color: #afc0cc; }
-            """)
+            self.css = Gtk.CssProvider()
+            self.layout_key = None
+            self.resize_pending = False
             Gtk.StyleContext.add_provider_for_screen(
-                Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+                Gdk.Screen.get_default(), self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
             )
             root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             root.set_border_width(12)
@@ -155,13 +138,15 @@ def main():
             self.title_label.set_ellipsize(3)
             self.title_label.get_style_context().add_class("title")
             heading.pack_start(self.title_label, True, True, 0)
+            quit_button = Gtk.Button(label="Exit")
+            quit_button.connect("clicked", lambda *_: self.destroy())
+            heading.pack_end(quit_button, False, False, 0)
             logo = Gtk.Image.new_from_pixbuf(
                 GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(Path(__file__).parent / "images" / "ailia.jpg"), 40, 40, True
+                    str(Path(__file__).parent / "images" / "ailia.jpg"), 160, 160, True
                 )
             )
             logo.set_tooltip_text("ailia")
-            heading.pack_end(logo, False, False, 0)
             root.pack_start(heading, False, False, 0)
             source_bar = Gtk.Box(spacing=8)
             self.mode_buttons = {}
@@ -179,6 +164,7 @@ def main():
             source_bar.pack_end(self.source_button, False, False, 0)
             root.pack_start(source_bar, False, False, 0)
             body = Gtk.Box(spacing=18)
+            self.body = body
             root.pack_start(body, True, True, 0)
             self.canvas = Gtk.DrawingArea()
             self.canvas.set_size_request(320, 180)
@@ -187,8 +173,10 @@ def main():
             self.canvas.connect("button-press-event", self.click)
             body.pack_start(self.canvas, True, True, 0)
             side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-            side.set_size_request(250, -1)
-            body.pack_start(side, False, False, 0)
+            self.side_scroll = Gtk.ScrolledWindow()
+            self.side_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            self.side_scroll.add(side)
+            body.pack_start(self.side_scroll, False, False, 0)
             side.pack_start(Gtk.Label(label="Runtime", xalign=0), False, False, 0)
             self.selector = Gtk.ComboBoxText()
             for key in BACKENDS:
@@ -268,9 +256,6 @@ def main():
             self.info = info
             self.info.set_max_width_chars(30)
             side.pack_start(info, False, False, 0)
-            quit_button = Gtk.Button(label="Exit")
-            quit_button.connect("clicked", lambda *_: self.destroy())
-            side.pack_end(quit_button, False, False, 0)
             self.status = Gtk.Label(label="Starting…", xalign=0)
             self.status.set_ellipsize(3)
             self.status.set_max_width_chars(30)
@@ -279,16 +264,16 @@ def main():
             self.live_timing.set_line_wrap(True)
             self.live_timing.set_max_width_chars(30)
             side.pack_start(self.live_timing, False, False, 0)
-            bottom = Gtk.Box(spacing=18)
-            root.pack_start(bottom, False, False, 0)
             grid = Gtk.Grid(column_spacing=24, row_spacing=6)
             grid.set_hexpand(True)
-            bottom.pack_start(grid, True, True, 0)
+            self.table_scroll = Gtk.ScrolledWindow()
+            self.table_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+            self.table_scroll.add(grid)
+            root.pack_start(self.table_scroll, False, False, 0)
             self.compare_button = Gtk.Button(label="Compare all 4")
-            self.compare_button.set_size_request(250, -1)
             self.compare_button.set_valign(Gtk.Align.CENTER)
             self.compare_button.connect("clicked", self.benchmark)
-            bottom.pack_end(self.compare_button, False, False, 0)
+            heading.pack_end(self.compare_button, False, False, 0)
             self.controls.append(self.compare_button)
             self.table_headers = []
             for col, text in enumerate(
@@ -334,28 +319,33 @@ def main():
             scroll = Gtk.ScrolledWindow()
             scroll.set_size_request(-1, 140)
             scroll.add(view)
-            history_box = Gtk.Expander(
-                label="Measurement history (last 200; includes previous runs)"
-            )
+            history_box = Gtk.Expander(label="Measurement history")
+            history_box.set_tooltip_text("Last 200 measurements, including previous runs")
             history_box.add(scroll)
-            root.pack_start(history_box, False, False, 0)
+            footer = Gtk.Box(spacing=18)
+            footer_text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            footer_text.set_valign(Gtk.Align.END)
+            footer.pack_start(footer_text, True, True, 0)
+            logo.set_valign(Gtk.Align.END)
+            footer.pack_end(logo, False, False, 0)
+            root.pack_end(footer, False, False, 0)
+            footer_text.pack_start(history_box, False, False, 0)
             try:
                 for record in load_history(self.history_path):
                     self.show_measurement(record)
             except OSError as exc:
                 print("Cannot load measurement history:", exc, flush=True)
-            self.note = Gtk.Label(xalign=0)
-            self.note.set_ellipsize(3)
-            self.note.get_style_context().add_class("muted")
-            root.pack_start(self.note, False, False, 0)
             self.attribution = Gtk.Label(xalign=0)
+            self.attribution.get_style_context().add_class("muted")
             self.attribution.set_ellipsize(3)
-            root.pack_start(self.attribution, False, False, 0)
+            footer_text.pack_start(self.attribution, False, False, 0)
             self.load_image()
             # Hide mode-specific controls before mapping the window; otherwise
             # GTK sizes a 720p window for every model's controls at once.
             root.show_all()
             self.update_model_controls()
+            self.connect("size-allocate", self.resize_layout)
+            self.resize_layout(self, self.get_allocation())
             self.show()
             if not args.windowed:
                 self.fullscreen()
@@ -365,6 +355,35 @@ def main():
                 self.start_camera()
             else:
                 self.submit("prepare")
+
+        def resize_layout(self, _widget, allocation):
+            # GTK cannot reliably reflow containers during their allocation signal.
+            if not self.resize_pending:
+                self.resize_pending = True
+                GLib.idle_add(self.apply_layout)
+
+        def apply_layout(self):
+            self.resize_pending = False
+            allocation = self.get_allocation()
+            width, height = max(640, allocation.width), max(480, allocation.height)
+            metrics = layout_metrics(width, height)
+            self.table_scroll.set_min_content_height(
+                (metrics["font"] + 12) * (5 if self.model == "sam" else 2)
+            )
+            key = tuple(metrics.values())
+            if key == self.layout_key:
+                return
+            self.layout_key = key
+            self.css.load_from_data(stylesheet(metrics["font"], metrics["touch"]))
+            portrait = metrics["portrait"]
+            self.body.set_orientation(
+                Gtk.Orientation.VERTICAL if portrait else Gtk.Orientation.HORIZONTAL
+            )
+            self.side_scroll.set_size_request(
+                -1 if portrait else metrics["side"],
+                metrics["touch"] * 3 if portrait else -1,
+            )
+            self.title_label.set_visible(not portrait)
 
         def stop_capture(self):
             if self.capture is not None:
@@ -419,9 +438,6 @@ def main():
             self.live_snapshot_scheduled = False
             self.rgb = np.zeros((480, 640, 3), np.uint8)
             self.update_pixbuf()
-            self.note.set_text(
-                "Camera: continuous inference on the latest frame. Compare freezes one frame, then resumes."
-            )
             try:
                 source = str(args.video_input) if args.video_input else find_camera(args.camera)
                 self.capture = LiveInput(source)
@@ -437,6 +453,7 @@ def main():
                 else f"USB camera {source}"
             )
             self.attribution.set_text("Input: " + self.source_label.get_text())
+            self.attribution.set_tooltip_text(None)
             self.status.set_text("Opening camera…")
 
         def poll_capture(self):
@@ -504,12 +521,7 @@ def main():
                     backend=backend,
                     values=values,
                     image=image,
-                    model_revision={
-                        "grounding": GROUNDING_REVISION,
-                        "depth": DEPTH_REVISION,
-                        "yolox": YOLOX_REVISION,
-                        "vit": VIT_REVISION,
-                    }.get(self.model, MODEL_REVISION),
+                    model_revision=model_revision(self.model),
                     model=self.model,
                 )
             self.show_measurement(record)
@@ -519,41 +531,13 @@ def main():
             if self.capture is not None:
                 self.update_pixbuf()
                 return
-            if (
-                self.video_mode
-                or Path(self.image_path).resolve().parent
-                == (Path(__file__).parent / "images" / "bedroom").resolve()
-            ):
-                self.attribution.set_text(
-                    "Demo images: Segment Anything official repository (SAM 2 / bedroom) — github.com/facebookresearch/sam2"
-                )
-            elif (
-                Path(self.image_path).resolve()
-                == (Path(__file__).parent / "images" / "truck.jpg").resolve()
-            ):
-                self.attribution.set_text(
-                    "Demo image: Segment Anything official repository (truck.jpg) — github.com/facebookresearch/segment-anything"
-                )
-            elif Path(self.image_path).resolve() in (
-                default_image("grounding"),
-                default_image("yolox"),
-                default_image("vit"),
-            ):
-                self.attribution.set_text(
-                    "Demo image: ailia-models test image — github.com/ailia-ai/ailia-models"
-                )
-            else:
-                self.attribution.set_text("Image: user-selected file")
-            self.note.set_text(
-                "Video: actual per-frame times, not 3-run medians. Sum = network calls; excludes loading/drawing. NPU includes CPU fallback."
-                if self.video_mode
-                else "ailia / ORT: warm-up at model Open. ailia memory mode 11. Compare all: median of 3 runs. Times exclude loading/drawing. NPU includes CPU fallback."
+            source = image_source(self.image_path)
+            self.attribution.set_text(
+                "Image source: " + source if source else "Image: user-selected file"
             )
+            self.attribution.set_tooltip_text(source)
             self.source_label.set_text(
                 "Bedroom · frame 1 / 5" if self.video_mode else Path(self.image_path).name
-            )
-            self.note.set_text(
-                self.note.get_text() + " Previous values retained; check input/time in history."
             )
             bgr = cv2.imread(self.image_path)
             if bgr is None:
@@ -576,15 +560,33 @@ def main():
                     x0, y0, x1, y1 = (
                         np.array(item["box"]) * [width, height, width, height]
                     ).astype(int)
-                    cv2.rectangle(rgb, (x0, y0), (x1, y1), (50, 225, 170), 2)
+                    color = (
+                        category_color(item["label"]) if self.model == "yolox" else (50, 225, 170)
+                    )
+                    thickness = max(2, round(min(height, width) / 240))
+                    scale = max(0.4, min(height, width) / 950)
+                    text = f"{item['label']} {item['score']:.2f}"
+                    (tw, th), baseline = cv2.getTextSize(
+                        text, cv2.FONT_HERSHEY_SIMPLEX, scale, thickness
+                    )
+                    tx = max(0, min(x0, width - tw - 8))
+                    ty = max(th + 8, min(y0 - 4, height - baseline - 4))
+                    cv2.rectangle(rgb, (x0, y0), (x1, y1), color, thickness)
+                    cv2.rectangle(
+                        rgb,
+                        (tx, ty - th - 6),
+                        (min(width - 1, tx + tw + 8), ty + baseline + 3),
+                        color,
+                        -1,
+                    )
                     cv2.putText(
                         rgb,
-                        f"{item['label']} {item['score']:.2f}",
-                        (x0, max(16, y0 - 4)),
+                        text,
+                        (tx + 4, ty),
                         cv2.FONT_HERSHEY_SIMPLEX,
-                        0.55,
-                        (50, 225, 170),
-                        2,
+                        scale,
+                        (255, 255, 255) if self.model == "yolox" else (16, 24, 32),
+                        thickness,
                         cv2.LINE_AA,
                     )
             if self.mask is not None:
@@ -741,6 +743,7 @@ def main():
                 if self.video_mode
                 else "Left click: foreground (+)\nRight click: background (−)"
             )
+            self.resize_layout(self, self.get_allocation())
 
         def switch_model(self, selector):
             self.after_live = None

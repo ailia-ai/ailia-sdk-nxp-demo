@@ -1,6 +1,6 @@
 """Standard ONNX ConvInteger conversion and retained FP32 head checks."""
-import sys
 import copy
+import sys
 import unittest
 from pathlib import Path
 
@@ -9,9 +9,11 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 try:
     import onnx
-    from onnx import TensorProto as T, helper as h, numpy_helper as nh
-    from onnx.reference import ReferenceEvaluator
     from depth_convert import quantize_convolutions
+    from onnx import TensorProto as T
+    from onnx import helper as h
+    from onnx import numpy_helper as nh
+    from onnx.reference import ReferenceEvaluator
 except ImportError:
     onnx = None
 

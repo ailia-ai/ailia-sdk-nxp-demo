@@ -6,7 +6,8 @@ from pathlib import Path
 import numpy as np
 import onnx
 import onnxruntime as ort
-from onnx import TensorProto as T, helper as h
+from onnx import TensorProto as T
+from onnx import helper as h
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from calibrate_attention import freeze_quantizers

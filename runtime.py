@@ -125,6 +125,8 @@ def bind_worker_lifetime():
 
 
 def worker(directory, requests, responses):
+    from importlib import import_module
+
     from scenes.sam2 import Engine
 
     if not bind_worker_lifetime():
@@ -132,10 +134,23 @@ def worker(directory, requests, responses):
     engine = None
     video_engine = None
     cache = None
-    grounding = None
-    depth_engine = None
-    yolox_engine = None
-    vit_engine = None
+    scene_engine = scene_key = None
+    scene_types = {
+        "vit": ("vit", "VitEngine", "ViT", "Ready — press Classify or open an image."),
+        "yolox": ("yolox", "YoloEngine", "YOLOX-S", "Ready — press Detect."),
+        "depth": (
+            "depth_anything_v2",
+            "DepthEngine",
+            "Depth",
+            "Ready — open an image or press Estimate depth.",
+        ),
+        "grounding": (
+            "grounding_dino",
+            "GroundingEngine",
+            "Grounding DINO",
+            "Ready — edit the prompt and press Detect.",
+        ),
+    }
 
     def select_backend(backend):
         nonlocal engine, video_engine, cache
@@ -159,99 +174,34 @@ def worker(directory, requests, responses):
         if job is None:
             return
         try:
-            if job.get("model") == "vit":
-                from scenes.vit import VitEngine
-
-                for backend in backend_order(job, job["action"] == "benchmark"):
-                    responses.put(dict(kind="progress", text="Loading / running ViT / " + backend))
-                    if vit_engine is None or vit_engine.backend != backend:
-                        vit_engine = None
+            model = job.get("model", "sam")
+            if model in scene_types:
+                module, class_name, label, ready = scene_types[model]
+                compare = job["action"] == "benchmark"
+                for backend in backend_order(job, compare):
+                    responses.put(
+                        dict(kind="progress", text=f"Loading / running {label} / {backend}")
+                    )
+                    if scene_engine is None or scene_key != (model, backend):
+                        scene_engine = None
                         gc.collect()
-                        vit_engine = VitEngine(directory, backend)
-                    result = vit_engine.run(job["image"], compare=job["action"] == "benchmark")
+                        factory = getattr(import_module(f"scenes.{module}"), class_name)
+                        scene_engine = factory(directory, backend)
+                        scene_key = (model, backend)
+                    args = [job["image"]]
+                    if model == "grounding":
+                        args.append(job["caption"])
+                    result = scene_engine.run(*args, compare=compare)
                     responses.put(
                         dict(
                             kind="result",
-                            model="vit",
+                            model=model,
                             backend=backend,
                             action=job["action"],
                             **result,
                         )
                     )
-                responses.put(dict(kind="done", text="Ready — press Classify or open an image."))
-                continue
-            if job.get("model") == "yolox":
-                from scenes.yolox import YoloEngine
-
-                for backend in backend_order(job, job["action"] == "benchmark"):
-                    responses.put(
-                        dict(kind="progress", text="Loading / running YOLOX-S / " + backend)
-                    )
-                    if yolox_engine is None or yolox_engine.backend != backend:
-                        yolox_engine = None
-                        gc.collect()
-                        yolox_engine = YoloEngine(directory, backend)
-                    result = yolox_engine.run(job["image"], compare=job["action"] == "benchmark")
-                    responses.put(
-                        dict(
-                            kind="result",
-                            model="yolox",
-                            backend=backend,
-                            action=job["action"],
-                            **result,
-                        )
-                    )
-                responses.put(dict(kind="done", text="Ready — press Detect."))
-                continue
-            if job.get("model") == "depth":
-                from scenes.depth_anything_v2 import DepthEngine
-
-                for backend in backend_order(job, job["action"] == "benchmark"):
-                    responses.put(
-                        dict(kind="progress", text="Loading / running Depth / " + backend)
-                    )
-                    if depth_engine is None or depth_engine.backend != backend:
-                        depth_engine = None
-                        gc.collect()
-                        depth_engine = DepthEngine(directory, backend)
-                    result = depth_engine.run(job["image"], compare=job["action"] == "benchmark")
-                    responses.put(
-                        dict(
-                            kind="result",
-                            model="depth",
-                            backend=backend,
-                            action=job["action"],
-                            **result,
-                        )
-                    )
-                responses.put(
-                    dict(kind="done", text="Ready — open an image or press Estimate depth.")
-                )
-                continue
-            if job.get("model", "sam") == "grounding":
-                from scenes.grounding_dino import GroundingEngine
-
-                for backend in backend_order(job, job["action"] == "benchmark"):
-                    responses.put(
-                        dict(kind="progress", text="Loading / running Grounding DINO / " + backend)
-                    )
-                    if grounding is None or grounding.backend != backend:
-                        grounding = None
-                        gc.collect()
-                        grounding = GroundingEngine(directory, backend)
-                    result = grounding.run(
-                        job["image"], job["caption"], compare=job["action"] == "benchmark"
-                    )
-                    responses.put(
-                        dict(
-                            kind="result",
-                            model="grounding",
-                            backend=backend,
-                            action=job["action"],
-                            **result,
-                        )
-                    )
-                responses.put(dict(kind="done", text="Ready — edit the prompt and press Detect."))
+                responses.put(dict(kind="done", text=ready))
                 continue
             if job["action"] in ("video", "video_compare"):
                 from scenes.sam2_video import VideoEngine
@@ -325,9 +275,7 @@ def worker(directory, requests, responses):
             engine = None
             video_engine = None
             cache = None
-            grounding = None
-            yolox_engine = None
-            vit_engine = None
+            scene_engine = scene_key = None
             gc.collect()
             responses.put(
                 dict(kind="error", action=job["action"], text=f"{type(exc).__name__}: {exc}")

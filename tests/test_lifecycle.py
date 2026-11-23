@@ -11,6 +11,7 @@ import numpy as np
 
 from history import append_history, load_history
 from runtime import Session, SessionCache, worker
+from scenes import DEFAULT_IMAGES, model_revision
 from scenes.sam2 import Engine
 from scenes.sam2_video import VideoEngine
 from settings import ENCODER, MODEL_REVISION
@@ -19,6 +20,59 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_all_models_restore_latest_history_after_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "history.jsonl"
+            for model in DEFAULT_IMAGES:
+                for backend in ("ailia_cpu", "ailia_npu", "ort_cpu", "ort_npu"):
+                    record = append_history(path, backend, ["1"] * 5, "image.jpg", model)
+                    self.assertEqual(record["model_revision"], model_revision(model))
+            # Even a short visible history must restore all comparison cells.
+            records = load_history(path, limit=2)
+            self.assertEqual(len(records), 20)
+            self.assertEqual(sum(r["model"] == "vit" for r in records), 4)
+            with path.open("a") as stream:
+                stream.write('null\n{"model":"unknown"}\nnot json\n')
+            self.assertEqual(load_history(path, limit=2), records)
+
+    def test_scene_workers_reuse_and_reset_after_errors(self):
+        for model, target in (
+            ("vit", "scenes.vit.VitEngine"),
+            ("depth", "scenes.depth_anything_v2.DepthEngine"),
+            ("grounding", "scenes.grounding_dino.GroundingEngine"),
+            ("yolox", "scenes.yolox.YoloEngine"),
+        ):
+            with self.subTest(model=model):
+                requests, responses = SimpleQueue(), SimpleQueue()
+                for backend in ("ailia_npu", "ailia_npu", "ort_cpu", "ort_cpu"):
+                    requests.put(
+                        dict(
+                            model=model,
+                            backend=backend,
+                            action="prepare",
+                            image="test.jpg",
+                            caption="cat",
+                            single_backend=True,
+                        )
+                    )
+                requests.put(None)
+                first, failed, recovered = Mock(), Mock(), Mock()
+                first.run.return_value = recovered.run.return_value = {}
+                failed.run.side_effect = RuntimeError("test failure")
+                with patch(target, side_effect=[first, failed, recovered]) as factory:
+                    with patch("traceback.print_exc"):
+                        worker(ROOT / "models", requests, responses)
+                self.assertEqual(factory.call_count, 3)
+                self.assertEqual(first.run.call_count, 2)
+                self.assertEqual(recovered.run.call_count, 1)
+                if model == "grounding":
+                    first.run.assert_called_with("test.jpg", "cat", compare=False)
+                events = []
+                while not responses.empty():
+                    events.append(responses.get())
+                self.assertEqual(sum(e["kind"] == "error" for e in events), 1)
+                self.assertEqual(sum(e["kind"] == "result" for e in events), 3)
+
     def test_tracking_done_identifies_action(self):
         for action in ("video", "video_compare"):
             with self.subTest(action=action):
@@ -59,7 +113,12 @@ class LifecycleTests(unittest.TestCase):
 
         for backend in ("ailia_npu", "ailia_npu", "ort_npu", "ort_npu"):
             requests.put(
-                dict(action="segment", backend=backend, image="images/truck.jpg", points=[[0.5, 0.5, 1]])
+                dict(
+                    action="segment",
+                    backend=backend,
+                    image="images/truck.jpg",
+                    points=[[0.5, 0.5, 1]],
+                )
             )
         requests.put(None)
         with patch("scenes.sam2.Engine", side_effect=create) as factory:

@@ -20,9 +20,10 @@ import onnxruntime as ort
 from onnx import TensorProto, helper, numpy_helper
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from depth_convert import convolution_targets, quantize_convolutions
+
 from scenes import depth_anything_v2_inputs as depth
 from scenes import grounding_dino_inputs as grounding
-from depth_convert import convolution_targets, quantize_convolutions
 
 
 def digest(path):
