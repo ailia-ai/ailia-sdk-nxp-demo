@@ -109,6 +109,14 @@ MJPEG video and runs two frames through every model on ailia NPU and ORT CPU.
 - **Open image**: select an image
 - **Compare all 4**: compare all four backends
 
+Switching models or runtimes only prepares and previews the selected runtime.
+It does not run a four-runtime benchmark. The comparison table resets when
+switching models, runtimes, or input modes, then shows the selected runtime's
+current inference time. Camera and video timings update after every processed frame.
+Press **Compare all 4** in the upper-right corner to start the comparison.
+Saved measurements remain available in **Measurement history**; preview and camera
+frame timings update the table without appending to that history.
+
 Models stay in memory until you switch models or backends. Grounding DINO also reopens when the prompt's token count changes.
 Both runtimes perform one excluded dummy inference at model Open. Comparisons report the median of three subsequent runs, excluding loading and drawing.
 Benchmark history is kept separately for each model and persists across application restarts.
@@ -121,11 +129,25 @@ When launching over SSH, set `XDG_RUNTIME_DIR` and `WAYLAND_DISPLAY` to match th
 python3 scripts/install_desktop.py
 ```
 
+This installs an ailia-logo shortcut in the application menu and copies
+`ailia-sdk-nxp-demo.desktop` to your desktop (detected with `xdg-user-dir`,
+or `~/Desktop`). Double-click the shortcut; if prompted, allow it to launch.
+Do not copy `launch.sh` itself: keep the repository in its original location.
+After moving the repository, rerun the installer to update the absolute paths.
+
+For a different desktop folder:
+
+```sh
+python3 scripts/install_desktop.py --desktop-dir /path/to/Desktop
+```
+
+Weston's default desktop shell does not display desktop file icons.
+On that shell, use a file manager to open the shortcut or add a panel launcher.
 To add a launcher to the Weston panel, append the following to `weston.ini`:
 
 ```ini
 [launcher]
-icon=/path/to/ailia-sdk-nxp-demo/launcher.png
+icon=/path/to/ailia-sdk-nxp-demo/ailia-logo.png
 path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
 ```
 

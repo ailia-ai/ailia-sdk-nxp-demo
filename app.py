@@ -21,6 +21,34 @@ from scenes.grounding_dino_inputs import DEFAULT_PROMPT
 from ui_style import category_color, layout_metrics, stylesheet
 
 
+def requested_backends(action, selected):
+    """Only an explicit Compare action schedules all four runtimes."""
+    if action in ("benchmark", "video_compare"):
+        return [backend for backend in BACKENDS if backend != selected] + [selected]
+    return [selected]
+
+
+def current_timing(result):
+    """Cached SAM image features do not consume encoder time for a new click."""
+    enc = result["encoder_ms"]
+    if result.get("cached") and result.get("action") != "benchmark":
+        enc = 0.0
+    click = result.get("click_ms")
+    return [
+        f"{enc:.1f}",
+        "—",
+        "—" if click is None else f"{click:.1f}",
+        f"{enc + (click or 0):.1f}",
+        result["mode"],
+    ]
+
+
+def reset_measurement_table(cells):
+    for row in cells.values():
+        for cell in row[1:]:
+            cell.set_text("—")
+
+
 def input_mode_for_model(model, mode):
     """Only SAM's five-frame memory tracker exposes Video mode."""
     if mode not in ("image", "video", "camera"):
@@ -300,7 +328,6 @@ def main():
                     cell.set_ellipsize(3)
                     grid.attach(cell, row, col, 1, 1)
                 self.cells[backend] = cells
-            self.recorded_backends = set()
             self.history_path = Path(__file__).parent / "benchmark_history.jsonl"
             self.history_rows = Gtk.ListStore(*([str] * 7))
             view = Gtk.TreeView(model=self.history_rows)
@@ -332,7 +359,7 @@ def main():
             footer_text.pack_start(history_box, False, False, 0)
             try:
                 for record in load_history(self.history_path):
-                    self.show_measurement(record)
+                    self.show_measurement(record, update_table=False)
             except OSError as exc:
                 print("Cannot load measurement history:", exc, flush=True)
             self.attribution = Gtk.Label(xalign=0)
@@ -409,6 +436,7 @@ def main():
             for control in self.controls:
                 control.set_sensitive(True)
             self.input_mode = mode
+            reset_measurement_table(self.cells)
             self.live_frame = None
             self.live_timing.set_text("")
             self.points, self.mask, self.detections, self.depth = [], None, [], None
@@ -475,14 +503,16 @@ def main():
             self.submit("live")
             return True
 
-        def show_measurement(self, record):
+        def update_measurement_table(self, backend, values):
+            for cell, text in zip(self.cells[backend][1:], values):
+                cell.set_text(text)
+
+        def show_measurement(self, record, update_table=True):
             backend = record["backend"]
             values = list(record["values"])
             values[-1] += " / " + record.get("model_revision", "legacy-qdq")
-            if record.get("model", "sam") == self.model:
-                for cell, text in zip(self.cells[backend][1:], values):
-                    cell.set_text(text)
-                self.recorded_backends.add(backend)
+            if update_table and record.get("model", "sam") == self.model:
+                self.update_measurement_table(backend, values)
             label = (
                 record["time"]
                 + " / "
@@ -658,11 +688,7 @@ def main():
             for control in self.controls:
                 control.set_sensitive(action == "live")
             self.status.set_text("Working… " + self.backend)
-            backends = (
-                [backend for backend in BACKENDS if backend != self.backend] + [self.backend]
-                if action in ("benchmark", "video_compare")
-                else [self.backend]
-            )
+            backends = requested_backends(action, self.backend)
             self.pending_jobs = [
                 dict(
                     action=action,
@@ -757,22 +783,7 @@ def main():
             self.points, self.mask, self.detections = [], None, []
             self.depth = None
             self.image_path = str(default_image(self.model))
-            self.recorded_backends.clear()
-            for cells in self.cells.values():
-                for cell in cells[1:]:
-                    cell.set_text("—")
-            try:
-                records = load_history(self.history_path)
-            except OSError as exc:
-                print("Cannot load measurement history:", exc, flush=True)
-                records = []
-            for record in records:
-                if record.get("model", "sam") == self.model:
-                    values = list(record["values"])
-                    values[-1] += " / " + record.get("model_revision", "legacy-qdq")
-                    for cell, text in zip(self.cells[record["backend"]][1:], values):
-                        cell.set_text(text)
-                    self.recorded_backends.add(record["backend"])
+            reset_measurement_table(self.cells)
             self.update_model_controls()
             self.load_image()
             if self.input_mode != "camera":
@@ -788,6 +799,7 @@ def main():
                 self.busy = False
                 self.pending_jobs = []
             self.backend = selector.get_active_id()
+            reset_measurement_table(self.cells)
             self.depth = None
             if self.video_mode:
                 self.image_path = str(Path(__file__).parent / "images" / "bedroom" / "00000.jpg")
@@ -900,6 +912,10 @@ def main():
                     self.status.set_text(
                         f"{backend} frame {result['frame'] + 1}/5 | MemoryAttention {times['memory_attention']:.1f} ms | processing {result['total_ms']:.1f} ms"
                     )
+                    self.live_timing.set_text(
+                        f"Inference: {sum(times.values()):.1f} ms\n"
+                        f"Frame processing: {result['total_ms']:.1f} ms"
+                    )
                     self.video_records.append({k: v for k, v in result.items() if k != "mask"})
                     try:
                         (Path(__file__).parent / "video_results.json").write_text(
@@ -909,7 +925,6 @@ def main():
                         print("Cannot save video timings:", exc, flush=True)
                 elif kind == "result":
                     backend = result["backend"]
-                    enc, click = result["encoder_ms"], result.get("click_ms")
                     if (
                         self.capture is not None
                         and backend == self.backend
@@ -920,25 +935,18 @@ def main():
                         self.rgb = cv2.cvtColor(self.live_frame, cv2.COLOR_BGR2RGB)
                         self.mask, self.detections, self.depth = None, [], None
                         self.update_pixbuf()
-                    # Preparing an image must not erase an existing benchmark
-                    # (especially the last full video measurement).
+                    values = current_timing(result)
+                    self.update_measurement_table(backend, values)
                     if result.get("action") == "live":
                         elapsed = time.monotonic() - self.live_started if self.live_started else 0
                         self.live_timing.set_text(
-                            f"Inference: {enc + (click or 0):.1f} ms\nProcessing: {1 / elapsed if elapsed else 0:.2f} FPS"
+                            f"Inference: {values[3]} ms\nProcessing: {1 / elapsed if elapsed else 0:.2f} FPS"
                         )
                         self.status.set_text("Camera · continuous inference")
-                    elif result.get("action") != "prepare" or backend not in self.recorded_backends:
-                        self.record_measurement(
-                            backend,
-                            [
-                                f"{enc:.1f}",
-                                "—",
-                                "—" if click is None else f"{click:.1f}",
-                                "—" if click is None else f"{enc + click:.1f}",
-                                result["mode"],
-                            ],
-                        )
+                    else:
+                        self.live_timing.set_text(f"Inference: {values[3]} ms")
+                        if result.get("action") != "prepare":
+                            self.record_measurement(backend, values)
                     if backend == self.backend and "mask" in result and self.points:
                         self.mask = result["mask"]
                         self.update_pixbuf()

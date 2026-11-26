@@ -2,10 +2,21 @@
 
 import unittest
 
-from app import input_mode_for_model
+from app import input_mode_for_model, requested_backends
+from settings import BACKENDS
 
 
 class InputModes(unittest.TestCase):
+    def test_only_compare_schedules_all_runtimes(self):
+        for selected in BACKENDS:
+            for action in ("prepare", "detect", "classify", "estimate", "segment", "live", "video"):
+                self.assertEqual(requested_backends(action, selected), [selected])
+            for action in ("benchmark", "video_compare"):
+                order = requested_backends(action, selected)
+                self.assertEqual(set(order), set(BACKENDS))
+                self.assertEqual(len(order), 4)
+                self.assertEqual(order[-1], selected)
+
     def test_sam_has_all_three_modes(self):
         for mode in ("image", "video", "camera"):
             self.assertEqual(input_mode_for_model("sam", mode), mode)
