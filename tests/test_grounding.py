@@ -51,7 +51,21 @@ class GroundingTests(unittest.TestCase):
         self.assertEqual(result[0]["label"], "truck")
         np.testing.assert_allclose(result[0]["box"], [0, 0, 1, 1], atol=1e-6)
 
-    def test_reuse_and_reopen_for_token_shape(self):
+    def test_fixed_text_padding(self):
+        original, tokens = self.tokenizer.encode("person.")
+        padded, padded_tokens = self.tokenizer.encode("person.", pad_to=256)
+        self.assertEqual(tokens, padded_tokens)
+        for name, value in original.items():
+            if name == "attention_mask":
+                np.testing.assert_array_equal(padded[name][:, :4, :4], value)
+                self.assertFalse(padded[name][:, :4, 4:].any())
+                self.assertTrue(padded[name].any(axis=-1).all())
+            else:
+                self.assertEqual(padded[name].shape, (1, 256))
+                np.testing.assert_array_equal(padded[name][:, :4], value)
+        self.assertFalse(padded["text_token_mask"][:, 4:].any())
+
+    def test_reuse_and_update_text_only_on_change(self):
         session = Mock(version="test")
         session.run.return_value = [np.zeros((1, 0, 256)), np.zeros((1, 0, 4))]
         with (
@@ -64,8 +78,27 @@ class GroundingTests(unittest.TestCase):
             self.assertEqual(factory.call_count, 1)
             self.assertEqual(session.run.call_count, 4)
             engine.run(ROOT / "images/truck.jpg", "person. truck.")
-            self.assertEqual(factory.call_count, 2)
+            self.assertEqual(factory.call_count, 1)
             self.assertIn("warmup_inputs", factory.call_args.kwargs)
+            feeds = [call.args[0] for call in session.run.call_args_list]
+            self.assertEqual(set(feeds[0]), {"samples"})
+            self.assertIn("input_ids", feeds[1])
+            self.assertEqual(set(feeds[2]), {"samples"})
+            self.assertEqual(set(feeds[3]), {"samples"})
+            self.assertIn("input_ids", feeds[4])
+            self.assertEqual(feeds[4]["input_ids"].shape, (1, 256))
+
+    def test_ort_always_receives_all_inputs(self):
+        session = Mock(version="test")
+        session.run.return_value = [np.zeros((1, 0, 256)), np.zeros((1, 0, 4))]
+        with patch("scenes.grounding_dino.Session", return_value=session) as factory:
+            engine = GroundingEngine(ROOT / "models", "ort_npu")
+            image = np.zeros((240, 320, 3), np.uint8)
+            for caption in ("person.", "person. chair.", "person. chair."):
+                engine.run(image, caption)
+            self.assertEqual(factory.call_count, 1)
+            for call in session.run.call_args_list:
+                self.assertEqual(len(call.args[0]), 6)
 
     def test_history_retains_each_model(self):
         with tempfile.TemporaryDirectory() as directory:

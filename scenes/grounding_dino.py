@@ -1,6 +1,5 @@
 """Resident Grounding DINO runtime, separate from SAM's tracking state."""
 
-import gc
 import time
 from pathlib import Path
 
@@ -16,18 +15,15 @@ class GroundingEngine:
         self.directory, self.backend = Path(directory), backend
         self.tokenizer = Tokenizer(self.directory / "grounding_tokenizer" / "vocab.txt")
         self.session = None
-        self.token_count = None
+        self.text_tokens = None
 
     def run(self, path, caption, compare=False):
         image = path if isinstance(path, np.ndarray) else cv2.imread(str(path))
         if image is None:
             raise ValueError(f"Cannot read image: {path}")
         samples, geometry = preprocess(image)
-        text, tokens = self.tokenizer.encode(caption)
-        if self.session is None or self.token_count != len(tokens):
-            # NPU segments retain shape-specific plans. Reopen on token-count changes.
-            self.session = None
-            gc.collect()
+        text, tokens = self.tokenizer.encode(caption, pad_to=256)
+        if self.session is None:
             start = time.perf_counter()
             warmup = dict(samples=np.zeros((1, 3, HEIGHT, WIDTH), np.float32), **text)
             self.session = Session(
@@ -42,13 +38,17 @@ class GroundingEngine:
                 ),
             )
             self.load_ms = (time.perf_counter() - start) * 1000
-            self.token_count = len(tokens)
-        feed = dict(samples=samples, **text)
+            self.text_tokens = tuple(tokens)
         times = []
         for _ in range(3 if compare else 1):
+            # ailia retains omitted inputs. Updating only the image preserves
+            # unchanged text branches; ORT requires every input on every run.
+            update_text = not self.backend.startswith("ailia") or self.text_tokens != tuple(tokens)
+            feed = dict(samples=samples, **(text if update_text else {}))
             start = time.perf_counter()
             outputs = self.session.run(feed)
             times.append((time.perf_counter() - start) * 1000)
+            self.text_tokens = tuple(tokens)
         return dict(
             encoder_ms=float(np.median(times)),
             click_ms=0.0,

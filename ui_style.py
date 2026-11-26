@@ -1,6 +1,7 @@
 """Resolution-aware touch controls and stable detection colors."""
 
 import colorsys
+import hashlib
 
 
 def layout_metrics(width, height):
@@ -14,9 +15,14 @@ def category_color(label):
     # Stable across frames/processes; never use Python's randomized hash().
     from scenes.yolox import LABELS
 
-    index = LABELS.index(label) if label in LABELS else 0
+    label = " ".join(label.lower().split())
+    if label in LABELS:
+        hue = (LABELS.index(label) * 0.61803398875) % 1
+    else:
+        # Grounding DINO accepts arbitrary text, not just the COCO categories.
+        hue = int.from_bytes(hashlib.sha256(label.encode("utf-8")).digest()[:4], "big") / 2**32
     return tuple(
-        round(c * 255) for c in colorsys.hsv_to_rgb((index * 0.61803398875) % 1, 0.65, 1.0)
+        round(c * 255) for c in colorsys.hsv_to_rgb(hue, 0.65, 1.0)
     )
 
 

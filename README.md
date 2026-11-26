@@ -73,8 +73,8 @@ Licenses are managed per user account. See the [bundled license](licenses/LICENS
 Run as the same user as Weston:
 
 ```sh
-sh launch.sh                         # Maximized window, ailia NPU
-sh launch.sh --bedroom               # Five-frame tracking
+sh launch.sh                         # YOLOX-S, maximized window, ailia NPU
+sh launch.sh --model sam --bedroom   # Five-frame tracking
 sh launch.sh --fullscreen            # Optional fullscreen mode
 sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
@@ -82,7 +82,7 @@ sh launch.sh --model grounding --caption "Horse. Clouds. Grasses. Sky. Hill."
 sh launch.sh --model depth            # Indoor depth, Bedroom image
 sh launch.sh --model yolox            # YOLOX-S 320 object detection
 sh launch.sh --model vit              # ViT-B/16 INT4 image classification
-sh launch.sh --camera 1               # Start continuous inference with camera 1
+sh launch.sh --camera 1               # Preview camera 1; press Run to infer
 sh launch.sh --video-input /tmp/test.avi  # Diagnostic camera replay without USB hardware
 ```
 
@@ -91,9 +91,10 @@ Use the **Image / Video / Camera** buttons above the preview:
 - **Image**: use the model's bundled image or **Open image…**.
 - **Video**: SAM 2 only. Click the target in the first Bedroom frame, then
   **Track 5 frames**. Tracking uses memory and returns to frame 1 when finished.
-- **Camera**: all five models. Select Camera, then press **Detect**, **Run** (SAM),
-  **Classify**, or **Estimate depth** to start continuous USB UVC inference.
-  **Reconnect** resets the input; press the model's execution button to retry.
+- **Camera**: all five models. Selecting Camera starts a live preview without inference.
+  Press **Run** to start continuous USB UVC inference. The button changes to **Stop**;
+  stopping finishes the current inference and returns to preview without closing the model.
+  **Reconnect** resets the input; press **Run** to retry inference.
 
 Grounding DINO offers detection prompt presets for people, vehicles, indoor objects,
 and animals. The people preset includes person, chair, suit, glasses, and hair.
@@ -124,7 +125,9 @@ Press **Compare all 4** in the upper-right corner to start the comparison.
 Saved measurements remain available in **Measurement history**; camera frame
 timings update the table without appending to that history.
 
-Models stay in memory until you switch models or backends. Grounding DINO also reopens when the prompt's token count changes.
+Models stay in memory until you switch models or backends. Grounding DINO pads text
+inputs to 256 tokens, so changing prompts does not reopen the model. With ailia,
+text inputs are supplied during warm-up and only updated when the tokenized prompt changes.
 Both runtimes perform one excluded dummy inference at model Open. Comparisons report the median of three subsequent runs, excluding loading and drawing.
 Benchmark history is kept separately for each model and persists across application restarts.
 Logs are saved to `demo.log`, and benchmark history to `benchmark_history.jsonl`.

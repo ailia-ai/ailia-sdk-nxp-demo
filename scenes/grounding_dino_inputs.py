@@ -18,7 +18,7 @@ class Tokenizer:
     def __init__(self, path):
         self.vocab = {word: i for i, word in enumerate(Path(path).read_text().splitlines())}
 
-    def encode(self, caption):
+    def encode(self, caption, pad_to=None):
         caption = caption.strip().lower()
         if not caption:
             raise ValueError("Enter an English detection prompt")
@@ -75,13 +75,28 @@ class Tokenizer:
                 mask[0, previous + 1 : col + 1, previous + 1 : col + 1] = True
                 positions[0, previous + 1 : col + 1] = np.arange(col - previous)
             previous = col
-        return dict(
+        feed = dict(
             input_ids=ids,
             token_type_ids=np.zeros_like(ids),
             attention_mask=mask,
             position_ids=positions,
             text_token_mask=np.ones_like(ids, dtype=bool),
-        ), tokens
+        )
+        if pad_to is not None:
+            if not size <= pad_to <= 256:
+                raise ValueError("Padding length must fit the prompt and be at most 256")
+            padding = pad_to - size
+            for name, value in feed.items():
+                if name == "attention_mask":
+                    padded = np.eye(pad_to, dtype=bool)[None]
+                    padded[:, :size, :size] = value
+                    feed[name] = padded
+                else:
+                    feed[name] = np.pad(
+                        value, ((0, 0), (0, padding)),
+                        constant_values=self.vocab["[PAD]"] if name == "input_ids" else 0,
+                    )
+        return feed, tokens
 
 
 def preprocess(image):

@@ -77,7 +77,7 @@ def main():
     )
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
     parser.add_argument(
-        "--model", choices=("sam", "grounding", "depth", "yolox", "vit"), default="sam"
+        "--model", choices=("sam", "grounding", "depth", "yolox", "vit"), default="yolox"
     )
     parser.add_argument("--caption", default=DEFAULT_PROMPT, help="Grounding DINO detection prompt")
     parser.add_argument(
@@ -124,6 +124,7 @@ def main():
             self.results = {}
             self.closing = False
             self.capture = None
+            self.camera_inference = False
             self.camera_index = args.camera
             self.live_frame = None
             self.after_live = None
@@ -281,7 +282,7 @@ def main():
             self.sam_controls = []
             self.camera_run_button = Gtk.Button(label="Run")
             self.camera_run_button.get_style_context().add_class("primary")
-            self.camera_run_button.connect("clicked", lambda *_: self.run_inference("live"))
+            self.camera_run_button.connect("clicked", self.toggle_camera_inference)
             side.pack_start(self.camera_run_button, False, False, 0)
             self.controls.append(self.camera_run_button)
             point_controls = Gtk.Box(spacing=6)
@@ -404,17 +405,16 @@ def main():
                 self.maximize()
             GLib.timeout_add(30, self.poll)
             GLib.timeout_add(30, self.poll_capture)
-            if self.autoplay_pending and self.input_mode != "camera":
+            if self.input_mode == "camera":
+                self.start_camera()
+            elif self.autoplay_pending:
                 self.submit("prepare")
             else:
                 self.show_ready()
 
         def show_ready(self):
             if self.input_mode == "camera":
-                label = {"sam": "Run", "vit": "Classify", "depth": "Estimate depth"}.get(
-                    self.model, "Detect"
-                )
-                self.status.set_text(f"Press {label} to start continuous camera inference.")
+                self.status.set_text("Press Run to start continuous camera inference.")
                 return
             instruction = {
                 "sam": "Click a target in the image to segment it.",
@@ -453,6 +453,8 @@ def main():
             self.title_label.set_visible(not portrait)
 
         def stop_capture(self):
+            self.camera_inference = False
+            self.camera_run_button.set_label("Run")
             if self.capture is not None:
                 self.capture.close()
                 self.capture = None
@@ -488,7 +490,10 @@ def main():
             )
             self.update_model_controls()
             self.load_image()
-            self.show_ready()
+            if mode == "camera":
+                self.start_camera()
+            else:
+                self.show_ready()
 
         def choose_source(self, *_):
             if self.input_mode == "image":
@@ -503,15 +508,35 @@ def main():
             if caption:
                 self.prompt_entry.set_text(caption)
 
+        def toggle_camera_inference(self, *_):
+            if self.camera_inference:
+                self.camera_inference = False
+                self.after_live = None
+                self.camera_run_button.set_label("Run")
+                if self.busy:
+                    self.status.set_text("Stopping after the current inference…")
+                else:
+                    self.show_ready()
+            else:
+                self.run_inference("live")
+
         def run_inference(self, action):
             if self.input_mode == "camera":
-                if self.capture is None and not self.busy:
+                if self.busy:
+                    return
+                if self.capture is None:
                     self.start_camera()
+                self.camera_inference = self.capture is not None
+                self.camera_run_button.set_label("Stop" if self.camera_inference else "Run")
+                if self.camera_inference:
+                    self.status.set_text("Loading… " + self.backend)
                 return
             self.submit(action)
 
         def start_camera(self):
-            # Capture and continuous inference start only after an explicit action.
+            # Preview starts immediately; inference needs an explicit action.
+            self.camera_inference = False
+            self.camera_run_button.set_label("Run")
             self.live_snapshot_scheduled = False
             self.rgb = np.zeros((480, 640, 3), np.uint8)
             self.update_pixbuf()
@@ -531,7 +556,7 @@ def main():
             )
             self.attribution.set_text("Input: " + self.source_label.get_text())
             self.attribution.set_tooltip_text(None)
-            self.status.set_text("Opening camera…")
+            self.show_ready()
 
         def poll_capture(self):
             if self.closing:
@@ -548,6 +573,11 @@ def main():
                 self.live_timing.set_text("Disconnected — press Reconnect.")
                 return True
             self.live_frame = value
+            if not self.camera_inference:
+                self.rgb = cv2.cvtColor(value, cv2.COLOR_BGR2RGB)
+                self.mask, self.detections, self.depth = None, [], None
+                self.update_pixbuf()
+                return True
             self.live_started = time.monotonic()
             self.submit("live")
             return True
@@ -639,9 +669,7 @@ def main():
                     x0, y0, x1, y1 = (
                         np.array(item["box"]) * [width, height, width, height]
                     ).astype(int)
-                    color = (
-                        category_color(item["label"]) if self.model == "yolox" else (50, 225, 170)
-                    )
+                    color = category_color(item["label"])
                     thickness = max(2, round(min(height, width) / 240))
                     scale = max(0.4, min(height, width) / 950)
                     text = f"{item['label']} {item['score']:.2f}"
@@ -664,7 +692,7 @@ def main():
                         (tx + 4, ty),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         scale,
-                        (255, 255, 255) if self.model == "yolox" else (16, 24, 32),
+                        (255, 255, 255),
                         thickness,
                         cv2.LINE_AA,
                     )
@@ -730,6 +758,9 @@ def main():
         def submit(self, action):
             if self.busy:
                 return
+            if self.input_mode == "camera" and not self.camera_inference and action != "benchmark":
+                self.show_ready()
+                return
             if self.input_mode == "camera" and action != "live" and self.live_frame is None:
                 if self.capture is None:
                     self.show_ready()
@@ -737,9 +768,11 @@ def main():
                     self.status.set_text("Waiting for a camera frame…")
                 return
             self.busy = True
+            self.current_action = action
             for control in self.controls:
                 control.set_sensitive(action == "live")
-            self.status.set_text("Working… " + self.backend)
+            if action != "live" or not self.live_timing.get_text():
+                self.set_status_if_changed("Loading… " + self.backend)
             backends = requested_backends(action, self.backend)
             self.pending_jobs = [
                 dict(
@@ -786,13 +819,14 @@ def main():
                 else "SAM 2.1 Tiny / 512 × 512 / i.MX95"
             )
             self.prompt_box.set_visible(grounding)
-            self.grounding_button.set_visible(grounding)
-            self.yolox_button.set_visible(self.model == "yolox")
-            self.vit_button.set_visible(self.model == "vit")
-            self.camera_run_button.set_visible(sam and camera)
+            self.grounding_button.set_visible(grounding and not camera)
+            self.yolox_button.set_visible(self.model == "yolox" and not camera)
+            self.vit_button.set_visible(self.model == "vit" and not camera)
+            self.camera_run_button.set_visible(camera)
+            self.camera_run_button.set_label("Stop" if self.camera_inference else "Run")
             self.classification_label.set_visible(self.model == "vit")
             self.depth_controls.set_visible(self.model == "depth")
-            self.depth_button.set_visible(self.model == "depth")
+            self.depth_button.set_visible(self.model == "depth" and not camera)
             for control in self.sam_controls:
                 control.set_visible(sam)
             self.table_headers[1].set_text("Encoder (ms)" if sam else "Inference (ms)")
@@ -918,6 +952,16 @@ def main():
                 self.show_ready()
             dialog.destroy()
 
+        def set_status_if_changed(self, text):
+            if self.status.get_text() != text:
+                self.status.set_text(text)
+
+        def show_progress(self, text):
+            # Live frames keep the initial Loading message until the first result,
+            # then keep the continuous-inference label across subsequent frames.
+            if self.current_action != "live":
+                self.set_status_if_changed(text)
+
         def poll(self):
             if self.closing:
                 return False
@@ -930,13 +974,7 @@ def main():
                     break
                 kind = result["kind"]
                 if kind == "progress":
-                    self.status.set_text(
-                        "Camera · continuous inference"
-                        if self.input_mode == "camera"
-                        and self.live_timing.get_text()
-                        and not self.pending_jobs
-                        else result["text"]
-                    )
+                    self.show_progress(result["text"])
                 elif kind == "video_frame":
                     backend = result["backend"]
                     times = result["times_ms"]
@@ -993,7 +1031,8 @@ def main():
                         self.live_timing.set_text(
                             f"Inference: {values[3]} ms\nProcessing: {1 / elapsed if elapsed else 0:.2f} FPS"
                         )
-                        self.status.set_text("Camera · continuous inference")
+                        if self.camera_inference:
+                            self.set_status_if_changed("Camera · continuous inference")
                     else:
                         self.live_timing.set_text(f"Inference: {values[3]} ms")
                         if result.get("action") != "prepare":
@@ -1043,6 +1082,8 @@ def main():
                     self.busy = False
                     for control in self.controls:
                         control.set_sensitive(True)
+                    if self.input_mode == "camera" and not self.camera_inference and kind == "done":
+                        self.show_ready()
                     if self.input_mode != "camera":
                         self.update_model_controls()
                     if self.capture is None or kind == "error":

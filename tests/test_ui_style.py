@@ -21,3 +21,10 @@ class UiStyleTests(unittest.TestCase):
         self.assertEqual(len(set(colors)), 80)
         self.assertEqual(colors, [category_color(label) for label in LABELS])
         self.assertTrue(all(0 <= value <= 255 for color in colors for value in color))
+
+    def test_open_vocabulary_colors(self):
+        labels = ("person", "chair", "suit", "glasses", "hair", "red handbag")
+        colors = [category_color(label) for label in labels]
+        self.assertEqual(len(set(colors)), len(labels))
+        for label, color in zip(labels, colors):
+            self.assertEqual(category_color("  " + label.upper() + "  "), color)
