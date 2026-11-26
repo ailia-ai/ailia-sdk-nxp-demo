@@ -75,7 +75,6 @@ Run as the same user as Weston:
 ```sh
 sh launch.sh                         # YOLOX-S, maximized window, ailia NPU
 sh launch.sh --model sam --bedroom   # Five-frame tracking
-sh launch.sh --fullscreen            # Optional fullscreen mode
 sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
 sh launch.sh --model grounding --caption "Horse. Clouds. Grasses. Sky. Hill."
@@ -143,7 +142,7 @@ This installs an ailia-logo shortcut in the application menu and copies
 `ailia-sdk-nxp-demo.desktop` to your desktop (detected with `xdg-user-dir`,
 or `~/Desktop`). Double-click the shortcut; if prompted, allow it to launch.
 The shortcut and `sh launch.sh` open a maximized window with a title bar.
-Use `--fullscreen` to hide the title bar.
+The app always opens in a maximized window. Use the title bar's close button to exit.
 Do not copy `launch.sh` itself: keep the repository in its original location.
 After moving the repository, rerun the installer to update the absolute paths.
 

@@ -68,12 +68,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", type=Path, default=Path(__file__).parent / "models")
     parser.add_argument("--image", type=Path)
-    display_mode = parser.add_mutually_exclusive_group()
-    display_mode.add_argument(
+    parser.add_argument(
         "--windowed", action="store_true", help="Maximized window (default)"
-    )
-    display_mode.add_argument(
-        "--fullscreen", action="store_true", help="Fullscreen without a title bar"
     )
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
     parser.add_argument(
@@ -173,9 +169,6 @@ def main():
             self.title_label.set_ellipsize(3)
             self.title_label.get_style_context().add_class("title")
             heading.pack_start(self.title_label, True, True, 0)
-            quit_button = Gtk.Button(label="Exit")
-            quit_button.connect("clicked", lambda *_: self.destroy())
-            heading.pack_end(quit_button, False, False, 0)
             logo = Gtk.Image.new_from_pixbuf(
                 GdkPixbuf.Pixbuf.new_from_file_at_scale(
                     str(Path(__file__).parent / "images" / "ailia.jpg"), 160, 160, True
@@ -399,10 +392,7 @@ def main():
             self.connect("size-allocate", self.resize_layout)
             self.resize_layout(self, self.get_allocation())
             self.show()
-            if args.fullscreen:
-                self.fullscreen()
-            else:
-                self.maximize()
+            self.maximize()
             GLib.timeout_add(30, self.poll)
             GLib.timeout_add(30, self.poll_capture)
             if self.input_mode == "camera":
