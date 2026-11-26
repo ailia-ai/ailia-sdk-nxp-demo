@@ -229,20 +229,33 @@ def main():
             )
             self.prompt_entry = Gtk.Entry()
             self.prompt_entry.set_text(args.caption)
-            self.prompt_entry.connect("activate", lambda *_: self.submit("detect"))
+            self.prompt_presets = Gtk.ComboBoxText()
+            for caption, label in (
+                ("", "Custom prompt"),
+                ("person. chair. suit. glasses. hair.", "People: person, chair, suit, glasses, hair"),
+                ("person.", "Person only"),
+                ("car. bus. truck. bicycle. motorcycle.", "Vehicles"),
+                ("chair. table. sofa. laptop. bottle.", "Indoor objects"),
+                ("cat. dog. bird.", "Animals"),
+            ):
+                self.prompt_presets.append(caption, label)
+            self.prompt_presets.set_active_id("")
+            self.prompt_presets.connect("changed", self.select_prompt)
+            self.prompt_box.pack_start(self.prompt_presets, False, False, 0)
+            self.prompt_entry.connect("activate", lambda *_: self.run_inference("detect"))
             self.prompt_box.pack_start(self.prompt_entry, False, False, 0)
             detect = Gtk.Button(label="Detect")
             self.grounding_button = detect
-            detect.connect("clicked", lambda *_: self.submit("detect"))
+            detect.connect("clicked", lambda *_: self.run_inference("detect"))
             self.prompt_box.pack_start(detect, False, False, 0)
-            self.controls.extend([self.prompt_entry, detect])
+            self.controls.extend([self.prompt_entry, self.prompt_presets, detect])
             side.pack_start(self.prompt_box, False, False, 0)
             self.yolox_button = Gtk.Button(label="Detect")
-            self.yolox_button.connect("clicked", lambda *_: self.submit("detect"))
+            self.yolox_button.connect("clicked", lambda *_: self.run_inference("detect"))
             side.pack_start(self.yolox_button, False, False, 0)
             self.controls.append(self.yolox_button)
             self.vit_button = Gtk.Button(label="Classify")
-            self.vit_button.connect("clicked", lambda *_: self.submit("classify"))
+            self.vit_button.connect("clicked", lambda *_: self.run_inference("classify"))
             side.pack_start(self.vit_button, False, False, 0)
             self.controls.append(self.vit_button)
             self.classification_label = Gtk.Label(xalign=0)
@@ -251,7 +264,7 @@ def main():
             side.pack_start(self.classification_label, False, False, 0)
             self.depth_controls = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
             self.depth_button = Gtk.Button(label="Estimate depth")
-            self.depth_button.connect("clicked", lambda *_: self.submit("estimate"))
+            self.depth_button.connect("clicked", lambda *_: self.run_inference("estimate"))
             self.depth_controls.pack_start(self.depth_button, False, False, 0)
             self.show_depth = Gtk.CheckButton(label="Show depth map")
             self.show_depth.set_active(True)
@@ -266,6 +279,11 @@ def main():
             side.pack_start(self.depth_controls, False, False, 0)
             self.controls.append(self.depth_button)
             self.sam_controls = []
+            self.camera_run_button = Gtk.Button(label="Run")
+            self.camera_run_button.get_style_context().add_class("primary")
+            self.camera_run_button.connect("clicked", lambda *_: self.run_inference("live"))
+            side.pack_start(self.camera_run_button, False, False, 0)
+            self.controls.append(self.camera_run_button)
             point_controls = Gtk.Box(spacing=6)
             side.pack_start(point_controls, False, False, 0)
             for title, callback in [
@@ -386,14 +404,18 @@ def main():
                 self.maximize()
             GLib.timeout_add(30, self.poll)
             GLib.timeout_add(30, self.poll_capture)
-            if self.input_mode == "camera":
-                self.start_camera()
-            elif self.autoplay_pending:
+            if self.autoplay_pending and self.input_mode != "camera":
                 self.submit("prepare")
             else:
                 self.show_ready()
 
         def show_ready(self):
+            if self.input_mode == "camera":
+                label = {"sam": "Run", "vit": "Classify", "depth": "Estimate depth"}.get(
+                    self.model, "Detect"
+                )
+                self.status.set_text(f"Press {label} to start continuous camera inference.")
+                return
             instruction = {
                 "sam": "Click a target in the image to segment it.",
                 "vit": "Press Classify to start inference.",
@@ -466,10 +488,7 @@ def main():
             )
             self.update_model_controls()
             self.load_image()
-            if mode == "camera":
-                self.start_camera()
-            else:
-                self.show_ready()
+            self.show_ready()
 
         def choose_source(self, *_):
             if self.input_mode == "image":
@@ -479,8 +498,20 @@ def main():
             else:
                 self.select_input_mode("camera")
 
+        def select_prompt(self, selector):
+            caption = selector.get_active_id()
+            if caption:
+                self.prompt_entry.set_text(caption)
+
+        def run_inference(self, action):
+            if self.input_mode == "camera":
+                if self.capture is None and not self.busy:
+                    self.start_camera()
+                return
+            self.submit(action)
+
         def start_camera(self):
-            # Camera mode is continuously inferred, without a Start/Detect step.
+            # Capture and continuous inference start only after an explicit action.
             self.live_snapshot_scheduled = False
             self.rgb = np.zeros((480, 640, 3), np.uint8)
             self.update_pixbuf()
@@ -700,7 +731,10 @@ def main():
             if self.busy:
                 return
             if self.input_mode == "camera" and action != "live" and self.live_frame is None:
-                self.status.set_text("Waiting for a camera frame…")
+                if self.capture is None:
+                    self.show_ready()
+                else:
+                    self.status.set_text("Waiting for a camera frame…")
                 return
             self.busy = True
             for control in self.controls:
@@ -752,12 +786,13 @@ def main():
                 else "SAM 2.1 Tiny / 512 × 512 / i.MX95"
             )
             self.prompt_box.set_visible(grounding)
-            self.grounding_button.set_visible(grounding and not camera)
-            self.yolox_button.set_visible(self.model == "yolox" and not camera)
-            self.vit_button.set_visible(self.model == "vit" and not camera)
+            self.grounding_button.set_visible(grounding)
+            self.yolox_button.set_visible(self.model == "yolox")
+            self.vit_button.set_visible(self.model == "vit")
+            self.camera_run_button.set_visible(sam and camera)
             self.classification_label.set_visible(self.model == "vit")
             self.depth_controls.set_visible(self.model == "depth")
-            self.depth_button.set_visible(self.model == "depth" and not camera)
+            self.depth_button.set_visible(self.model == "depth")
             for control in self.sam_controls:
                 control.set_visible(sam)
             self.table_headers[1].set_text("Encoder (ms)" if sam else "Inference (ms)")
@@ -804,10 +839,8 @@ def main():
             reset_measurement_table(self.cells)
             self.update_model_controls()
             self.load_image()
-            if self.input_mode != "camera":
+            if self.capture is None:
                 self.show_ready()
-            elif self.capture is None:
-                self.start_camera()
 
         def switch(self, selector):
             self.after_live = None
@@ -825,7 +858,7 @@ def main():
             self.mask = None
             self.detections = []
             self.load_image()
-            if self.input_mode != "camera":
+            if self.capture is None:
                 self.show_ready()
 
         def benchmark(self, *_):

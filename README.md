@@ -91,8 +91,13 @@ Use the **Image / Video / Camera** buttons above the preview:
 - **Image**: use the model's bundled image or **Open image…**.
 - **Video**: SAM 2 only. Click the target in the first Bedroom frame, then
   **Track 5 frames**. Tracking uses memory and returns to frame 1 when finished.
-- **Camera**: all five models. USB UVC input automatically starts continuous
-  inference, without a Start or Detect step. **Reconnect** retries a missing camera.
+- **Camera**: all five models. Select Camera, then press **Detect**, **Run** (SAM),
+  **Classify**, or **Estimate depth** to start continuous USB UVC inference.
+  **Reconnect** resets the input; press the model's execution button to retry.
+
+Grounding DINO offers detection prompt presets for people, vehicles, indoor objects,
+and animals. The people preset includes person, chair, suit, glasses, and hair.
+You can also edit the English prompt directly. Selecting a preset does not start inference.
 
 USB cameras are detected automatically; use `--camera INDEX` for a specific device.
 Only the latest frame is processed, with one inference in flight; models stay loaded
@@ -113,7 +118,8 @@ In Image mode, inference starts only when you press **Detect**, **Classify**, or
 **Estimate depth** (or click a target for SAM). Starting the app, switching models
 or runtimes, and opening an image do not run inference. The comparison table resets
 when switching models, runtimes, or input modes and fills after inference.
-Camera mode runs continuously; camera and video timings update after every processed frame.
+Camera mode runs continuously after pressing the execution button; camera and video
+timings update after every processed frame.
 Press **Compare all 4** in the upper-right corner to start the comparison.
 Saved measurements remain available in **Measurement history**; camera frame
 timings update the table without appending to that history.
