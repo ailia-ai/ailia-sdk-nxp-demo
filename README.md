@@ -73,9 +73,9 @@ Licenses are managed per user account. See the [bundled license](licenses/LICENS
 Run as the same user as Weston:
 
 ```sh
-sh launch.sh                         # Fullscreen, ailia NPU
+sh launch.sh                         # Maximized window, ailia NPU
 sh launch.sh --bedroom               # Five-frame tracking
-sh launch.sh --windowed              # Windowed mode
+sh launch.sh --fullscreen            # Optional fullscreen mode
 sh launch.sh --backend ort_cpu       # Start with ORT CPU
 sh launch.sh --image /path/to/image.jpg
 sh launch.sh --model grounding --caption "Horse. Clouds. Grasses. Sky. Hill."
@@ -109,13 +109,14 @@ MJPEG video and runs two frames through every model on ailia NPU and ORT CPU.
 - **Open image**: select an image
 - **Compare all 4**: compare all four backends
 
-Switching models or runtimes only prepares and previews the selected runtime.
-It does not run a four-runtime benchmark. The comparison table resets when
-switching models, runtimes, or input modes, then shows the selected runtime's
-current inference time. Camera and video timings update after every processed frame.
+In Image mode, inference starts only when you press **Detect**, **Classify**, or
+**Estimate depth** (or click a target for SAM). Starting the app, switching models
+or runtimes, and opening an image do not run inference. The comparison table resets
+when switching models, runtimes, or input modes and fills after inference.
+Camera mode runs continuously; camera and video timings update after every processed frame.
 Press **Compare all 4** in the upper-right corner to start the comparison.
-Saved measurements remain available in **Measurement history**; preview and camera
-frame timings update the table without appending to that history.
+Saved measurements remain available in **Measurement history**; camera frame
+timings update the table without appending to that history.
 
 Models stay in memory until you switch models or backends. Grounding DINO also reopens when the prompt's token count changes.
 Both runtimes perform one excluded dummy inference at model Open. Comparisons report the median of three subsequent runs, excluding loading and drawing.
@@ -132,6 +133,8 @@ python3 scripts/install_desktop.py
 This installs an ailia-logo shortcut in the application menu and copies
 `ailia-sdk-nxp-demo.desktop` to your desktop (detected with `xdg-user-dir`,
 or `~/Desktop`). Double-click the shortcut; if prompted, allow it to launch.
+The shortcut and `sh launch.sh` open a maximized window with a title bar.
+Use `--fullscreen` to hide the title bar.
 Do not copy `launch.sh` itself: keep the repository in its original location.
 After moving the repository, rerun the installer to update the absolute paths.
 
@@ -148,7 +151,7 @@ To add a launcher to the Weston panel, append the following to `weston.ini`:
 ```ini
 [launcher]
 icon=/path/to/ailia-sdk-nxp-demo/ailia-logo.png
-path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh
+path=/bin/sh /path/to/ailia-sdk-nxp-demo/launch.sh --windowed
 ```
 
 ## ViT-B/16 INT4

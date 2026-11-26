@@ -10,6 +10,17 @@ from runtime import SessionCache
 from settings import ENCODER, preprocess_image
 
 
+def postprocess_mask(logits, image_shape):
+    """Match SAM2 Python: resize logits to the source image before thresholding."""
+    height, width = image_shape[:2]
+    return (
+        cv2.resize(
+            np.asarray(logits, dtype=np.float32), (width, height), interpolation=cv2.INTER_LINEAR
+        )
+        > 0
+    ).astype(np.uint8)
+
+
 class Engine:
     def __init__(self, directory, backend, cache=None):
         self.backend = backend
@@ -38,6 +49,7 @@ class Engine:
         image = path if isinstance(path, np.ndarray) else cv2.imread(self.path)
         if image is None:
             raise ValueError("Cannot read image: " + self.path)
+        self.image_shape = image.shape[:2]
         start = time.perf_counter()
         self.input = preprocess_image(image)[None]
         self.preprocess_ms = (time.perf_counter() - start) * 1000
@@ -86,7 +98,7 @@ class Engine:
         if not np.isfinite(masks).all() or not np.isfinite(scores).all():
             raise RuntimeError("Non-finite decoder output")
         index = int(np.argmax(scores[0, 1:])) + 1
-        mask = (masks[0, index] > 0).astype(np.uint8)
+        mask = postprocess_mask(masks[0, index], self.image_shape)
         return dict(
             mask=mask,
             score=float(scores[0, index]),

@@ -35,6 +35,11 @@ def stylesheet(font, touch):
         menuitem:hover, menuitem:hover label, menuitem:hover cellview,
         row:selected {{ background-color: #c0d9ee; color: #14202b; }}
         .title {{ font-size: {round(font * 1.25)}px; font-weight: bold; }}
+        headerbar, headerbar:backdrop, .titlebar, .titlebar:backdrop {{
+            background-image: none; background-color: #e8eef4; color: #000000;
+        }}
+        headerbar label, headerbar label:backdrop,
+        .titlebar label, .titlebar label:backdrop {{ color: #000000; }}
         .input-mode:checked, .primary {{ background-color: #b9dce9; color: #10212e; }}
         .muted {{ color: #afc0cc; font-size: {max(12, round(font * 0.65))}px; }}
     """.encode()

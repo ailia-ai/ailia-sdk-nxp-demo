@@ -27,7 +27,7 @@ def install(root, applications, desktop):
     entry = applications / "ailia-sdk-nxp-demo.desktop"
     entry.write_text(
         "[Desktop Entry]\nType=Application\nName=ailia i.MX95 Demo\n"
-        f'Exec=sh "{launch}"\nIcon={root / "ailia-logo.png"}\n'
+        f'Exec=sh "{launch}" --windowed\nIcon={root / "ailia-logo.png"}\n'
         "Terminal=false\nCategories=Graphics;Science;\n",
         encoding="utf-8",
     )

@@ -68,7 +68,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--models", type=Path, default=Path(__file__).parent / "models")
     parser.add_argument("--image", type=Path)
-    parser.add_argument("--windowed", action="store_true")
+    display_mode = parser.add_mutually_exclusive_group()
+    display_mode.add_argument(
+        "--windowed", action="store_true", help="Maximized window (default)"
+    )
+    display_mode.add_argument(
+        "--fullscreen", action="store_true", help="Fullscreen without a title bar"
+    )
     parser.add_argument("--backend", choices=BACKENDS, default="ailia_npu")
     parser.add_argument(
         "--model", choices=("sam", "grounding", "depth", "yolox", "vit"), default="sam"
@@ -374,14 +380,26 @@ def main():
             self.connect("size-allocate", self.resize_layout)
             self.resize_layout(self, self.get_allocation())
             self.show()
-            if not args.windowed:
+            if args.fullscreen:
                 self.fullscreen()
+            else:
+                self.maximize()
             GLib.timeout_add(30, self.poll)
             GLib.timeout_add(30, self.poll_capture)
             if self.input_mode == "camera":
                 self.start_camera()
-            else:
+            elif self.autoplay_pending:
                 self.submit("prepare")
+            else:
+                self.show_ready()
+
+        def show_ready(self):
+            instruction = {
+                "sam": "Click a target in the image to segment it.",
+                "vit": "Press Classify to start inference.",
+                "depth": "Press Estimate depth to start inference.",
+            }.get(self.model, "Press Detect to start inference.")
+            self.status.set_text(instruction)
 
         def resize_layout(self, _widget, allocation):
             # GTK cannot reliably reflow containers during their allocation signal.
@@ -451,7 +469,7 @@ def main():
             if mode == "camera":
                 self.start_camera()
             else:
-                self.submit("prepare")
+                self.show_ready()
 
         def choose_source(self, *_):
             if self.input_mode == "image":
@@ -787,7 +805,7 @@ def main():
             self.update_model_controls()
             self.load_image()
             if self.input_mode != "camera":
-                self.submit("prepare")
+                self.show_ready()
             elif self.capture is None:
                 self.start_camera()
 
@@ -808,7 +826,7 @@ def main():
             self.detections = []
             self.load_image()
             if self.input_mode != "camera":
-                self.submit("prepare")
+                self.show_ready()
 
         def benchmark(self, *_):
             if self.capture is not None and self.busy:
@@ -864,7 +882,7 @@ def main():
                 self.depth = None
                 self.update_model_controls()
                 self.load_image()
-                self.submit("prepare")
+                self.show_ready()
             dialog.destroy()
 
         def poll(self):

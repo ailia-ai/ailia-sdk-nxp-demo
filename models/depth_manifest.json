@@ -27,15 +27,18 @@
     "dynamic_matmuls": 24,
     "dynamic_execution": "standard ONNX fixed QuantizeLinear on both dynamic operands, MatMulInteger, Cast, Mul; ailia NPU uses uncompressed row tiles",
     "implicit_float_quantization": false,
-    "source_revision": "c8e3d217e95a591fb5a47fb2337d756fa5d82be1",
-    "sdk_sha256": "71ca0c6def343d3cc27e614ef4a044f64146769b028448602695c140f9ef1382",
-    "source_state": "committed: persistent compressed fixed INT8 weights and fused Softmax/QuantizeLinear",
+    "source_revision": "d3b9c2211ac5ae1f0e5bea62686343bf9faa0a40",
+    "sdk_sha256": "80d1c45c4237195925e685a9eb9f8de78192167f95f37cc1a4cdbcb8082b888c",
+    "source_state": "committed: Neutron startup optimization with indexed scheduling, tiled weights, and NEON INT4 expansion",
     "source_files": {
-      "library/npu/neutron/NeutronComposite.h": "4872dc32f60a24a8c508c7d193ca626fe2781cfa5643d44225d624bf4165d8c4",
+      "library/npu/neutron/NeutronComposite.h": "9b1e75b232a9390b70745ad5ec765981d563506f5602c82eac073d76c029de22",
       "library/npu/neutron/NeutronInt8Gemm.cpp": "4e67e8dca665d008b57265c8c765fc0367d3daae3c462d04d53b85c1369f373b",
       "library/npu/neutron/NeutronInt8Gemm.h": "d29b5e8d9eadb14503cc62308829b7b0e9aeb413bf5f26a8e52dfd8a668e7d38",
       "library/npu/neutron/NeutronQdqSoftmax.h": "eb95e7ea5c6259f5e25dcf9be3d51320665c52bf3170dc3403cc7ce7dd99a88e",
-      "library/npu/neutron/NeutronScaledInteger.h": "810d25dd45f8b4a7279986c5b0725ec84aaaa48f5b388153b5cac1969d6ffa21"
+      "library/npu/neutron/NeutronScaledInteger.h": "b9b25e43043439ab9f67689f0e5097782f43ebc5bd0de7fc811b4e572ec2a818",
+      "library/npu/neutron/NeutronMatMulNBits.cpp": "2bc6c82dc18d5e8bef3afc2a9b10dbb161fda8a00737fa0d26d25cd7ac18329e",
+      "library/npu/neutron/NeutronRegionOrder.h": "6778819896e50ef88893c6e6c0e4378e907f0787af010ccbfb914d412150e943",
+      "library/npu/neutron/NeutronSegmentBuilder.cpp": "7267940c1c26c7a57b454e03f2ef14061e824254d99a87808453d3bc64d7db0a"
     },
     "convolution_npu": true
   },

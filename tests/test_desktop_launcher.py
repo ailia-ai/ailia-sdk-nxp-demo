@@ -18,6 +18,7 @@ class DesktopLauncherTests(unittest.TestCase):
             text = shortcut.read_text()
             self.assertIn(f"Icon={root}/ailia-logo.png", text)
             self.assertIn('Exec=sh "', text)
+            self.assertIn('launch.sh" --windowed\n', text)
             self.assertIn("100%%", text)
             self.assertTrue(shortcut.stat().st_mode & 0o111)
             self.assertEqual(install(root, entry.parent, shortcut.parent), (entry, shortcut))
